@@ -46,8 +46,10 @@ router.post('/signup', async (req, res) => {
 
   try {
     // Check for duplicates
-    const emailExists = await User.findOne({ personalEmail });
-    const ufEmailExists = await User.findOne({ ufEmail });
+    const [emailExists, ufEmailExists] = await Promise.all([
+      User.findOne({ personalEmail }),
+      User.findOne({ ufEmail })
+    ]);
 
     if (emailExists || ufEmailExists) {
       return res.status(409).json({
@@ -57,9 +59,10 @@ router.post('/signup', async (req, res) => {
       });
     }
 
-    // Hash password
+    // Hash the password
     const hashedPassword = await bcrypt.hash(personalPassword, 10);
 
+    // Create and save new user
     const newUser = new User({
       firstName,
       lastName,
@@ -70,7 +73,8 @@ router.post('/signup', async (req, res) => {
       ufEmail,
       birthday,
       major,
-      year
+      year,
+      isApproved: false // Mark as pending approval
     });
 
     await newUser.save();
@@ -80,8 +84,10 @@ router.post('/signup', async (req, res) => {
       userId: newUser._id
     });
   } catch (err) {
-    console.error('Signup error:', err);
-    res.status(500).json({ message: 'Server error. Please try again later.' });
+    console.error('❌ Signup error:', err); // Full error log
+    res.status(500).json({
+      message: err.message || 'Server error. Please try again later.'
+    });
   }
 });
 

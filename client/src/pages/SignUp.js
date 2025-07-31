@@ -17,6 +17,8 @@ function SignUp() {
 
   const [errors, setErrors] = useState({});
 
+  
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -231,6 +233,9 @@ function SignUp() {
       </form>
     </div>
   );
+
+  
 }
+
 
 export default SignUp;
