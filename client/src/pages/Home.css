@@ -1,0 +1,147 @@
+body {
+  margin: 0;
+  background-color: #97B1DC;
+  min-height: 100vh;
+  width: 100%;
+  font-family: Jost, sans-serif;
+}
+
+.hero {
+  background-repeat: no-repeat;
+  background-position: 40% top;
+  background-size: cover;
+  background-color: #97B1DC;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 0rem;
+  flex-direction: column;
+  text-align: center;
+  padding-bottom: 4rem; /* default bottom padding */
+}
+
+.home-header {
+  padding: 0 20px;
+}
+
+.psr {
+  color: #000;
+  text-align: center;
+  font-family: Jost;
+  font-size: 96px;
+  font-style: normal;
+  font-weight: var(--sds-typography-heading-font-weight);
+  line-height: 120%;
+  letter-spacing: -1.92px;
+  margin: 0;
+}
+
+.sub-header {
+  font-family: "Gloria Hallelujah", cursive;
+  font-size: 40px;
+  font-style: italic;
+  margin-top: 4px;
+  color: #000;
+  font-weight: var(--sds-typography-heading-font-weight);
+  line-height: 120%;
+  letter-spacing: -0.8px;
+}
+
+.section {
+  background-color: white;
+  padding: 30px 20px;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  margin-bottom: 25rem;
+  margin-top: 0rem;
+}
+
+.third-header {
+  margin-top: 0;
+  color: #EC90B8;
+  margin-bottom: 20px;
+  text-align: center;
+  font-family: Jost;
+  font-size: 90px;
+  font-style: normal;
+  font-weight: var(--sds-typography-heading-font-weight);
+  line-height: 120%;
+  letter-spacing: -1.8px;
+}
+
+.blurb {
+  color: #323B67;
+  text-align: center;
+  font-family: Jost;
+  font-size: 42px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 120%;
+  letter-spacing: -0.84px;
+}
+
+.uf {
+  color: #4A5C99;
+}
+
+.divider {
+  padding: 0 10px;
+}
+
+.tau {
+  color: #EC90B8;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding-bottom: 2rem;
+  }
+
+  .psr {
+    font-size: 60px;
+    letter-spacing: -1.2px;
+  }
+
+  .sub-header {
+    font-size: 24px;
+  }
+
+  .third-header {
+    font-size: 42px;
+  }
+
+  .blurb {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 500px) {
+  .hero {
+    padding-bottom: 2rem;
+  }
+
+  .psr {
+    font-size: 42px;
+  }
+
+  .sub-header {
+    font-size: 18px;
+  }
+
+  .third-header {
+    font-size: 32px;
+  }
+
+  .blurb {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .hero {
+    padding-bottom: 10rem;
+  }
+}
