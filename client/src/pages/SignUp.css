@@ -44,3 +44,14 @@
   border-radius: 10px;
   cursor: pointer;
 }
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+
+.error-message {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
