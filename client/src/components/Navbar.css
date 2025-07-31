@@ -1,13 +1,25 @@
+/* === DEFAULT STYLES (for most screens) === */
+
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: white;
-  padding: 15px 30px;
+  padding: 10px 30px;   /* less vertical padding */
   border-radius: 40px;
   max-width: 90%;
-  margin: 20px auto;
+  margin: 5px auto 10px auto; /* less vertical margin */
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  margin-bottom: 0;
+}
+
+.logo {
+  font-weight: bold;
+  font-size: 20px;
 }
 
 .nav-links,
@@ -21,6 +33,7 @@
   text-decoration: none;
   font-weight: bold;
   color: black;
+  font-size: 16px;
 }
 
 .nav-links a:hover {
@@ -35,9 +48,123 @@
   font-weight: bold;
   text-decoration: none;
   color: black;
+  font-size: 16px;
 }
 
 .signin-link:hover {
   background-color: #ececec;
   color: #ff69b4;
+}
+
+.menu-toggle {
+  display: none;
+}
+
+/* === SMALL SCREENS (<768px) === */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 8px 20px; /* reduced vertical padding */
+    border-radius: 30px;
+    max-width: 95%;
+    flex-direction: column;
+    align-items: center;
+    margin: 5px auto 8px auto; /* reduced margin */
+  }
+
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    order: 1;
+  }
+
+  .auth-button {
+    width: 100%;
+    justify-content: center;
+    order: 2;
+    margin-top: 10px;
+  }
+
+  .signin-link {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 15px;
+    width: auto;
+  }
+
+  .logo {
+    font-size: 16px;
+    margin-bottom: 10px;
+    order: 0;
+  }
+}
+
+/* === SUPER SMALL SCREENS (<500px) === */
+@media (max-width: 500px) {
+  .navbar {
+    gap: 10px;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 15px; /* even less vertical padding */
+    margin: 4px auto 6px auto; /* less margin */
+  }
+
+  .nav-links {
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    order: 1;
+  }
+
+  .auth-button {
+    width: 100%;
+    justify-content: center;
+    order: 2;
+    margin-top: 10px;
+  }
+
+  .signin-link {
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 12px;
+  }
+
+  .logo {
+    font-size: 14px;
+    order: 0;
+  }
+
+  .nav-links a:nth-child(6),
+  .nav-links a:nth-child(7) {
+    display: none;
+  }
+}
+
+/* === LARGE SCREENS (>1024px) === */
+@media (min-width: 1024px) {
+  .navbar {
+    max-width: 80%;
+    padding: 12px 50px; /* reduced vertical padding */
+    border-radius: 50px;
+    margin: 8px auto 12px auto;
+  }
+
+  .nav-links,
+  .auth-button {
+    gap: 40px;
+  }
+
+  .nav-links a {
+    font-size: 18px;
+  }
+
+  .signin-link {
+    font-size: 18px;
+    padding: 10px 20px;
+    border-radius: 25px;
+  }
+
+  .logo {
+    font-size: 24px;
+  }
 }
