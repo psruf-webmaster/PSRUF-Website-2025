@@ -1,29 +1,37 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #bcd1ee;
+}
+
 body {
   margin: 0;
-  background-color: #97B1DC;
   min-height: 100vh;
   width: 100%;
   font-family: Jost, sans-serif;
+  position: relative;
 }
 
 .hero {
+  position: relative;
+  z-index: 0;
   background-repeat: no-repeat;
   background-position: 40% top;
   background-size: cover;
-  background-color: #97B1DC;
   width: 100%;
   height: 100vh;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding-top: 0rem;
   flex-direction: column;
   text-align: center;
   padding-bottom: 4rem; /* default bottom padding */
+  margin-top: 0;   /* ensure no top margin */
+
 }
 
 .home-header {
-  padding: 0 20px;
+  padding-top: 6rem;
 }
 
 .psr {
@@ -36,6 +44,12 @@ body {
   line-height: 120%;
   letter-spacing: -1.92px;
   margin: 0;
+}
+
+.uf, .divider, .tau{
+    background-size: 150%;
+    border-radius: 20px;
+    background-color: rgba(240, 248, 255, 0.5);
 }
 
 .sub-header {
@@ -55,7 +69,7 @@ body {
   max-width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
-  margin-bottom: 25rem;
+  margin-bottom: 50rem;
   margin-top: 0rem;
 }
 
