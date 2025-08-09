@@ -11,7 +11,7 @@ import Contact from './pages/Contact';
 import Members from './pages/Members';
 import SignInUp from './pages/SignInUp';
 import SignUp from './pages/SignUp';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './account pages/Dashboard';
 import Navbar from './components/Navbar';
 
 // Wrapper so we can use useLocation inside Router

@@ -125,3 +125,14 @@ html, body {
     font-size: 2rem;
   }
 }
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+
+.error-message {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
