@@ -1,30 +1,43 @@
+html, body {
+  background-color: #bcd1ee;
+  color: #323B67;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
 .signinup-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   background-color: #bcd1ee;
-  height: 100vh;
-  padding: 40px 0;
-  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  padding: 40px 20px;
+  margin-top: 3rem;
 }
 
+/* === Default login/signup box === */
 .login-box, .signup-box {
   background-color: #dbe6f3;
   border-radius: 40px;
   padding: 40px;
   width: 400px;
+  max-width: 100%;
   margin: 20px;
   text-align: center;
 }
 
+/* === Headings === */
 .login-box h1,
 .signup-box h1 {
   font-size: 2.5rem;
   font-weight: 800;
   letter-spacing: 5px;
   margin-bottom: 20px;
+  color: #323B67;
 }
 
+/* === Form and Inputs === */
 form {
   display: flex;
   flex-direction: column;
@@ -34,6 +47,8 @@ form {
 label {
   text-align: left;
   font-weight: bold;
+  padding-top: 0.5rem;
+  color: #323B67;
 }
 
 input {
@@ -42,16 +57,21 @@ input {
   border-bottom: 2px solid gray;
   background: transparent;
   outline: none;
+  font-size: 1rem;
 }
 
+/* === Button === */
 button {
   margin-top: 15px;
   padding: 10px;
   background-color: #fff;
   border-radius: 20px;
-  border: 1px solid #ccc;
+  border: 1px solid #c5c5c6;
   font-weight: bold;
+  font-size: 15px;
   cursor: pointer;
+  color: #323B67;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
@@ -63,5 +83,66 @@ p {
 }
 
 u {
-  color: black;
+  color: #323B67;
+}
+
+/* === Super Small Screens (<500px) === */
+@media (max-width: 499px) {
+  .login-box,
+  .signup-box {
+    width: 90%;
+    padding: 20px;
+    border-radius: 25px;
+  }
+
+  .login-box h1,
+  .signup-box h1 {
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+  }
+
+  input {
+    font-size: 0.9rem;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 8px;
+  }
+}
+
+/* === Small Screens (500px–767px) === */
+@media (min-width: 500px) and (max-width: 767px) {
+  .login-box,
+  .signup-box {
+    width: 90%;
+    padding: 30px;
+  }
+
+  .login-box h1,
+  .signup-box h1 {
+    font-size: 2rem;
+  }
+}
+
+/* === Medium Screens (768px–1023px) === */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .login-box,
+  .signup-box {
+    width: 450px;
+    padding: 40px;
+  }
+
+  .login-box h1,
+  .signup-box h1 {
+    font-size: 2.2rem;
+  }
+}
+
+/* === Large Screens (>1024px) === */
+@media (min-width: 1024px) {
+  .login-box,
+  .signup-box {
+    width: 500px;
+  }
 }
