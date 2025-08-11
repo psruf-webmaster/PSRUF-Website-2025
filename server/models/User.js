@@ -12,14 +12,14 @@ const userSchema = new mongoose.Schema({
   major: String,
   year: String,
   memberStatus: {
-    type: String,
-    enum: ['candidate', 'active', 'inactive', 'probation', 'senior', 'scholarship'],
-    default: 'active'
+    type: [String],
+    enum: ['active', 'inactive', 'probation', 'seniorStatus', 'scholarship', 'co-op', 'dropped'],
+    default: ['active']
   },
   role: {
-    type: String,
-    enum: ['pending', 'member', 'alumni', 'officer', 'exec', 'webmaster', 'webdev'],
-    default: 'pending'
+    type: [String],
+    enum: ['pending','pnm', 'candidate', 'candOfficer','member', 'alumni', 'officer', 'exec', 'webmaster', 'webdev'],
+    default: ['pending']
   },
   isApproved: {
     type: Boolean,
