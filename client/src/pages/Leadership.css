@@ -1,0 +1,134 @@
+/* Reset and layout setup */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  font-family: 'Jost', sans-serif;
+  background-color: #f9f9fb;
+  box-sizing: border-box;
+}
+
+/* Main wrapper */
+.ExecWelcomeSection {
+  margin-top: 15%;
+  padding: 0 10%;
+  text-align: center;
+}
+
+/* Top heading + dropdown container */
+.WelcomeHeader {
+  background-color: #fff;
+  padding: 5px 5px 5px;
+  border-radius: 20px;
+  border: 2px solid rgba(236, 144, 184, 0.35);
+  box-shadow: 0 4px 20px rgba(236, 144, 184, 0.2);
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 0;
+}
+
+.YearDropdownContainer {
+  margin-bottom: 1rem;
+}
+
+
+/* Heading text */
+.welcometext {
+  font-size: 2.5rem;
+  color: #323B67;
+  margin-bottom: 20px;
+}
+
+
+/* Dropdown styles */
+.year-select {
+  font-size: 1.3rem;
+  padding: 12px 50px;
+  background-color: transparent;
+  color: #323B67;
+  border-color: transparent;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg width='14' height='8' viewBox='0 0 14 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%23EC90B8' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.year-select:hover {
+  box-shadow: 0 0 0 3px rgba(236, 144, 184, 0.1);
+  border-radius: 20px;
+}
+
+/* Scroll container for all leaders */
+.LeadersScrollContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3rem;
+  background-color: transparent;
+}
+
+/* Each section (e.g. Executive Board, Officers) */
+.LeaderSection {
+  width: 100%;
+  max-width: 1000px;
+}
+
+/* Section title */
+.SectionTitle {
+  font-size: 1.75rem;
+  color: #323B67;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #353743;
+  padding-bottom: 5px;
+}
+
+/* Column layout for leaders */
+.LeaderColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 50px;
+}
+
+/* Individual leader card */
+.LeaderCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 200px;
+  text-align: center;
+}
+
+/* Profile image */
+.LeaderImage {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(236, 144, 184, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+}
+
+/* Name */
+.LeaderName {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #323B67;
+}
+
+/* Title */
+.LeaderTitle {
+  font-size: 0.95rem;
+  color: #353743;
+  margin-top: 4px;
+}

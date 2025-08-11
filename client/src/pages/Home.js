@@ -1,14 +1,14 @@
 import React from 'react';
 import './Home.css';
 
-export default function Home() {
+export default function Home({ bgPosition }) {
   return (
     <>
-      {/* Hero Section with Background Image */}
       <div
         className="hero"
         style={{
           backgroundImage: "url('/dbb97d8762356babafe63b3cef9f46fcfedf78a1.png')",
+          backgroundPosition: bgPosition,
         }}
       >
         <div className="home-header">
@@ -19,8 +19,8 @@ export default function Home() {
             <span className="tau">Tau Chapter</span>
           </h2>
         </div>
-        </div>
-      {/* Blurb Section */}
+      </div>
+
       <div className="section">
         <h6 className="third-header">RE-ENGINEERING SORORITY LIFE</h6>
         <p className="blurb">

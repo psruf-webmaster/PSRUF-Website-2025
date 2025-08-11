@@ -1,48 +1,129 @@
+html, body {
+  background-color: #bcd1ee;
+  color: #323B67;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
 .signup-form-container {
   background-color: #e6f0ff;
   padding: 40px;
-  font-family: 'Segoe UI', sans-serif;
-  max-width: 600px;
-  margin: auto;
+  margin: 5rem auto;
   border-radius: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 90%;
 }
 
+/* Heading */
 .signup-form h1 {
   text-align: center;
   font-size: 2rem;
   margin-bottom: 20px;
+  background-color: #e6f0ff;
 }
 
+/* Form Row */
 .signup-form .form-row {
   display: flex;
   flex-direction: column;
   margin-bottom: 15px;
+  background-color: #e6f0ff;
 }
 
+/* Label */
 .signup-form label {
   font-weight: 600;
   margin-bottom: 5px;
 }
 
+/* Inputs & Selects */
 .signup-form input,
 .signup-form select {
-  padding: 8px;
+  padding: 10px;
   font-size: 1rem;
   border-radius: 5px;
   border: 1px solid #ccc;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #e6f0ff;
 }
 
+/* Submit Button */
 .signup-form button {
   margin-top: 20px;
-  padding: 10px;
+  padding: 12px;
   width: 100%;
-  background-color: #000;
+  background-color:  #323B67;
   color: white;
   font-weight: bold;
+  font-size: 1rem;
   border: none;
   border-radius: 10px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.signup-form button:hover {
+  background-color:  #202647;
+}
+
+/* === Super Small Screens (<500px) === */
+@media (max-width: 499px) {
+  .signup-form-container {
+    padding: 25px;
+    border-radius: 12px;
+  }
+
+  .signup-form h1 {
+    font-size: 1.5rem;
+  }
+
+  .signup-form input,
+  .signup-form select {
+    font-size: 0.95rem;
+    padding: 8px;
+  }
+
+  .signup-form button {
+    font-size: 0.95rem;
+    padding: 10px;
+  }
+}
+
+/* === Small Screens (500px–767px) === */
+@media (min-width: 500px) and (max-width: 767px) {
+  .signup-form-container {
+    padding: 30px;
+  }
+
+  .signup-form h1 {
+    font-size: 1.7rem;
+  }
+}
+
+/* === Medium Screens (768px–1023px) === */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .signup-form-container {
+    max-width: 550px;
+  }
+
+  .signup-form h1 {
+    font-size: 1.9rem;
+  }
+}
+
+/* === Large Screens (≥1024px) === */
+@media (min-width: 1024px) {
+  .signup-form-container {
+    max-width: 600px;
+    margin: 7rem auto;
+  }
+
+  .signup-form h1 {
+    font-size: 2rem;
+  }
 }
 
 .capitalize {

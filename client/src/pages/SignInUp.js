@@ -19,7 +19,7 @@ function SignInUp() {
       <div className="signup-box">
         <h1>SIGN-UP</h1>
         <p>
-          New to our website? <Link to="/signup">Sign up <u>here</u></Link>
+          New to our website? <Link to="/signup"><u>Sign up here</u></Link>
         </p>
       </div>
     </div>
