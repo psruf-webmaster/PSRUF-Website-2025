@@ -1,9 +1,13 @@
+// server/routes/auth.js
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 
-// Signup route
+/**
+ * POST /api/auth/signup
+ * Creates a new (unapproved) user
+ */
 router.post('/signup', async (req, res) => {
   const {
     firstName,
@@ -15,10 +19,9 @@ router.post('/signup', async (req, res) => {
     ufEmail,
     birthday,
     major,
-    year
+    year,
   } = req.body;
 
-  // Basic presence check
   if (
     !firstName || !lastName || !phoneNumber || !phoneServiceProvider ||
     !personalEmail || !personalPassword || !ufEmail || !birthday ||
@@ -27,7 +30,6 @@ router.post('/signup', async (req, res) => {
     return res.status(400).json({ message: 'All fields are required.' });
   }
 
-  // Format validations
   if (!/^\d{10}$/.test(phoneNumber)) {
     return res.status(400).json({ message: 'Phone number must be 10 digits.' });
   }
@@ -45,24 +47,20 @@ router.post('/signup', async (req, res) => {
   }
 
   try {
-    // Check for duplicates
     const [emailExists, ufEmailExists] = await Promise.all([
       User.findOne({ personalEmail }),
-      User.findOne({ ufEmail })
+      User.findOne({ ufEmail }),
     ]);
-
     if (emailExists || ufEmailExists) {
       return res.status(409).json({
         message: emailExists
           ? 'This personal email is already registered.'
-          : 'This UF email is already registered.'
+          : 'This UF email is already registered.',
       });
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(personalPassword, 10);
 
-    // Create and save new user
     const newUser = new User({
       firstName,
       lastName,
@@ -74,21 +72,73 @@ router.post('/signup', async (req, res) => {
       birthday,
       major,
       year,
-      isApproved: false // Mark as pending approval
+      // role default: ['pending']
+      isApproved: false,
+      createdAt: new Date(),
     });
 
     await newUser.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Signup successful! Your account is under review by the webmaster.',
-      userId: newUser._id
+      userId: newUser._id,
     });
   } catch (err) {
-    console.error('❌ Signup error:', err); // Full error log
-    res.status(500).json({
-      message: err.message || 'Server error. Please try again later.'
-    });
+    console.error('❌ Signup error:', err);
+    return res.status(500).json({ message: err.message || 'Server error. Please try again later.' });
   }
+});
+
+/**
+ * POST /api/auth/login
+ * Body: { email, password }
+ * Authenticates with personalEmail & personalPassword; enforces approval.
+ */
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body; // email = personalEmail
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Missing credentials.' });
+    }
+
+    const user = await User.findOne({ personalEmail: email });
+    if (!user) return res.status(400).json({ message: 'Invalid credentials.' });
+
+    const ok = await bcrypt.compare(password, user.personalPassword || '');
+    if (!ok) return res.status(400).json({ message: 'Invalid credentials.' });
+
+    if (!user.isApproved) {
+      return res.status(403).json({ message: 'Account pending approval.' });
+    }
+
+    const safeUser = {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      personalEmail: user.personalEmail,
+      ufEmail: user.ufEmail,
+      role: user.role || [],
+      memberStatus: user.memberStatus || [],
+      positions: user.positions || [],
+      permissions: user.permissions || [],
+    };
+
+    return res.json({ message: 'Login successful', user: safeUser });
+  } catch (err) {
+    console.error('❌ Login error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+
+/**
+ * GET /api/auth/me
+ * Optional: Used to check current logged-in user (future session/JWT support)
+ */
+router.get('/me', async (req, res) => {
+  // For now, no session-based auth — just a placeholder.
+  // Later, verify req.user from a token or cookie
+  return res.json({ ok: true, message: 'Auth check route working.' });
 });
 
 module.exports = router;

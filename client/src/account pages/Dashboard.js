@@ -1,9 +1,18 @@
 import React from 'react';
+//import AppTopbar from 'components/AppTopbar';
+
+
+
+
 
 export default function Dashboard() {
-  return <h1>Welcome to the Placeholder Dashboard Page</h1>;
+  return (
+    <>
+      
+      {/* your existing dashboard content */}
+    </>
+  );
 }
-
 
 //make a unified dashboard for all sisters w events and point values (candidates have diff events, so they need their own diff dahsboard,
 //alumni also have a comletely diff set of events so they get their own dashbaord??)

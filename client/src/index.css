@@ -12,7 +12,16 @@ code {
     monospace;
 }
 
-html, body {
+html, body, #root {
   margin: 0;
   padding: 0;
+}
+html, body {
+  overflow-x: hidden;       /* prevent any x-scroll */
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;           /* avoids inline gaps */
 }

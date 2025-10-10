@@ -7,6 +7,14 @@ const authRoutes = require('./routes/auth'); // <-- ✅ Import the auth routes
 
 const app = express();
 
+const { transporter } = require('./utils/email');
+
+transporter
+  .verify()
+  .then(() => console.log('✅ SMTP connection OK'))
+  .catch(err => console.error('❌ SMTP error:', err.message));
+
+
 // Middleware
 app.use(cors());
 app.use(express.json());
