@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+// client/src/components/Navbar.js
+import React, { useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -15,6 +16,113 @@ const linkStyle = ({ isActive }) => ({
   background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
 });
 
+function isOfficerLevel(user) {
+  if (!user) return false;
+  if (user.isOfficer || user.isExec || user.isWebmaster) return true;
+  const roles = Array.isArray(user.role) ? user.role.map(r => String(r).toLowerCase())
+                                         : [String(user.role || "").toLowerCase()];
+  return roles.some(r =>
+    r.includes("officer") ||
+    r.includes("exec") ||
+    r.includes("webmaster") ||
+    r.includes("vp_comm") ||
+    r.includes("vp comm") ||
+    r.includes("vpcommunications") ||
+    r.includes("vp communications")
+  );
+}
+
+/** Hover dropdown; clicking the trigger navigates to /feeds/chapter */
+function AnnouncementsMenu({ showOfficerFeed }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      style={{ position: "relative" }}
+    >
+      {/* Trigger navigates to Chapter Announcements */}
+      <NavLink
+        to="/feeds/chapter"
+        style={{
+          ...baseLinkStyle,
+          color: "#222",
+          background: open ? "rgba(109,44,44,0.12)" : "transparent",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+        }}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        Announcements ▾
+      </NavLink>
+
+      {open && (
+        <div
+          role="menu"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            right: 0,
+            minWidth: 220,
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 12,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+            padding: 6,
+            zIndex: 1000,
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <NavLink
+              to="/feeds/chapter"
+              style={({ isActive }) => ({
+                ...baseLinkStyle,
+                display: "block",
+                color: isActive ? "#6d2c2c" : "#222",
+                background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
+                borderRadius: 10,
+              })}
+            >
+              Chapter Announcements
+            </NavLink>
+
+            <NavLink
+              to="/feeds/penguins"
+              style={({ isActive }) => ({
+                ...baseLinkStyle,
+                display: "block",
+                color: isActive ? "#6d2c2c" : "#222",
+                background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
+                borderRadius: 10,
+              })}
+            >
+              Penguin Parties
+            </NavLink>
+
+            {showOfficerFeed && (
+              <NavLink
+                to="/feeds/officers"
+                style={({ isActive }) => ({
+                  ...baseLinkStyle,
+                  display: "block",
+                  color: isActive ? "#6d2c2c" : "#222",
+                  background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
+                  borderRadius: 10,
+                })}
+              >
+                Officer Feed
+              </NavLink>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -26,28 +134,22 @@ export default function Navbar() {
       { to: "/recruitment", label: "Recruitment" },
       { to: "/alumni", label: "Alumni" },
       { to: "/partners", label: "Partners" },
-    //{ to: "/calendar", label: "Calendar" },
       { to: "/contact", label: "Contact Us" },
-    //{ to: "/members", label: "Members" },
     ],
     []
   );
 
+  // Removed /announcements here; dropdown replaces it
   const memberLinks = useMemo(
     () => [
       { to: "/dashboard", label: "Dashboard" },
       { to: "/events", label: "Events" },
-      { to: "/announcements", label: "Announcements" },
       { to: "/calendar", label: "Calendar" },
     ],
     []
   );
 
-  const isAdmin =
-    Array.isArray(user?.role) &&
-    (user.role.includes("webmaster") ||
-      user.role.includes("exec") ||
-      user.role.includes("officer"));
+  const isAdmin = isOfficerLevel(user);
 
   const onLogout = () => {
     logout();
@@ -64,40 +166,24 @@ export default function Navbar() {
         borderBottom: "1px solid #e5e7eb",
       }}
     >
-      {/* CONTAINER: centered, single row, no clipping */}
-     <nav
-  style={{
-    width: "100%",                // ← full width
-    padding: "10px 12px 10px 0",  // optional: 0 left padding for truly flush-left
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between", // left group vs right group
-    gap: 12,
-    flexWrap: "nowrap",
-    whiteSpace: "nowrap",
-    overflow: "visible",
-  }}
->
-
+      <nav
+        style={{
+          width: "100%",
+          padding: "10px 12px 10px 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "nowrap",
+          whiteSpace: "nowrap",
+          overflow: "visible",
+        }}
+      >
         {/* LEFT: brand + public links */}
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 10,
-            minWidth: 0, // play nice with flex sizing
-          }}
-        >
-          <NavLink
-            to="/"
-            style={{
-              ...baseLinkStyle,
-              fontSize: 18,
-              color: "#222",
-            }}
-          >
-            <span style={{ color: "#6d2c2c", fontWeight: 800 }}>PSR</span>{" "}
-            <span style={{ opacity: 0.7 }}>Website</span>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          <NavLink to="/" style={{ ...baseLinkStyle, fontSize: 18, color: "#222" }}>
+            <span style={{ color: "#6d2c2c", fontWeight: 800 }}>ΦΣΡ</span>{" "}
+            <span style={{ opacity: 0.7 }}>Phi Sigma Rho</span>
           </NavLink>
 
           {publicLinks.map((l) => (
@@ -107,23 +193,12 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* RIGHT: member links + admin + greeting + log out */}
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 10,
-            minWidth: 0,
-          }}
-        >
+        {/* RIGHT: member links + dropdown + admin + greeting + logout */}
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           {!user ? (
             <>
-              <NavLink to="/login" style={linkStyle}>
-                Sign In
-              </NavLink>
-              <NavLink to="/signup" style={linkStyle}>
-                Sign Up
-              </NavLink>
+              <NavLink to="/login" style={linkStyle}>Sign In</NavLink>
+              <NavLink to="/signup" style={linkStyle}>Sign Up</NavLink>
             </>
           ) : (
             <>
@@ -133,14 +208,12 @@ export default function Navbar() {
                 </NavLink>
               ))}
 
+              <AnnouncementsMenu showOfficerFeed={isAdmin} />
+
               {isAdmin && (
                 <>
-                  <NavLink to="/admin/approvals" style={linkStyle}>
-                    Approvals
-                  </NavLink>
-                  <NavLink to="/admin/users" style={linkStyle}>
-                    Users
-                  </NavLink>
+                  <NavLink to="/admin/approvals" style={linkStyle}>Approvals</NavLink>
+                  <NavLink to="/admin/users" style={linkStyle}>Users</NavLink>
                 </>
               )}
 

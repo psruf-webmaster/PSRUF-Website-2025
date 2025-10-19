@@ -6,11 +6,11 @@ import {
   Route,
   Navigate,
   useLocation,
+  Outlet
 } from 'react-router-dom';
 
-import AuthProvider from './context/AuthContext';
+import AuthProvider, { useAuth } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
-
 import Navbar from './components/Navbar';
 
 import Home from './pages/Home';
@@ -32,29 +32,49 @@ import Announcements from './pages/Announcements';
 import AdminApprovals from './pages/AdminApprovals';
 import AdminUsers from './pages/AdminUsers';
 
-// Wrapper so we can use useLocation inside Router
+// NEW layout + shared feed renderer
+import FeedsLayout from './pages/feeds/FeedsLayout';
+import FeedPage from './pages/feeds/FeedPage';
+
+// ---- Officer-only guard ----
+function isOfficerLevel(user) {
+  if (!user) return false;
+  if (user.isOfficer || user.isExec || user.isWebmaster) return true;
+  const roles = Array.isArray(user.role)
+    ? user.role.map(r => String(r).toLowerCase())
+    : [String(user.role || '').toLowerCase()];
+  return roles.some(r =>
+    r.includes('officer') ||
+    r.includes('exec') ||
+    r.includes('webmaster') ||
+    r.includes('vp_comm') || r.includes('vp comm') ||
+    r.includes('vpcommunications') || r.includes('vp communications')
+  );
+}
+
+function OfficerRoute() {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isOfficerLevel(user)) return <Navigate to="/feeds/chapter" replace />;
+  return <Outlet />;
+}
+
+// ---- AppContent so we can use useLocation ----
 function AppContent() {
   const location = useLocation();
-  // const isHome = location.pathname === '/'; // keep if you use elsewhere
-
   const [bgPosition, setBgPosition] = useState('40% -10%');
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 600) {
-        setBgPosition('center top');
-      } else {
-        setBgPosition('40% -10%');
-      }
+      setBgPosition(window.innerWidth < 600 ? 'center top' : '40% -10%');
     };
     window.addEventListener('resize', handleResize);
-    handleResize(); // once on mount
+    handleResize();
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return (
     <>
-      {/* Public navbar is always visible so users can browse the public site */}
       <Navbar />
 
       <Routes>
@@ -77,7 +97,16 @@ function AppContent() {
           <Route path="/events" element={<Events />} />
           <Route path="/announcements" element={<Announcements />} />
 
-          {/* Admin tools (also protected by login; we can add role checks later) */}
+          {/* Channels (feeds) – shared layout + sidebar */}
+          <Route path="/feeds" element={<FeedsLayout />}>
+            <Route path="chapter"  element={<FeedPage feed="chapterAnnouncements" />} />
+            <Route path="penguins" element={<FeedPage feed="penguinParties" />} />
+            <Route element={<OfficerRoute />}>
+              <Route path="officers" element={<FeedPage feed="officerFeed" />} />
+            </Route>
+          </Route>
+
+          {/* Admin tools */}
           <Route path="/admin/approvals" element={<AdminApprovals />} />
           <Route path="/admin/users" element={<AdminUsers />} />
         </Route>
