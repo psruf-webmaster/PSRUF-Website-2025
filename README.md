@@ -11,7 +11,7 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
 - Member dashboard foundation
 - Role and status based access control across the application
 
-### **Eventsand Sign-Ups**
+### **Events and Sign-Ups**
 - Full event lifecycle:
   - Create, edit, and manage events with role-based permissions
   - Visibility rules by role and member status
