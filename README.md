@@ -1,4 +1,4 @@
-# Product Backlog – PSRUF Website
+# Project Backlog – PSRUF Website
 
 This backlog tracks **completed work**, **in-progress validation**, and **upcoming features** for the Phi Sigma Rho UF website
 
