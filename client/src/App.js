@@ -28,6 +28,9 @@ import Login from './pages/Login';
 import Dashboard from './account pages/Dashboard';
 import Events from './pages/Events';
 import Announcements from './pages/Announcements';
+import Points from './pages/Points';
+import PointsOverview from './pages/PointsOverview';
+import Ledger from './pages/Ledger';
 
 import AdminApprovals from './pages/AdminApprovals';
 import AdminUsers from './pages/AdminUsers';
@@ -96,6 +99,13 @@ function AppContent() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/events" element={<Events />} />
           <Route path="/announcements" element={<Announcements />} />
+          <Route path="/points" element={<Points />} />
+          <Route element={<OfficerRoute />}>
+            <Route path="/points-overview" element={<PointsOverview />} />
+          </Route>
+          <Route element={<OfficerRoute />}>
+            <Route path="/ledger" element={<Ledger />} />
+          </Route>
 
           {/* Channels (feeds) – shared layout + sidebar */}
           <Route path="/feeds" element={<FeedsLayout />}>

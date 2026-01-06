@@ -19,16 +19,12 @@ const linkStyle = ({ isActive }) => ({
 function isOfficerLevel(user) {
   if (!user) return false;
   if (user.isOfficer || user.isExec || user.isWebmaster) return true;
-  const roles = Array.isArray(user.role) ? user.role.map(r => String(r).toLowerCase())
-                                         : [String(user.role || "").toLowerCase()];
+  const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
   return roles.some(r =>
-    r.includes("officer") ||
-    r.includes("exec") ||
-    r.includes("webmaster") ||
-    r.includes("vp_comm") ||
-    r.includes("vp comm") ||
-    r.includes("vpcommunications") ||
-    r.includes("vp communications")
+    r === "officer" ||
+    r === "exec" ||
+    r === "webmaster" ||
+    r === "webdev"
   );
 }
 
@@ -145,6 +141,9 @@ export default function Navbar() {
       { to: "/dashboard", label: "Dashboard" },
       { to: "/events", label: "Events" },
       { to: "/calendar", label: "Calendar" },
+      { to: "/points", label: "Points" },
+      { to: "/ledger", label: "Ledger", officerOnly: true },
+      { to: "/points-overview", label: "Points Overview", officerOnly: true },
     ],
     []
   );
@@ -203,9 +202,11 @@ export default function Navbar() {
           ) : (
             <>
               {memberLinks.map((l) => (
-                <NavLink key={l.to} to={l.to} style={linkStyle}>
-                  {l.label}
-                </NavLink>
+                (!l.officerOnly || isAdmin) && (
+                  <NavLink key={l.to} to={l.to} style={linkStyle}>
+                    {l.label}
+                  </NavLink>
+                )
               ))}
 
               <AnnouncementsMenu showOfficerFeed={isAdmin} />

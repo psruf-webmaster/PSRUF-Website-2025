@@ -14,6 +14,7 @@ transporter.verify()
 
 // --- Middleware ---
 app.use(express.json());
+app.use('/api/sms', require('./routes/sms'));
 // Configure CORS for your frontend origin(s)
 app.use(cors({
   origin: ['http://localhost:3000'], // add prod domain here later
@@ -24,10 +25,18 @@ app.use(cors({
 const authRoutes  = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const feedsRouter = require('./routes/feeds');
+const eventsRouter = require('./routes/events');
+const usersRouter = require('./routes/users');
+const ledgerRouter = require('./routes/ledger');
+const requirementsRouter = require('./routes/requirements');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/feeds', feedsRouter);
+app.use('/api/events', eventsRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/ledger', ledgerRouter);
+app.use('/api/requirements', requirementsRouter);
 
 // Basic health checks
 app.get('/', (req, res) => res.send('API is running...'));
