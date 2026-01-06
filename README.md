@@ -90,11 +90,6 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
   - Points pages (Master points vs regular member points page)
   - Requirements eligibility
 
-### **UI **
-  - Dashboard (weekly events + points circles)
-  - Member Points page
-  - Admin Points Overview page
-
 ---
 ## TO DO 
 ## 🔴 P0 – Highest Priority (Decision Needed ASAP)
