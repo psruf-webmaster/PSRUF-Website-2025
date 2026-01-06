@@ -117,7 +117,9 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
     - Member status
     - Position
   - Optional scheduled send time
-- **Event reminder notifications**:
+- **Events and reminder notifications**:
+  - Need to get list of mandatory events
+  - Add mandatory event designation option for event creators
   - Event creators can opt-in to automated reminders
   - Reminder types:
     - Email reminder **1 week before** event
