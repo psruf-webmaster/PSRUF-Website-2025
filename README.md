@@ -171,7 +171,10 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
 - Edge-case testing for:
   - Point requirements met and candidate eligibility
   - Ledger consistency
-  - Role and status transitions over time
+  - Role and status transitions for new officers
+ 
+### **Post-Deployment**
+- Start working on mobile application
 
 ---
 
