@@ -4,6 +4,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Post = require('../models/Post');
 const User = require('../models/User');
+const { sendSmsBlast } = require('../services/smsBlast');
 
 const ALLOWED_FEEDS = ['chapterAnnouncements', 'penguinParties', 'officerFeed'];
 
@@ -47,6 +48,13 @@ const CAN = {
   TEXTBLAST_SEND: (user) => Array.isArray(user?.permissions) && user.permissions.includes('sms.send'),
 };
 
+function scopeFromClient(scope, audienceType) {
+  if (audienceType === 'specific') return 'INDIVIDUALS';
+  if (scope === 'specific') return 'INDIVIDUALS';
+  if (['ALL', 'GROUPS', 'INDIVIDUALS'].includes(scope)) return scope;
+  return 'ALL';
+}
+
 // ---------- List posts (newest first) ----------
 router.get('/:feed/posts', async (req, res) => {
   try {
@@ -69,7 +77,15 @@ router.post('/:feed/posts', async (req, res) => {
   try {
     const user = await getUser(req);
     const { feed } = req.params;
-    const { content, imageURL, sendTextBlast, blastAudience } = req.body || {};
+    const {
+      content,
+      imageURL,
+      sendTextBlast,
+      blastAudience,
+      sendAsText,
+      audienceType,
+      selectedUserIds,
+    } = req.body || {};
 
     if (!user) return bad(res, 401, 'No user (x-user-id missing or invalid)');
     if (!ALLOWED_FEEDS.includes(feed)) return bad(res, 400, 'Unknown feed');
@@ -89,18 +105,29 @@ router.post('/:feed/posts', async (req, res) => {
       content: String(content).trim(),
       imageURL,
       sendTextBlast: willBlast,
-      blastAudience: willBlast ? blastAudience : undefined,
+      blastAudience: willBlast
+        ? {
+            scope: scopeFromClient(blastAudience?.scope, audienceType),
+            groups: blastAudience?.groups,
+            userIds: Array.isArray(selectedUserIds) ? selectedUserIds : blastAudience?.userIds,
+          }
+        : undefined,
     });
 
-    // TODO: enqueue SMS job
-    if (willBlast) {
-      console.log('📢 Would send text blast:', {
-        feed,
-        postId: post._id.toString(),
-        blastAudience,
-      });
+    let smsResult;
+    const shouldSendSms = sendAsText === true && audienceType === 'specific' && Array.isArray(selectedUserIds) && selectedUserIds.length > 0;
+
+    if (shouldSendSms) {
+      try {
+        smsResult = await sendSmsBlast({ message: String(content).trim(), selectedUserIds });
+      } catch (err) {
+        smsResult = { attempted: 0, sent: 0, failed: 0, failures: [{ userId: null, reason: err.message || 'sms failed' }] };
+      }
     }
 
+    if (smsResult) {
+      return res.status(201).json({ ...post.toObject(), smsResult });
+    }
     return res.status(201).json(post);
   } catch (e) {
     console.error('Create post error:', e);

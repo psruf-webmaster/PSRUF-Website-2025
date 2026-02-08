@@ -28,10 +28,31 @@ function CreatePost({ feed, canPost, canBlast, onPosted }) {
   const [content, setContent] = useState('');
   const [sendBlast, setSendBlast] = useState(false);
   const [scope, setScope] = useState('ALL');
+  const [userOptions, setUserOptions] = useState([]);
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await fetch('/api/users/approved', {
+          credentials: 'include',
+          headers: user?._id || user?.id ? { 'x-user-id': user._id || user.id } : undefined,
+        });
+        const data = await res.json();
+        if (Array.isArray(data)) setUserOptions(data);
+      } catch {
+        setUserOptions([]);
+      }
+    };
+    if (sendBlast && scope === 'specific') {
+      loadUsers();
+    }
+  }, [sendBlast, scope]);
 
   const submit = async () => {
     if (!content.trim() || !user) return;
+    if (sendBlast && scope === 'specific' && selectedUserIds.length === 0) return;
     setSubmitting(true);
     const userId = user?._id || user?.id;
 
@@ -45,6 +66,9 @@ function CreatePost({ feed, canPost, canBlast, onPosted }) {
         content: content.trim(),
         sendTextBlast: canBlast ? sendBlast : false,
         blastAudience: canBlast && sendBlast ? { scope } : undefined,
+        sendAsText: sendBlast,
+        audienceType: scope === 'specific' ? 'specific' : scope,
+        selectedUserIds: scope === 'specific' ? selectedUserIds : undefined,
       }),
     });
 
@@ -57,6 +81,7 @@ function CreatePost({ feed, canPost, canBlast, onPosted }) {
     }
     setContent('');
     setSendBlast(false);
+    setSelectedUserIds([]);
     onPosted && onPosted();
   };
 
@@ -80,9 +105,30 @@ function CreatePost({ feed, canPost, canBlast, onPosted }) {
             <select value={scope} onChange={e => setScope(e.target.value)}>
               <option value="ALL">All Sisters</option>
               <option value="GROUPS">Selected Groups</option>
-              <option value="INDIVIDUALS">Specific Sisters</option>
+              <option value="specific">Specific Users</option>
             </select>
           )}
+        </div>
+      )}
+      {sendBlast && scope === 'specific' && (
+        <div style={{ marginTop: 8, border: '1px solid #eee', borderRadius: 8, padding: 8, maxHeight: 180, overflowY: 'auto' }}>
+          {userOptions.length === 0 && <div style={{ fontSize: 12, color: '#555' }}>No users available.</div>}
+          {userOptions.map(u => (
+            <label key={u._id} style={{ display: 'block', fontSize: 13 }}>
+              <input
+                type="checkbox"
+                checked={selectedUserIds.includes(u._id)}
+                onChange={e => {
+                  if (e.target.checked) {
+                    setSelectedUserIds(prev => [...prev, u._id]);
+                  } else {
+                    setSelectedUserIds(prev => prev.filter(id => id !== u._id));
+                  }
+                }}
+              />{' '}
+              {u.firstName} {u.lastName} {u.role ? `(${Array.isArray(u.role) ? u.role.join(', ') : u.role})` : ''}
+            </label>
+          ))}
         </div>
       )}
       <div style={{ marginTop: 8, textAlign: 'right' }}>
@@ -125,6 +171,13 @@ function PostCard({ post, onCommented }) {
       </div>
       <div style={{ marginBottom: 10 }}>{post.content}</div>
       {post.sendTextBlast && <div style={{ fontSize: 12, color: '#555' }}>📢 Sent as text</div>}
+      {post.smsResult && (
+        <div style={{ fontSize: 12, color: post.smsResult.failed > 0 ? 'red' : '#555' }}>
+          {post.smsResult.failed > 0
+            ? 'SMS failed'
+            : `📱 Sent as text to ${post.smsResult.sent || 0} recipient${(post.smsResult.sent || 0) === 1 ? '' : 's'}`}
+        </div>
+      )}
       <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
         <input
           placeholder="Write a comment…"

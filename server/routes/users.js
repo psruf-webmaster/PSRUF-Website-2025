@@ -13,6 +13,11 @@ async function getUser(req) {
       if (u) return u;
     }
   }
+  const xUser = req.header('x-user-id');
+  if (xUser && mongoose.Types.ObjectId.isValid(xUser)) {
+    const u = await User.findById(xUser);
+    if (u) return u;
+  }
   return null;
 }
 
@@ -40,7 +45,7 @@ router.get('/approved', async (req, res) => {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
 
-    const users = await User.find({ isApproved: true }).select('_id firstName lastName role');
+    const users = await User.find({ isApproved: true }).select('_id firstName lastName role memberStatus');
     return res.json(users);
   } catch (err) {
     console.error('Users approved error:', err);
