@@ -1,0 +1,10 @@
+/* Reset and layout setup */
+h1, html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  font-family: 'Jost', sans-serif;
+  box-sizing: border-box;
+  padding-bottom: 1rem;
+  margin-top: 5rem;
+}

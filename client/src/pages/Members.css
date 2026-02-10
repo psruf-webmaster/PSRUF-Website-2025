@@ -1,0 +1,11 @@
+/* Reset and layout setup */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  font-family: 'Jost', sans-serif;
+  background-color: #f9f9fb;
+  box-sizing: border-box;
+  padding-bottom: 1rem;
+  padding-top: 2rem;
+}

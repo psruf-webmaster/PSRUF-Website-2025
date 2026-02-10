@@ -2,16 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 
 import Home from './pages/Home';
-import Leadership from './pages/Leadership';
+import Executive from './pages/Executive';
 import Recruitment from './pages/Recruitment';
 import Alumni from './pages/Alumni';
 import Partners from './pages/Partners';
-import Calendar from './pages/Calendar';
+import Calendar from './account pages/Calendar';
 import Contact from './pages/Contact';
 import Members from './pages/Members';
 import SignInUp from './pages/SignInUp';
 import SignUp from './pages/SignUp';
 import Dashboard from './account pages/Dashboard';
+import AlumniDashboard from './account pages/AlumniDash'
 import Navbar from './components/Navbar';
 
 // Wrapper so we can use useLocation inside Router
@@ -41,7 +42,7 @@ function AppContent() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home bgPosition={bgPosition} />} />
-        <Route path="/leadership" element={<Leadership />} />
+        <Route path="/executive" element={<Executive />} />
         <Route path="/recruitment" element={<Recruitment />} />
         <Route path="/alumni" element={<Alumni />} />
         <Route path="/partners" element={<Partners />} />

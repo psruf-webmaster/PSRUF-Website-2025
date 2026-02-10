@@ -17,13 +17,13 @@ function Navbar() {
 
       <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
         <Link to="/" onClick={closeMenu}>Home</Link>
-        <Link to="/leadership" onClick={closeMenu}>Leadership</Link>
+        <Link to="/executive" onClick={closeMenu}>Executive</Link>
         <Link to="/recruitment" onClick={closeMenu}>Recruitment</Link>
+        <Link to="/members" onClick={closeMenu}>Members</Link>
         <Link to="/alumni" onClick={closeMenu}>Alumni</Link>
         <Link to="/partners" onClick={closeMenu}>Partners</Link>
-        <Link to="/calendar" onClick={closeMenu}>Calendar</Link>
         <Link to="/contact" onClick={closeMenu}>Contact Us</Link>
-        <Link to="/members" onClick={closeMenu}>Members</Link>
+      
 
         <div className="auth-button">
         <Link to="/signinup" className="signin-link">
