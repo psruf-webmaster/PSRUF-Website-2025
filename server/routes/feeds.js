@@ -4,7 +4,10 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Post = require('../models/Post');
 const User = require('../models/User');
-const { sendSmsBlast } = require('../services/smsBlast');
+const { sendSmsBlastToRecipients } = require('../services/smsBlast');
+const { resolveRecipientPhones } = require('../services/audienceResolver');
+const { canUserSendSms } = require('../utils/smsPermissions');
+const Channel = require('../models/Channel');
 
 const ALLOWED_FEEDS = ['chapterAnnouncements', 'penguinParties', 'officerFeed'];
 
@@ -48,11 +51,33 @@ const CAN = {
   TEXTBLAST_SEND: (user) => Array.isArray(user?.permissions) && user.permissions.includes('sms.send'),
 };
 
-function scopeFromClient(scope, audienceType) {
-  if (audienceType === 'specific') return 'INDIVIDUALS';
-  if (scope === 'specific') return 'INDIVIDUALS';
-  if (['ALL', 'GROUPS', 'INDIVIDUALS'].includes(scope)) return scope;
-  return 'ALL';
+function normalizeAudienceType(rawAudienceType, rawScope) {
+  if (rawAudienceType === 'channel' || rawAudienceType === 'roleStatus' || rawAudienceType === 'specific') {
+    return rawAudienceType;
+  }
+  if (rawScope === 'specific' || rawScope === 'INDIVIDUALS') return 'specific';
+  if (rawScope === 'GROUPS' || rawScope === 'ROLE_STATUS') return 'roleStatus';
+  return 'channel';
+}
+
+function buildBlastAudience({ audienceType, channelSlug, includeRoles, includeMemberStatuses, selectedUserIds }) {
+  if (audienceType === 'specific') {
+    return {
+      scope: 'INDIVIDUALS',
+      userIds: Array.isArray(selectedUserIds) ? selectedUserIds : [],
+    };
+  }
+  if (audienceType === 'roleStatus') {
+    return {
+      scope: 'ROLE_STATUS',
+      includeRoles: Array.isArray(includeRoles) ? includeRoles : [],
+      includeMemberStatuses: Array.isArray(includeMemberStatuses) ? includeMemberStatuses : [],
+    };
+  }
+  return {
+    scope: 'CHANNEL',
+    channelSlug,
+  };
 }
 
 // ---------- List posts (newest first) ----------
@@ -85,6 +110,9 @@ router.post('/:feed/posts', async (req, res) => {
       sendAsText,
       audienceType,
       selectedUserIds,
+      channelSlug,
+      includeRoles,
+      includeMemberStatuses,
     } = req.body || {};
 
     if (!user) return bad(res, 401, 'No user (x-user-id missing or invalid)');
@@ -92,9 +120,16 @@ router.post('/:feed/posts', async (req, res) => {
     if (!CAN.POST_CREATE(user, feed)) return bad(res, 403, 'Not allowed to post to this feed');
     if (!content || !String(content).trim()) return bad(res, 400, 'Content is required');
 
-    const willBlast = !!sendTextBlast;
-    if (willBlast && !CAN.TEXTBLAST_SEND(user)) {
-      return bad(res, 403, 'Only VP Comm/Webmaster may send text blasts');
+    const channel = await Channel.findOne({ slug: feed });
+    if (channel && channel.isArchived) return bad(res, 400, 'Channel is archived; posting is locked');
+
+    const sendAsTextNormalized = sendAsText === true || sendTextBlast === true;
+    const audienceTypeNormalized = normalizeAudienceType(audienceType, blastAudience?.scope);
+    const channelSlugNormalized = channelSlug || feed;
+
+    const validAudienceTypes = ['channel', 'roleStatus', 'specific'];
+    if (sendAsTextNormalized === true && !validAudienceTypes.includes(audienceTypeNormalized)) {
+      return bad(res, 400, 'Invalid audienceType');
     }
 
     const post = await Post.create({
@@ -104,31 +139,57 @@ router.post('/:feed/posts', async (req, res) => {
       authorRole: Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []),
       content: String(content).trim(),
       imageURL,
-      sendTextBlast: willBlast,
-      blastAudience: willBlast
-        ? {
-            scope: scopeFromClient(blastAudience?.scope, audienceType),
-            groups: blastAudience?.groups,
-            userIds: Array.isArray(selectedUserIds) ? selectedUserIds : blastAudience?.userIds,
-          }
+      sendTextBlast: sendAsTextNormalized,
+      blastAudience: sendAsTextNormalized
+        ? buildBlastAudience({
+            audienceType: audienceTypeNormalized,
+            channelSlug: channelSlugNormalized,
+            includeRoles,
+            includeMemberStatuses,
+            selectedUserIds,
+          })
         : undefined,
     });
 
     let smsResult;
-    const shouldSendSms = sendAsText === true && audienceType === 'specific' && Array.isArray(selectedUserIds) && selectedUserIds.length > 0;
+    const shouldSendSms = sendAsTextNormalized === true;
 
     if (shouldSendSms) {
-      try {
-        smsResult = await sendSmsBlast({ message: String(content).trim(), selectedUserIds });
-      } catch (err) {
-        smsResult = { attempted: 0, sent: 0, failed: 0, failures: [{ userId: null, reason: err.message || 'sms failed' }] };
+      if (!canUserSendSms(user)) {
+        smsResult = { attempted: 0, sent: 0, failed: 0, failures: [], error: 'Not authorized to send SMS' };
+      } else {
+        try {
+          const resolverInput = {
+            audienceType: audienceTypeNormalized,
+            channelSlug: audienceTypeNormalized === 'channel' ? channelSlugNormalized : undefined,
+            channelId: req.body?.channelId,
+            includeRoles,
+            includeMemberStatuses,
+            selectedUserIds,
+          };
+          const recipients = await resolveRecipientPhones(resolverInput);
+          if (!recipients.length) {
+            smsResult = { attempted: 0, sent: 0, failed: 0, failures: [] };
+          } else {
+            smsResult = await sendSmsBlastToRecipients({
+              message: String(content).trim(),
+              recipients,
+            });
+          }
+        } catch (err) {
+          const status = err.status || 500;
+          if (status === 400 || status === 404) {
+            return bad(res, status, err.message || 'Invalid SMS audience');
+          }
+          smsResult = { attempted: 0, sent: 0, failed: 0, failures: [{ userId: null, reason: err.message || 'sms failed' }] };
+        }
       }
     }
 
     if (smsResult) {
-      return res.status(201).json({ ...post.toObject(), smsResult });
+      return res.status(201).json({ ...post.toObject(), sendAsText: sendAsTextNormalized, smsResult });
     }
-    return res.status(201).json(post);
+    return res.status(201).json({ ...post.toObject(), sendAsText: sendAsTextNormalized });
   } catch (e) {
     console.error('Create post error:', e);
     return bad(res, 500, `Server error: ${e.message}`);

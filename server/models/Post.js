@@ -17,7 +17,10 @@ const PostSchema = new mongoose.Schema({
   imageURL: String,
   sendTextBlast: { type: Boolean, default: false },
   blastAudience: {
-    scope: { type: String, enum: ['ALL','GROUPS','INDIVIDUALS'], default: 'ALL' },
+    scope: { type: String, enum: ['ALL','GROUPS','INDIVIDUALS','CHANNEL','ROLE_STATUS'], default: 'ALL' },
+    channelSlug: String,
+    includeRoles: [String],
+    includeMemberStatuses: [String],
     groups: [String],
     userIds: [String],
   },
