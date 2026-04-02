@@ -8,10 +8,11 @@ const { recipientsWithPhones, dedupeIds } = require('../utils/recipients');
  * @param {string[]} params.selectedUserIds
  */
 async function sendSmsBlast({ message, selectedUserIds = [] }) {
-  const ids = dedupeIds(selectedUserIds);
-  if (!ids.length) return { attempted: 0, sent: 0, failed: 0, failures: [] };
-
-  const recipients = await recipientsWithPhones(ids);
+  let recipients = [];
+  if (Array.isArray(selectedUserIds) && selectedUserIds.length > 0) {
+    const ids = dedupeIds(selectedUserIds);
+    recipients = await recipientsWithPhones(ids);
+  }
   const results = { attempted: recipients.length, sent: 0, failed: 0, failures: [] };
 
   for (const r of recipients) {
@@ -27,4 +28,18 @@ async function sendSmsBlast({ message, selectedUserIds = [] }) {
   return results;
 }
 
-module.exports = { sendSmsBlast };
+async function sendSmsBlastToRecipients({ message, recipients = [] }) {
+  const results = { attempted: recipients.length, sent: 0, failed: 0, failures: [] };
+  for (const r of recipients) {
+    try {
+      await sendSMS({ phone: r.phoneNumber, message });
+      results.sent += 1;
+    } catch (err) {
+      results.failed += 1;
+      results.failures.push({ userId: r.userId, reason: err.message || 'send failed' });
+    }
+  }
+  return results;
+}
+
+module.exports = { sendSmsBlast, sendSmsBlastToRecipients };
