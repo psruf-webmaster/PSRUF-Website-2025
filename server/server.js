@@ -14,7 +14,7 @@ app.use(express.json());
 app.use('/api/sms', require('./routes/sms'));
 // Configure CORS for your frontend origin(s)
 app.use(cors({
-  origin: ['http://localhost:3000'], // add prod domain here later
+  origin: ['http://localhost:3000', 'https://psruf-website-2026.onrender.com/'], // add prod domain here later
   credentials: true,
 }));
 app.use('/api', (req, res, next) => {
