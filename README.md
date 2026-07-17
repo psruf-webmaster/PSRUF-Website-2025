@@ -141,14 +141,6 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
 
 ### **User Account Enhancements**
 - Password reset flow
-- Profile settings page:
-  - Edit email
-  - Edit phone number
-  - Avatar/profile photo upload
-
-### **Calendar**
-- Dedicated calendar page
-- Embedded Google Calendar for chapter events
 
 ### **Public Website**
 - Finish and polish all public-facing pages:
