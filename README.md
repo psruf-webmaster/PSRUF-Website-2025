@@ -131,7 +131,6 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
  
 ### **UI **
   - LIterally every page
-  - Dashboard (weekly events + points circles)
   - Member Points page
   - Admin Points Overview page
 
