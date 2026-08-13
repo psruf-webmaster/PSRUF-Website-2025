@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 const app = express();
 // --- SMTP sanity check (optional) ---
@@ -40,9 +41,22 @@ app.use('/api/events', eventsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/ledger', ledgerRouter);
 app.use('/api/requirements', requirementsRouter);
+
+// Serve the React build when backend and frontend are deployed together.
+const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+}
 // Basic health checks
 app.get('/', (req, res) => res.send('API is running...'));
 app.get('/api/hello', (req, res) => res.json({ message: 'Hello from the backend!' }));
+
+// SPA fallback so direct URL visits/refreshes resolve to index.html.
+if (fs.existsSync(clientBuildPath)) {
+  app.get(/^(?!\/api|\/uploads).*/, (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 // --- MongoDB + Start server ---
 async function startServer() {
   try {
