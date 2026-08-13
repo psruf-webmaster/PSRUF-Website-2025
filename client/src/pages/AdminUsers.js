@@ -37,7 +37,6 @@ function Multi({ options, value, onChange, size = 5, width = 220 }) {
   );
 }
 
-// Simple modal component
 function Modal({ open, onClose, title, children }) {
   if (!open) return null;
   return (
@@ -125,7 +124,7 @@ export default function AdminUsers() {
         })
       });
       if (!res.ok) throw new Error((await res.json()).message || 'Update failed');
-      setMsg('✅ Roles/Status updated');
+      setMsg('Roles/Status updated');
       await load();
     } catch (e) {
       console.error(e); setMsg('❌ ' + e.message);
@@ -143,7 +142,7 @@ export default function AdminUsers() {
         })
       });
       if (!res.ok) throw new Error((await res.json()).message || 'Positions update failed');
-      setMsg('✅ Positions updated (history saved)');
+      setMsg('Positions updated (history saved)');
       await load();
     } catch (e) {
       console.error(e); setMsg('❌ ' + e.message);

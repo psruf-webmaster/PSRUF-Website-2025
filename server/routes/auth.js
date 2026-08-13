@@ -4,6 +4,23 @@ const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 
+function toSafeUser(user) {
+  return {
+    id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    personalEmail: user.personalEmail,
+    ufEmail: user.ufEmail,
+    major: user.major,
+    year: user.year,
+    profilePicUrl: user.profilePicUrl || '',
+    role: user.role || [],
+    memberStatus: user.memberStatus || [],
+    positions: user.positions || [],
+    permissions: user.permissions || [],
+  };
+}
+
 /**
  * POST /api/auth/signup
  * Creates a new (unapproved) user
@@ -111,19 +128,7 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ message: 'Account pending approval.' });
     }
 
-    const safeUser = {
-      id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      personalEmail: user.personalEmail,
-      ufEmail: user.ufEmail,
-      role: user.role || [],
-      memberStatus: user.memberStatus || [],
-      positions: user.positions || [],
-      permissions: user.permissions || [],
-    };
-
-    return res.json({ message: 'Login successful', user: safeUser });
+    return res.json({ message: 'Login successful', user: toSafeUser(user) });
   } catch (err) {
     console.error('❌ Login error:', err);
     return res.status(500).json({ message: 'Server error.' });

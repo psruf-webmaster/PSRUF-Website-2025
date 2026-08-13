@@ -37,7 +37,7 @@ html, body {
 /* Heading text */
 .welcometext {
   font-size: 2.5rem;
-  color: #323B67;
+  color: #6d2c2c;
   margin-bottom: 20px;
 }
 
@@ -47,7 +47,7 @@ html, body {
   font-size: 1.3rem;
   padding: 12px 50px;
   background-color: transparent;
-  color: #323B67;
+  color: #6d2c2c;
   border-color: transparent;
   outline: none;
   appearance: none;
@@ -85,7 +85,7 @@ html, body {
 /* Section title */
 .SectionTitle {
   font-size: 1.75rem;
-  color: #323B67;
+  color: #6d2c2c;
   margin-bottom: 30px;
   border-bottom: 2px solid #353743;
   padding-bottom: 5px;
@@ -123,7 +123,7 @@ html, body {
 .LeaderName {
   font-weight: 600;
   font-size: 1.1rem;
-  color: #323B67;
+  color: #6d2c2c;
 }
 
 /* Title */

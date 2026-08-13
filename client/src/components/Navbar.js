@@ -1,20 +1,6 @@
-// client/src/components/Navbar.js
-import React, { useMemo, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { NavLink, useMatch, useNavigate, useResolvedPath } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-
-const baseLinkStyle = {
-  padding: "6px 10px",
-  borderRadius: 16,
-  textDecoration: "none",
-  fontWeight: 600,
-  whiteSpace: "nowrap",
-};
-const linkStyle = ({ isActive }) => ({
-  ...baseLinkStyle,
-  color: isActive ? "#6d2c2c" : "#222",
-  background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
-});
 
 function isOfficerLevel(user) {
   if (!user) return false;
@@ -28,100 +14,27 @@ function isOfficerLevel(user) {
   );
 }
 
-/** Hover dropdown; clicking the trigger navigates to /feeds/chapter */
-function AnnouncementsMenu({ showOfficerFeed }) {
-  const [open, setOpen] = useState(false);
+function NavMenuLink({ to, children, end, onClick }) {
+  const resolved = useResolvedPath(to);
+  const isActive = useMatch({ path: resolved.pathname, end: end ?? to === "/" });
 
   return (
-    <div
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      style={{ position: "relative" }}
+    <NavLink
+      to={to}
+      onClick={onClick}
+      className={`site-nav-pill ${isActive ? "site-nav-pill-active" : ""}`}
     >
-      {/* Trigger navigates to Chapter Announcements */}
-      <NavLink
-        to="/feeds/chapter"
-        style={{
-          ...baseLinkStyle,
-          color: "#222",
-          background: open ? "rgba(109,44,44,0.12)" : "transparent",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-        }}
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        Announcements ▾
-      </NavLink>
-
-      {open && (
-        <div
-          role="menu"
-          style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            right: 0,
-            minWidth: 220,
-            background: "#fff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 12,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-            padding: 6,
-            zIndex: 1000,
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <NavLink
-              to="/feeds/chapter"
-              style={({ isActive }) => ({
-                ...baseLinkStyle,
-                display: "block",
-                color: isActive ? "#6d2c2c" : "#222",
-                background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
-                borderRadius: 10,
-              })}
-            >
-              Chapter Announcements
-            </NavLink>
-
-            <NavLink
-              to="/feeds/penguins"
-              style={({ isActive }) => ({
-                ...baseLinkStyle,
-                display: "block",
-                color: isActive ? "#6d2c2c" : "#222",
-                background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
-                borderRadius: 10,
-              })}
-            >
-              Penguin Parties
-            </NavLink>
-
-            {showOfficerFeed && (
-              <NavLink
-                to="/feeds/officers"
-                style={({ isActive }) => ({
-                  ...baseLinkStyle,
-                  display: "block",
-                  color: isActive ? "#6d2c2c" : "#222",
-                  background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
-                  borderRadius: 10,
-                })}
-              >
-                Officer Feed
-              </NavLink>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+      {children}
+    </NavLink>
   );
 }
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
 
   const publicLinks = useMemo(
     () => [
@@ -135,15 +48,12 @@ export default function Navbar() {
     []
   );
 
-  // Removed /announcements here; dropdown replaces it
   const memberLinks = useMemo(
     () => [
       { to: "/dashboard", label: "Dashboard" },
       { to: "/events", label: "Events" },
       { to: "/calendar", label: "Calendar" },
       { to: "/points", label: "Points" },
-      { to: "/ledger", label: "Ledger", officerOnly: true },
-      { to: "/points-overview", label: "Points Overview", officerOnly: true },
     ],
     []
   );
@@ -155,90 +65,165 @@ export default function Navbar() {
     navigate("/", { replace: true });
   };
 
+  const closeMenu = () => setMenuOpen(false);
+
+  const displayName = user
+    ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Admin User"
+    : "";
+  const profileImage = user?.profilePicUrl || "/avatar-placeholder.svg";
+
+  useEffect(() => {
+    const onDocumentClick = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onDocumentClick);
+    return () => document.removeEventListener("mousedown", onDocumentClick);
+  }, []);
+
   return (
-    <div
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-        background: "#fff",
-        borderBottom: "1px solid #e5e7eb",
-      }}
-    >
-      <nav
-        style={{
-          width: "100%",
-          padding: "10px 12px 10px 0",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "nowrap",
-          whiteSpace: "nowrap",
-          overflow: "visible",
-        }}
-      >
-        {/* LEFT: brand + public links */}
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-          <NavLink to="/" style={{ ...baseLinkStyle, fontSize: 18, color: "#222" }}>
-            <span style={{ color: "#6d2c2c", fontWeight: 800 }}>ΦΣΡ</span>{" "}
-            <span style={{ opacity: 0.7 }}>Phi Sigma Rho</span>
-          </NavLink>
+    <header className="site-navbar">
+      <nav className="site-nav">
+        {/* Logo - always on the far left */}
+        <NavLink to="/" className="site-brand">
+          <span className="site-brand-mark">ΦΣΡ</span>
+          <span className="site-brand-copy">
+            <span>Phi Sigma Rho</span>
+            <span>Tau Chapter • UF</span>
+          </span>
+        </NavLink>
 
-          {publicLinks.map((l) => (
-            <NavLink key={l.to} to={l.to} style={linkStyle}>
-              {l.label}
-            </NavLink>
-          ))}
-        </div>
+        {/* Public links - only shown when NOT signed in */}
+        {!user && (
+          <div className="site-nav-links">
+            {publicLinks.map((link) => (
+              <NavMenuLink key={link.to} to={link.to}>
+                {link.label}
+              </NavMenuLink>
+            ))}
+          </div>
+        )}
 
-        {/* RIGHT: member links + dropdown + admin + greeting + logout */}
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+        <div className="site-nav-actions">
           {!user ? (
             <>
-              <NavLink to="/login" style={linkStyle}>Sign In</NavLink>
-              <NavLink to="/signup" style={linkStyle}>Sign Up</NavLink>
+              <NavMenuLink to="/login">Sign In</NavMenuLink>
+              <NavMenuLink to="/signup">Sign Up</NavMenuLink>
             </>
           ) : (
             <>
-              {memberLinks.map((l) => (
-                (!l.officerOnly || isAdmin) && (
-                  <NavLink key={l.to} to={l.to} style={linkStyle}>
-                    {l.label}
-                  </NavLink>
-                )
-              ))}
+              {/* Member links - shown prominently when signed in */}
+              <div className="site-nav-links">
+                {memberLinks.map((link) => (
+                  <NavMenuLink key={link.to} to={link.to}>
+                    {link.label}
+                  </NavMenuLink>
+                ))}
+              </div>
 
-              <AnnouncementsMenu showOfficerFeed={isAdmin} />
+              <NavMenuLink to="/feeds/chapter">Announcements</NavMenuLink>
 
-              {isAdmin && (
-                <>
-                  <NavLink to="/admin/approvals" style={linkStyle}>Approvals</NavLink>
-                  <NavLink to="/admin/users" style={linkStyle}>Users</NavLink>
-                </>
-              )}
-
-              <span style={{ fontWeight: 600, color: "#6d2c2c" }}>
-                Hi,&nbsp;{user.firstName || "Sister"}
-              </span>
+              {/* Hamburger menu button - shown when signed in */}
               <button
-                onClick={onLogout}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: 10,
-                  border: "1px solid #e5e7eb",
-                  background: "#6d2c2c",
-                  color: "#fff",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
+                className={`hamburger-menu-toggle ${menuOpen ? "active" : ""}`}
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-label="Toggle menu"
               >
-                Log out
+                <span></span>
+                <span></span>
+                <span></span>
               </button>
+
+              <div className="profile-menu" ref={profileMenuRef}>
+                <button
+                  type="button"
+                  className={`profile-menu-trigger ${profileMenuOpen ? "active" : ""}`}
+                  onClick={() => setProfileMenuOpen((open) => !open)}
+                  aria-haspopup="menu"
+                  aria-expanded={profileMenuOpen}
+                >
+                  <img
+                    className="profile-avatar"
+                    src={profileImage}
+                    alt={`${displayName || 'User'} avatar`}
+                  />
+                  <span className="profile-name">{displayName}</span>
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+
+                {profileMenuOpen && (
+                  <div className="profile-menu-dropdown" role="menu">
+                    <NavLink
+                      to="/profile"
+                      className="profile-menu-link"
+                      onClick={() => setProfileMenuOpen(false)}
+                    >
+                      Profile settings
+                    </NavLink>
+                    <button
+                      type="button"
+                      className="profile-menu-item"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        onLogout();
+                      }}
+                    >
+                      Log out
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
       </nav>
-    </div>
+
+      {/* Hamburger menu dropdown - shows admin pages first, then public links */}
+      {menuOpen && (
+        <div className="hamburger-menu-dropdown">
+          {/* Admin pages first - only shown when logged in and is admin */}
+          {user && isAdmin && (
+            <>
+              <NavMenuLink 
+                to="/admin/approvals" 
+                onClick={closeMenu}
+              >
+                Approvals
+              </NavMenuLink>
+              <NavMenuLink 
+                to="/admin/users" 
+                onClick={closeMenu}
+              >
+                Users
+              </NavMenuLink>
+              <NavMenuLink 
+                to="/ledger" 
+                onClick={closeMenu}
+              >
+                Ledger
+              </NavMenuLink>
+              <NavMenuLink 
+                to="/points-overview" 
+                onClick={closeMenu}
+              >
+                Points Overview
+              </NavMenuLink>
+              <div className="hamburger-divider"></div>
+            </>
+          )}
+
+          {/* Public links below admin pages */}
+          {publicLinks.map((link) => (
+            <NavMenuLink key={link.to} to={link.to} onClick={closeMenu}>
+              {link.label}
+            </NavMenuLink>
+          ))}
+        </div>
+      )}
+    </header>
   );
 }

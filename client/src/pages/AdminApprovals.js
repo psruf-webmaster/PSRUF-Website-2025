@@ -1,7 +1,5 @@
-// client/src/pages/AdminApprovals.js
 import React, { useEffect, useState } from "react";
 
-// Constants should match your backend enums
 const ROLE_OPTIONS = [
   "pending", "pnm", "candidate", "candOfficer", "member",
   "alumni", "officer", "exec", "webmaster", "webdev",
@@ -84,7 +82,7 @@ export default function AdminApprovals() {
         throw new Error(err.message || "Approve failed");
       }
       await load();
-      setMsg("✅ Approved!");
+      setMsg("Approved!");
     } catch (e) {
       console.error(e);
       setMsg("❌ " + e.message);
@@ -100,7 +98,7 @@ export default function AdminApprovals() {
         throw new Error(err.message || "Reject failed");
       }
       await load();
-      setMsg("🗑️ Rejected.");
+      setMsg("Rejected.");
     } catch (e) {
       console.error(e);
       setMsg("❌ " + e.message);
@@ -121,7 +119,7 @@ export default function AdminApprovals() {
       {loading ? (
         <div>Loading…</div>
       ) : rows.length === 0 ? (
-        <div>No pending users 🎉</div>
+        <div>No pending users.</div>
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>

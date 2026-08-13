@@ -35,6 +35,7 @@ const userSchema = new mongoose.Schema({
   birthday: Date,
   major: String,
   year: String,
+  profilePicUrl: String,
 
   memberStatus: {
     type: [String],

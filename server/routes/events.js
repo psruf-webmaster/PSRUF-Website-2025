@@ -4,11 +4,32 @@ const router = express.Router();
 const Event = require('../models/Event');
 const User = require('../models/User');
 const PointsLedger = require('../models/PointsLedger');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const ROLE_CREATE = ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer'];
 const POINT_CATEGORIES = ['phi', 'sigma', 'rho', 'tau'];
 const ATTENDANCE_STATUSES = ['present', 'absent', 'excused'];
 const COHOST_ROLES = ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer'];
+
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadsDir),
+  filename: (_req, file, cb) => {
+    const safeName = String(file.originalname || 'event-image').replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, `${Date.now()}-${safeName}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 // Helpers
 async function getUser(req) {
@@ -30,6 +51,57 @@ function normalizeStrings(values) {
   if (!values) return [];
   if (Array.isArray(values)) return values.map(v => String(v));
   return [String(values)];
+}
+
+function parseMaybeJson(value, fallback) {
+  if (value == null || value === '') return fallback;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch (_err) {
+    return fallback;
+  }
+}
+
+function parseOptionalNumber(value) {
+  if (value == null || value === '') return undefined;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : undefined;
+}
+
+function parseBoolean(value, fallback = false) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'true') return true;
+    if (value.toLowerCase() === 'false') return false;
+  }
+  return fallback;
+}
+
+function normalizeEventPayload(body = {}, file) {
+  const visibility = parseMaybeJson(body.visibility, body.visibility || {});
+  const points = parseMaybeJson(body.points, body.points || {});
+
+  return {
+    title: body.title,
+    description: body.description,
+    startAt: body.startAt,
+    endAt: body.endAt,
+    location: body.location,
+    imageUrl: file ? `/uploads/${file.filename}` : (body.imageUrl || ''),
+    isMandatory: parseBoolean(body.isMandatory, false),
+    capacityMax: parseOptionalNumber(body.capacityMax),
+    isPublished: parseBoolean(body.isPublished, true),
+    visibility: {
+      rolesAllowed: normalizeStrings(visibility?.rolesAllowed),
+      memberStatusesAllowed: normalizeStrings(visibility?.memberStatusesAllowed),
+    },
+    points: {
+      category: points?.category,
+      defaultRatePerHour: parseOptionalNumber(points?.defaultRatePerHour),
+      overrideTotalPoints: parseOptionalNumber(points?.overrideTotalPoints),
+    },
+  };
 }
 
 function isOfficerLevel(user) {
@@ -184,11 +256,25 @@ router.get('/mine', async (req, res) => {
       return {
         _id: ev._id,
         title: ev.title,
+        description: ev.description,
         startAt: ev.startAt,
         endAt: ev.endAt,
+        location: ev.location,
+        imageUrl: ev.imageUrl || '',
+        isMandatory: !!ev.isMandatory,
+        capacityMax: ev.capacityMax,
+        visibility: ev.visibility,
         pointsCategory: ev.points?.category,
+        points: ev.points,
         currentUserRsvp: rsvp?.status || null,
-        attendance: att ? { status: att.status, pointsAwarded: att.pointsAwarded } : null,
+        rsvpAt: rsvp?.createdAt || null,
+        attendance: att
+          ? {
+              status: att.status,
+              pointsAwarded: att.pointsAwarded,
+              updatedAt: att.updatedAt || null,
+            }
+          : null,
       };
     });
 
@@ -236,17 +322,17 @@ function validateEventPayload(body, isCandOfficerCreator) {
 }
 
 // POST /api/events
-router.post('/', async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
     if (!canCreate(user)) return res.status(403).json({ message: 'Not allowed to create events' });
 
     const isCandOfficerCreator = isCandOfficer(user);
-    const errors = validateEventPayload(req.body, isCandOfficerCreator);
+    const payload = normalizeEventPayload(req.body, req.file);
+    const errors = validateEventPayload(payload, isCandOfficerCreator);
     if (errors.length) return res.status(400).json({ message: errors.join(', ') });
 
-    const payload = { ...req.body };
     payload.createdBy = user._id;
     payload.points = {
       defaultRatePerHour: 10,
@@ -255,7 +341,7 @@ router.post('/', async (req, res) => {
     };
     payload.visibility = {
       rolesAllowed: payload.visibility.rolesAllowed,
-      memberStatusesAllowed: payload.visibility.memberStatusesAllowed,
+      memberStatusesAllowed: payload.visibility.memberStatusesAllowed?.length ? payload.visibility.memberStatusesAllowed : undefined,
     };
 
     const event = await Event.create(payload);
@@ -267,7 +353,7 @@ router.post('/', async (req, res) => {
 });
 
 // PATCH /api/events/:id
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', upload.single('image'), async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -279,23 +365,29 @@ router.patch('/:id', async (req, res) => {
       return res.status(403).json({ message: 'Not allowed to edit this event' });
     }
 
+    const has = (key) => Object.prototype.hasOwnProperty.call(req.body || {}, key);
+    const visibilityInput = parseMaybeJson(req.body?.visibility, req.body?.visibility || {});
+    const pointsInput = parseMaybeJson(req.body?.points, req.body?.points || {});
+
     const isCandOfficerEditor = isCandOfficer(user);
     const merged = {
-      title: req.body?.title ?? event.title,
-      description: req.body?.description ?? event.description,
-      startAt: req.body?.startAt ?? event.startAt,
-      endAt: req.body?.endAt ?? event.endAt,
-      location: req.body?.location ?? event.location,
-      capacityMax: req.body?.capacityMax ?? event.capacityMax,
-      isPublished: req.body?.isPublished ?? event.isPublished,
+      title: has('title') ? req.body?.title : event.title,
+      description: has('description') ? req.body?.description : event.description,
+      startAt: has('startAt') ? req.body?.startAt : event.startAt,
+      endAt: has('endAt') ? req.body?.endAt : event.endAt,
+      location: has('location') ? req.body?.location : event.location,
+      imageUrl: req.file ? `/uploads/${req.file.filename}` : (has('imageUrl') ? req.body?.imageUrl : event.imageUrl),
+      isMandatory: has('isMandatory') ? parseBoolean(req.body?.isMandatory, false) : event.isMandatory,
+      capacityMax: has('capacityMax') ? parseOptionalNumber(req.body?.capacityMax) : event.capacityMax,
+      isPublished: has('isPublished') ? parseBoolean(req.body?.isPublished, true) : event.isPublished,
       visibility: {
-        rolesAllowed: req.body?.visibility?.rolesAllowed ?? event.visibility?.rolesAllowed,
-        memberStatusesAllowed: req.body?.visibility?.memberStatusesAllowed ?? event.visibility?.memberStatusesAllowed,
+        rolesAllowed: has('visibility') ? normalizeStrings(visibilityInput?.rolesAllowed) : event.visibility?.rolesAllowed,
+        memberStatusesAllowed: has('visibility') ? normalizeStrings(visibilityInput?.memberStatusesAllowed) : event.visibility?.memberStatusesAllowed,
       },
       points: {
-        category: req.body?.points?.category ?? event.points?.category,
-        defaultRatePerHour: req.body?.points?.defaultRatePerHour ?? event.points?.defaultRatePerHour,
-        overrideTotalPoints: req.body?.points?.overrideTotalPoints ?? event.points?.overrideTotalPoints,
+        category: has('points') ? pointsInput?.category : event.points?.category,
+        defaultRatePerHour: has('points') ? parseOptionalNumber(pointsInput?.defaultRatePerHour) : event.points?.defaultRatePerHour,
+        overrideTotalPoints: has('points') ? parseOptionalNumber(pointsInput?.overrideTotalPoints) : event.points?.overrideTotalPoints,
       }
     };
 
@@ -374,6 +466,8 @@ router.get('/:id/manage', async (req, res) => {
         startAt: event.startAt,
         endAt: event.endAt,
         location: event.location,
+        imageUrl: event.imageUrl || '',
+        isMandatory: !!event.isMandatory,
         points: event.points,
         visibility: event.visibility,
         capacityMax: event.capacityMax,

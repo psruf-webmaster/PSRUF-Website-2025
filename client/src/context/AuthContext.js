@@ -37,8 +37,13 @@ export default function AuthProvider({ children }) {
     localStorage.removeItem("psr_user");
   };
 
+  const updateUser = (nextUser) => {
+    setUser(nextUser);
+    localStorage.setItem("psr_user", JSON.stringify(nextUser));
+  };
+
   return (
-    <AuthCtx.Provider value={{ user, loading, error, login, logout }}>
+    <AuthCtx.Provider value={{ user, loading, error, login, logout, updateUser }}>
       {children}
     </AuthCtx.Provider>
   );

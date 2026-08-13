@@ -2,6 +2,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 const app = express();
 // --- SMTP sanity check (optional) ---
@@ -10,7 +11,8 @@ transporter.verify()
   .then(() => console.log('✅ SMTP connection OK'))
   .catch(err => console.error('❌ SMTP error:', err.message));
 // --- Middleware ---
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/sms', require('./routes/sms'));
 // Configure CORS for your frontend origin(s)
 app.use(cors({

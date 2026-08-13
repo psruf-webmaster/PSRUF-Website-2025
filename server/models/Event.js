@@ -50,6 +50,8 @@ const eventSchema = new mongoose.Schema({
   startAt: { type: Date, required: true },
   endAt: { type: Date, required: true },
   location: { type: String },
+  imageUrl: { type: String, default: '' },
+  isMandatory: { type: Boolean, default: false },
   capacityMax: { type: Number, default: undefined },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   isPublished: { type: Boolean, default: true },
