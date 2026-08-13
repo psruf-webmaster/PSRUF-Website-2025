@@ -1,6 +1,6 @@
 html, body {
-  background-color: #bcd1ee;
-  color: #323B67;
+  background-color: #fffafc;
+  color: #6d2c2c;
   margin: 0;
   padding: 0;
   font-family: 'Segoe UI', sans-serif;
@@ -10,7 +10,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #bcd1ee;
+  background-color: #fffafc;
   min-height: 100vh;
   padding: 40px 20px;
   margin-top: 3rem;
@@ -18,7 +18,7 @@ html, body {
 
 /* === Default login/signup box === */
 .login-box, .signup-box {
-  background-color: #dbe6f3;
+  background-color: rgba(236, 144, 184, 0.1);
   border-radius: 40px;
   padding: 40px;
   width: 400px;
@@ -34,7 +34,7 @@ html, body {
   font-weight: 800;
   letter-spacing: 5px;
   margin-bottom: 20px;
-  color: #323B67;
+  color: #6d2c2c;
 }
 
 /* === Form and Inputs === */
@@ -48,7 +48,7 @@ label {
   text-align: left;
   font-weight: bold;
   padding-top: 0.5rem;
-  color: #323B67;
+  color: #6d2c2c;
 }
 
 input {
@@ -70,7 +70,7 @@ button {
   font-weight: bold;
   font-size: 15px;
   cursor: pointer;
-  color: #323B67;
+  color: #6d2c2c;
   transition: background-color 0.3s ease;
 }
 
@@ -83,7 +83,7 @@ p {
 }
 
 u {
-  color: #323B67;
+  color: #6d2c2c;
 }
 
 /* === Super Small Screens (<500px) === */

@@ -1,52 +1,121 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  ArrowRight,
+  Award,
+  Calendar,
+  Clock3,
+  Heart,
+  MessageSquare,
+  PlusCircle,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import './Dashboard.css';
 
 const POINT_MAX = 50;
-const CATEGORIES = ['phi', 'sigma', 'rho', 'tau'];
 
-function Circle({ label, value, onClick }) {
-  const pct = Math.max(0, Math.min(1, value / POINT_MAX));
-  const angle = pct * 360;
-  const bg = `conic-gradient(#6d2c2c ${angle}deg, #e5e7eb ${angle}deg 360deg)`;
+function IconCalendar() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={onClick}>
-      <div style={{
-        width: 90,
-        height: 90,
-        borderRadius: '50%',
-        background: bg,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#222',
-        fontWeight: 600,
-      }}>
-        {label}
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4" y="5" width="16" height="15" rx="2" ry="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <line x1="8" y1="3.5" x2="8" y2="7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="16" y1="3.5" x2="16" y2="7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="4" y1="10" x2="20" y2="10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconStar() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 4L13.9 9.2L19.5 9.3L15.1 12.8L16.8 18.1L12 14.9L7.2 18.1L8.9 12.8L4.5 9.3L10.1 9.2Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function EventCard({ ev, index }) {
+  const start = new Date(ev.startAt);
+  const dateStr = start.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  const timeStr = start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const dayNum = start.getDate();
+  const rsvpStatus = ev.currentUserRsvp;
+  const isSignedUp = rsvpStatus === 'going' || rsvpStatus === 'maybe';
+  const rsvpLabel = rsvpStatus === 'going' ? "RSVP'D" : (rsvpStatus === 'maybe' ? 'RSVP Maybe' : '');
+
+  return (
+    <motion.article
+      className="dashboard-event-card"
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5, delay: index * 0.1 + 0.4 }}
+      whileHover={{ x: 5, backgroundColor: 'rgba(109, 44, 44, 0.05)' }}
+    >
+      <motion.div
+        className="dashboard-event-date-pill"
+        aria-hidden="true"
+        whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+        transition={{ duration: 0.3 }}
+      >
+        <span>{dayNum}</span>
+      </motion.div>
+      <div className="dashboard-event-content">
+        <div className="dashboard-event-title-row">
+          <div className="dashboard-event-title">{ev.title}</div>
+          {isSignedUp && (
+            <motion.span
+              className={`dashboard-event-rsvp dashboard-event-rsvp-${rsvpStatus}`}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+            >
+              {rsvpLabel}
+            </motion.span>
+          )}
+        </div>
+        <div className="dashboard-event-time">{dateStr} • {timeStr}</div>
+        <div className="dashboard-event-tag">{ev.points?.category || ev.pointsCategory || 'General'}</div>
       </div>
-      <div style={{ fontSize: 12, color: '#4b5563' }}>{Math.round(value)} / {POINT_MAX}</div>
+    </motion.article>
+  );
+}
+
+function LoadingState({ text }) {
+  return (
+    <div className="dashboard-loading-state" role="status" aria-live="polite">
+      <span className="dashboard-loading-dot" />
+      <span>{text}</span>
     </div>
   );
 }
 
-function EventCard({ ev }) {
-  const start = new Date(ev.startAt);
-  const dateStr = start.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-  const timeStr = start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  return (
-    <div style={{
-      minWidth: 220,
-      padding: 12,
-      borderRadius: 12,
-      border: '1px solid #e5e7eb',
-      background: '#fff',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-    }}>
-      <div style={{ fontWeight: 700 }}>{ev.title}</div>
-      <div style={{ fontSize: 12, color: '#6b7280' }}>{dateStr} • {timeStr}</div>
-      <div style={{ marginTop: 6, fontSize: 12, color: '#4b5563', textTransform: 'uppercase' }}>{ev.points?.category || ev.pointsCategory || ''}</div>
-    </div>
-  );
+function formatRelativeTime(dateInput) {
+  if (!dateInput) return 'Recently';
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return 'Recently';
+
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 0) {
+    const futureMin = Math.ceil(Math.abs(diffMs) / 60000);
+    const futureHr = Math.ceil(Math.abs(diffMs) / 3600000);
+    const futureDay = Math.ceil(Math.abs(diffMs) / 86400000);
+    if (futureMin < 60) return `in ${futureMin} min`;
+    if (futureHr < 24) return `in ${futureHr} hour${futureHr === 1 ? '' : 's'}`;
+    if (futureDay < 7) return `in ${futureDay} day${futureDay === 1 ? '' : 's'}`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMs / 3600000);
+  const diffDay = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin} min ago`;
+  if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? '' : 's'} ago`;
+  if (diffDay < 7) return `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 export default function Dashboard() {
@@ -55,8 +124,25 @@ export default function Dashboard() {
   const userId = user?._id || user?.id;
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [loadingActivity, setLoadingActivity] = useState(true);
   const [points, setPoints] = useState({ phi: 0, sigma: 0, rho: 0, tau: 0, any: 0 });
   const [loadingPoints, setLoadingPoints] = useState(true);
+  const [activeRingKey, setActiveRingKey] = useState(null);
+  const [ringHoverPos, setRingHoverPos] = useState({ x: 130, y: 24 });
+  const [requirements, setRequirements] = useState({
+    minPerCategory: POINT_MAX,
+    buckets: {
+      phi: { have: 0, need: POINT_MAX, met: false },
+      sigma: { have: 0, need: POINT_MAX, met: false },
+      rho: { have: 0, need: POINT_MAX, met: false },
+      tau: { have: 0, need: POINT_MAX, met: false },
+    },
+    any: { have: 0, need: POINT_MAX, met: false },
+    metAll: false,
+    totalRequired: POINT_MAX * 5,
+    totalEarned: 0,
+  });
   const [error, setError] = useState('');
 
   const headers = useMemo(() => (
@@ -81,21 +167,36 @@ export default function Dashboard() {
     const loadPoints = async () => {
       setLoadingPoints(true);
       try {
-        const params = new URLSearchParams();
-        if (userId) params.append('userId', userId);
-        const res = await fetch(`/api/ledger/summary?${params.toString()}`, { headers, credentials: 'include' });
+        const res = await fetch('/api/requirements/active/self', { headers, credentials: 'include' });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to load points');
-        const totals = (data.totals || [])[0]?.totalsByCategory || {};
-        const grand = (data.totals || [])[0]?.grandTotal || 0;
-        const catTotals = {
-          phi: totals.phi || 0,
-          sigma: totals.sigma || 0,
-          rho: totals.rho || 0,
-          tau: totals.tau || 0,
+
+        const totals = data.totals || {};
+        const minPerCategory = data.requirements?.minPerCategory || POINT_MAX;
+        const buckets = data.requirements?.buckets || {
+          phi: { have: totals.phi || 0, need: Math.max(0, minPerCategory - (totals.phi || 0)), met: (totals.phi || 0) >= minPerCategory },
+          sigma: { have: totals.sigma || 0, need: Math.max(0, minPerCategory - (totals.sigma || 0)), met: (totals.sigma || 0) >= minPerCategory },
+          rho: { have: totals.rho || 0, need: Math.max(0, minPerCategory - (totals.rho || 0)), met: (totals.rho || 0) >= minPerCategory },
+          tau: { have: totals.tau || 0, need: Math.max(0, minPerCategory - (totals.tau || 0)), met: (totals.tau || 0) >= minPerCategory },
         };
-        const any = Math.max(0, grand - (catTotals.phi + catTotals.sigma + catTotals.rho + catTotals.tau));
-        setPoints({ ...catTotals, any });
+        const anyBucket = data.any || { have: 0, need: minPerCategory, met: false };
+
+        const catTotals = {
+          phi: buckets.phi?.have ?? totals.phi ?? 0,
+          sigma: buckets.sigma?.have ?? totals.sigma ?? 0,
+          rho: buckets.rho?.have ?? totals.rho ?? 0,
+          tau: buckets.tau?.have ?? totals.tau ?? 0,
+        };
+
+        setPoints({ ...catTotals, any: anyBucket.have || 0 });
+        setRequirements({
+          minPerCategory,
+          buckets,
+          any: anyBucket,
+          metAll: Boolean(data.requirements?.metAll),
+          totalRequired: minPerCategory * 5,
+          totalEarned: Number(totals.total || 0),
+        });
       } catch (e) {
         setError(e.message);
         setPoints({ phi: 0, sigma: 0, rho: 0, tau: 0, any: 0 });
@@ -104,9 +205,123 @@ export default function Dashboard() {
       }
     };
 
+    const loadRecentActivity = async () => {
+      setLoadingActivity(true);
+      try {
+        const [mineRes, monthRes, penguinRes, officerRes, chapterRes] = await Promise.all([
+          fetch('/api/events/mine', { headers, credentials: 'include' }),
+          fetch('/api/events?view=month', { headers, credentials: 'include' }),
+          fetch('/api/feeds/penguinParties/posts', {
+            credentials: 'include',
+            headers: userId ? { 'x-user-id': userId } : undefined,
+          }),
+          fetch('/api/feeds/officerFeed/posts', {
+            credentials: 'include',
+            headers: userId ? { 'x-user-id': userId } : undefined,
+          }),
+          fetch('/api/feeds/chapterAnnouncements/posts', {
+            credentials: 'include',
+            headers: userId ? { 'x-user-id': userId } : undefined,
+          }),
+        ]);
+
+        const [mineData, monthData, penguinData, officerData, chapterData] = await Promise.all([
+          mineRes.json(),
+          monthRes.json(),
+          penguinRes.json(),
+          officerRes.json(),
+          chapterRes.json(),
+        ]);
+
+        const activities = [];
+
+        if (mineRes.ok && Array.isArray(mineData)) {
+          mineData.forEach((ev) => {
+            if (ev.currentUserRsvp === 'going' || ev.currentUserRsvp === 'maybe') {
+              activities.push({
+                key: `rsvp-${ev._id}`,
+                action: ev.currentUserRsvp === 'going' ? `RSVP'D to ${ev.title}` : `RSVP maybe for ${ev.title}`,
+                time: ev.rsvpAt || ev.updatedAt || ev.createdAt || ev.startAt,
+                icon: Calendar,
+              });
+            }
+
+            if (ev.attendance?.status === 'present') {
+              activities.push({
+                key: `attend-${ev._id}`,
+                action: `Attended ${ev.title}`,
+                time: ev.attendance?.updatedAt || ev.endAt || ev.startAt,
+                icon: Heart,
+              });
+            }
+          });
+        }
+
+        if (monthRes.ok && Array.isArray(monthData)) {
+          monthData
+            .filter((ev) => String(ev.createdBy || '') === String(userId || ''))
+            .forEach((ev) => {
+              activities.push({
+                key: `created-${ev._id}`,
+                action: `Created event: ${ev.title}`,
+                time: ev.createdAt || ev.startAt,
+                icon: PlusCircle,
+              });
+            });
+        }
+
+        if (penguinRes.ok && Array.isArray(penguinData)) {
+          penguinData
+            .filter((post) => String(post.authorId || '') === String(userId || ''))
+            .forEach((post) => {
+              activities.push({
+                key: `penguin-${post._id}`,
+                action: 'Contributed to Penguin Parties',
+                time: post.createdAt,
+                icon: MessageSquare,
+              });
+            });
+        }
+
+        if (officerRes.ok && Array.isArray(officerData)) {
+          officerData
+            .filter((post) => String(post.authorId || '') === String(userId || ''))
+            .forEach((post) => {
+              activities.push({
+                key: `officer-${post._id}`,
+                action: 'Posted in Officer Feed',
+                time: post.createdAt,
+                icon: MessageSquare,
+              });
+            });
+        }
+
+        if (chapterRes.ok && Array.isArray(chapterData)) {
+          chapterData
+            .filter((post) => String(post.authorId || '') === String(userId || ''))
+            .forEach((post) => {
+              activities.push({
+                key: `chapter-${post._id}`,
+                action: 'Posted in Chapter Announcements',
+                time: post.createdAt,
+                icon: MessageSquare,
+              });
+            });
+        }
+
+        activities.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
+        setRecentActivity(activities.slice(0, 8));
+      } catch (e) {
+        setRecentActivity([]);
+      } finally {
+        setLoadingActivity(false);
+      }
+    };
+
     if (userId) {
       loadEvents();
       loadPoints();
+      loadRecentActivity();
     }
   }, [headers, userId]);
 
@@ -115,44 +330,474 @@ export default function Dashboard() {
     { label: 'Sigma', key: 'sigma' },
     { label: 'Rho', key: 'rho' },
     { label: 'Tau', key: 'tau' },
-    { label: 'Any', key: 'any' },
+    { label: 'Extra', key: 'any' },
   ];
 
+  const progressRows = circles.map((c) => {
+  if (c.key === 'any') {
+    const have = requirements.any?.have || 0;
+    const required = requirements.minPerCategory || POINT_MAX; 
+    const need = Math.max(0, required - have);
+    const ratio = required > 0 ? Math.max(0, Math.min(100, (have / required) * 100)) : 0;
+    
+    return {
+      ...c,
+      value: have,
+      need,
+      required,
+      ratio,
+    };
+  }
+
+
+    const bucket = requirements.buckets?.[c.key] || { have: points[c.key] || 0, need: POINT_MAX, met: false };
+    const required = requirements.minPerCategory || POINT_MAX;
+    const rawHave = bucket.have || 0;
+    const have = Math.min(rawHave, required);
+    const need = Math.max(0, required - have);
+    const ratio = required > 0 ? Math.max(0, Math.min(100, (have / required) * 100)) : 0;
+
+    return {
+      ...c,
+      value: have,
+      rawValue: rawHave,
+      need,
+      required,
+      ratio,
+    };
+  });
+
+  const coreProgressRows = progressRows.filter((row) => row.key !== 'any');
+  const anyProgressRow = progressRows.find((row) => row.key === 'any');
+
+  const progressColorByKey = {
+    phi: '#D4608A',
+    sigma: '#6D2C2C',
+    rho: '#6B5558',
+    tau: '#A04E74',
+    any: '#CE90A8',
+  };
+
+  const diagramRings = useMemo(() => {
+    const displayOrder = ['phi', 'sigma', 'rho', 'tau', 'any'];
+    return displayOrder
+      .map((key) => progressRows.find((row) => row.key === key))
+      .filter(Boolean)
+      .map((row) => ({
+        ...row,
+        color: progressColorByKey[row.key] || '#7a3239',
+      }));
+  }, [progressRows]);
+
+  const ringGeometry = useMemo(() => {
+    return diagramRings.map((row, index) => {
+      const radius = 110 - (index * 17);
+      const strokeWidth = 12;
+      const circumference = 2 * Math.PI * radius;
+      const progress = Math.max(0, Math.min(1, row.ratio / 100));
+      const dash = circumference * progress;
+      return {
+        ...row,
+        radius,
+        strokeWidth,
+        circumference,
+        dash,
+      };
+    });
+  }, [diagramRings]);
+
+  const firstName = user?.firstName || 'Member';
+  const totalPoints = requirements.totalEarned || circles.reduce((sum, c) => sum + (points[c.key] || 0), 0);
+  const totalRequired = requirements.totalRequired || null;
+
+  // Calculate progress by capping each category at its requirement
+  const effectiveTotal = progressRows.reduce((sum, row) => sum + Math.min(row.value, row.required || 0), 0);
+
+  const totalRatio = totalRequired ? Math.max(0, Math.min(100, (effectiveTotal / totalRequired) * 100)) : 0;
+  const remainingPoints = totalRequired ? Math.max(0, Math.round(totalRequired - effectiveTotal)) : null;
+
+  const progressCard = useMemo(() => {
+    if (requirements.metAll) {
+      return {
+        title: 'Semester goals completed!',
+        body: 'Amazing work. You met every requirement.',
+        icon: Sparkles,
+        tone: 'excellent',
+      };
+    }
+
+    if (totalRatio >= 75) {
+      return {
+        title: 'You are making great progress this semester!',
+        body: remainingPoints !== null
+          ? `${remainingPoints} points left to reach full requirements.`
+          : 'You are close to completing your requirements.',
+        icon: TrendingUp,
+        tone: 'great',
+      };
+    }
+
+    if (totalRatio >= 40) {
+      return {
+        title: 'Nice momentum this semester!',
+        body: remainingPoints !== null
+          ? `Keep going. You need ${remainingPoints} more points.`
+          : 'Keep going, you are building strong momentum.',
+        icon: Award,
+        tone: 'steady',
+      };
+    }
+
+    return {
+      title: 'Let us build momentum this semester!',
+      body: remainingPoints !== null
+        ? `Start with one event this week. You need ${remainingPoints} more points.`
+        : 'Start with one event this week to build your points.',
+      icon: Calendar,
+      tone: 'focus',
+    };
+  }, [requirements.metAll, totalRatio, remainingPoints]);
+
+  const ProgressCardIcon = progressCard.icon;
+
+  const updateRingHoverPos = (event) => {
+    const svg = event.currentTarget?.ownerSVGElement;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const x = Math.max(30, Math.min(rect.width - 30, event.clientX - rect.left));
+    const y = Math.max(20, Math.min(rect.height - 24, event.clientY - rect.top));
+    setRingHoverPos({ x, y });
+  };
+
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-      <h1 style={{ marginBottom: 12 }}>Dashboard</h1>
-      {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
+    <div className="dashboard-shell">
+      <header className="dashboard-hero">
+        <p className="dashboard-overline">Chapter Snapshot</p>
+        <h1>Welcome back, {firstName}!</h1>
+        <p>Here is your weekly outlook and points progress.</p>
+      </header>
 
-      <section style={{ marginBottom: 24 }}>
-        <div style={{ fontWeight: 700, marginBottom: 8 }}>My Weekly Outlook</div>
-        {loadingEvents ? (
-          <div>Loading events...</div>
-        ) : events.length === 0 ? (
-          <div>No events this week.</div>
-        ) : (
-          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
-            {events.map(ev => <EventCard key={ev._id} ev={ev} />)}
-          </div>
-        )}
-      </section>
+      {error && <div className="dashboard-error">{error}</div>}
 
-      <section>
-        <div style={{ fontWeight: 700, marginBottom: 8 }}>My Points</div>
-        {loadingPoints ? (
-          <div>Loading points...</div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 16 }}>
-            {circles.map(c => (
-              <Circle
-                key={c.key}
-                label={c.label}
-                value={points[c.key] || 0}
-                onClick={() => navigate(`/points?category=${c.key}`)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      <div className="dashboard-main-grid">
+        <div className="dashboard-primary-column">
+          <section className="dashboard-stats-grid" aria-label="Points summary">
+            <motion.article
+              className="dashboard-stat-card"
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1, type: 'spring', stiffness: 200 }}
+              whileHover={{ y: -5, boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="dashboard-stat-top">
+                <motion.span
+                  className="dashboard-stat-icon"
+                  aria-hidden="true"
+                  whileHover={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.1, 1] }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Award size={16} strokeWidth={2} />
+                </motion.span>
+                {totalRequired ? <span className="dashboard-stat-pill">{Math.round(totalRatio)}%</span> : null}
+              </div>
+
+              <div className="dashboard-stat-value-row">
+                <strong>{Math.round(totalPoints)}</strong>
+                {totalRequired ? <span>/ {Math.round(totalRequired)}</span> : null}
+              </div>
+
+              <div className="dashboard-stat-label">Total Points</div>
+              {totalRequired ? (
+                <div className="dashboard-stat-track">
+                  <motion.span
+                    className="dashboard-stat-fill"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${totalRatio}%` }}
+                    transition={{ duration: 1, delay: 0.45 }}
+                  />
+                </div>
+              ) : null}
+            </motion.article>
+          </section>
+
+          <motion.section
+            className="dashboard-section dashboard-section-events"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            whileHover={{ scale: 1.01 }}
+          >
+            <div className="dashboard-section-heading">
+              <motion.span
+                className="dashboard-section-icon"
+                aria-hidden="true"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <IconCalendar />
+              </motion.span>
+              <div>
+                <h2>This Week&apos;s Events</h2>
+                <p>Stay ready for upcoming chapter events.</p>
+              </div>
+              <motion.div className="dashboard-link-cta-wrap" whileHover={{ x: 5 }} whileTap={{ scale: 0.95 }}>
+                <Link to="/events" className="dashboard-link-cta">
+                  View All
+                  <ArrowRight size={15} strokeWidth={2} />
+                </Link>
+              </motion.div>
+            </div>
+
+            {loadingEvents ? (
+              <LoadingState text="Loading events..." />
+            ) : events.length === 0 ? (
+              <div className="dashboard-empty">No events this week.</div>
+            ) : (
+              <div className="dashboard-events-row">
+                {events.map((ev, index) => <EventCard key={ev._id} ev={ev} index={index} />)}
+              </div>
+            )}
+          </motion.section>
+
+          <motion.section
+            className="dashboard-section"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <div className="dashboard-section-heading">
+              <motion.span
+                className="dashboard-section-icon"
+                aria-hidden="true"
+                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+              >
+                <Clock3 size={16} strokeWidth={2} />
+              </motion.span>
+              <div>
+                <h2>Recent Activity</h2>
+                <p>See your recent RSVPs, attendance, and contributions.</p>
+              </div>
+            </div>
+
+            {loadingActivity ? (
+              <LoadingState text="Loading activity..." />
+            ) : recentActivity.length === 0 ? (
+              <div className="dashboard-empty">No recent activity yet.</div>
+            ) : (
+              <div className="dashboard-activity-list">
+                {recentActivity.map((item, index) => {
+                  const ActivityIcon = item.icon;
+                  return (
+                    <motion.article
+                      className="dashboard-activity-item"
+                      key={item.key}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 + 0.5 }}
+                      whileHover={{ x: 5 }}
+                    >
+                      <motion.span
+                        className="dashboard-activity-icon"
+                        aria-hidden="true"
+                        whileHover={{ scale: 1.15, rotate: [0, -10, 10, 0] }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ActivityIcon size={14} strokeWidth={2} />
+                      </motion.span>
+                      <div>
+                        <div className="dashboard-activity-title">{item.action}</div>
+                        <div className="dashboard-activity-time">{formatRelativeTime(item.time)}</div>
+                      </div>
+                    </motion.article>
+                  );
+                })}
+              </div>
+            )}
+          </motion.section>
+
+        </div>
+
+        <aside className="dashboard-sidebar-column">
+          <motion.section
+            className="dashboard-section dashboard-points-panel"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <div className="dashboard-section-heading">
+              <span className="dashboard-section-icon" aria-hidden="true">
+                <IconStar />
+              </span>
+              <div>
+                <h2>Points Progress</h2>
+                <p>Track each point requirement at a glance.</p>
+              </div>
+              <Link to="/points" className="dashboard-details-button">Details</Link>
+            </div>
+
+            {loadingPoints ? (
+              <LoadingState text="Loading points..." />
+            ) : (
+              <>
+                <div className="dashboard-progress-list" aria-label="Points progress by category">
+                  {[...coreProgressRows, ...(anyProgressRow ? [anyProgressRow] : [])].map((row, index) => (
+                    <div className="dashboard-progress-row" key={row.key}>
+                      <div className="dashboard-progress-labels">
+                        <span>{row.label}</span>
+                        <span>{Math.round(row.value)} / {Math.round(row.required || 0)}</span>
+                      </div>
+                      <div className="dashboard-progress-track">
+                        <motion.div
+                          className="dashboard-progress-fill"
+                          style={{ background: progressColorByKey[row.key] || '#6d2c2c' }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${row.ratio}%` }}
+                          transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="dashboard-rings-diagram" aria-label="Animated category rings">
+                  {activeRingKey ? (
+                    <div
+                      className="dashboard-ring-hover-card"
+                      role="status"
+                      aria-live="polite"
+                      style={{
+                        left: `${ringHoverPos.x}px`,
+                        top: `${ringHoverPos.y}px`,
+                      }}
+                    >
+                      {(() => {
+                        const activeRing = ringGeometry.find((ring) => ring.key === activeRingKey);
+                        if (!activeRing) return null;
+                        return (
+                          <>
+                            <span
+                              className="dashboard-ring-hover-dot"
+                              style={{ background: activeRing.color }}
+                              aria-hidden="true"
+                            />
+                            <strong>{activeRing.label}</strong>
+                            <span>{Math.round(activeRing.value)} / {Math.round(activeRing.required || 0)}</span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : null}
+
+                  <svg className="dashboard-rings-svg" viewBox="0 0 260 260" role="img" aria-label="Category progress rings">
+                    {ringGeometry.map((ring, index) => (
+                      <motion.g
+                        key={ring.key}
+                        initial={{ opacity: 0 }}
+                        animate={{
+                          opacity: 1,
+                          rotate: index % 2 === 0 ? [0, 1.2, 0] : [0, -1.2, 0],
+                        }}
+                        transition={{
+                          opacity: { duration: 0.35, delay: 0.12 + index * 0.1 },
+                          rotate: { duration: 6.5 + index, repeat: Infinity, ease: 'easeInOut' },
+                        }}
+                        style={{ transformOrigin: '130px 130px' }}
+                        className={`dashboard-svg-ring-group${activeRingKey === ring.key ? ' is-active' : ''}`}
+                        aria-label={`${ring.label} progress ${Math.round(ring.value)} out of ${Math.round(ring.required || 0)}`}
+                      >
+                        <circle
+                          className="dashboard-svg-ring-track"
+                          cx="130"
+                          cy="130"
+                          r={ring.radius}
+                          strokeWidth={ring.strokeWidth}
+                        />
+                        <motion.circle
+                          className="dashboard-svg-ring-progress"
+                          cx="130"
+                          cy="130"
+                          r={ring.radius}
+                          strokeWidth={ring.strokeWidth}
+                          stroke={ring.color}
+                          strokeDasharray={ring.circumference}
+                          initial={{ strokeDashoffset: ring.circumference }}
+                          animate={{ strokeDashoffset: ring.circumference - ring.dash }}
+                          transition={{ duration: 0.9, delay: 0.2 + index * 0.12, ease: 'easeOut' }}
+                          transform="rotate(-90 130 130)"
+                        />
+                        <circle
+                          className="dashboard-svg-ring-hover-zone"
+                          cx="130"
+                          cy="130"
+                          r={ring.radius}
+                          strokeWidth={ring.strokeWidth + 8}
+                          transform="rotate(-90 130 130)"
+                          onMouseEnter={(event) => {
+                            setActiveRingKey(ring.key);
+                            updateRingHoverPos(event);
+                          }}
+                          onMouseMove={updateRingHoverPos}
+                          onMouseLeave={() => setActiveRingKey(null)}
+                          onFocus={() => {
+                            setActiveRingKey(ring.key);
+                            setRingHoverPos({ x: 130, y: 24 });
+                          }}
+                          onBlur={() => setActiveRingKey(null)}
+                        />
+                      </motion.g>
+                    ))}
+                    <motion.circle
+                      className="dashboard-ring-core"
+                      cx="130"
+                      cy="130"
+                      r="22"
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: 1, scale: [1, 1.04, 1] }}
+                      transition={{
+                        opacity: { duration: 0.35, delay: 0.45 },
+                        scale: { duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.7 },
+                      }}
+                    />
+                  </svg>
+                </div>
+              </>
+            )}
+          </motion.section>
+
+          <motion.section
+            className={`dashboard-encouragement-card dashboard-encouragement-${progressCard.tone}`}
+            initial={{ opacity: 0, x: 20, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            whileHover={{ scale: 1.02 }}
+          >
+            <motion.span
+              className="dashboard-encouragement-icon"
+              aria-hidden="true"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }}
+              whileHover={{ scale: 1.15, transition: { duration: 0.3 } }}
+            >
+              <ProgressCardIcon size={20} strokeWidth={2} />
+            </motion.span>
+            <motion.h3
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.55 }}
+            >
+              {progressCard.title}
+            </motion.h3>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.65 }}
+            >
+              {progressCard.body}
+            </motion.p>
+          </motion.section>
+        </aside>
+      </div>
     </div>
   );
 }

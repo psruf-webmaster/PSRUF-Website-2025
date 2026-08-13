@@ -1,7 +1,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  background-color: #bcd1ee;
+  background-color: #fffafc;
 }
 
 body {
@@ -87,7 +87,7 @@ body {
 }
 
 .blurb {
-  color: #323B67;
+  color: #6d2c2c;
   text-align: center;
   font-family: Jost;
   font-size: 42px;
@@ -98,7 +98,7 @@ body {
 }
 
 .uf {
-  color: #4A5C99;
+  color: #6d2c2c;
 }
 
 .divider {

@@ -1,13 +1,13 @@
 html, body {
-  background-color: #bcd1ee;
-  color: #323B67;
+  background-color: #fffafc;
+  color: #6d2c2c;
   margin: 0;
   padding: 0;
   font-family: 'Segoe UI', sans-serif;
 }
 
 .signup-form-container {
-  background-color: #e6f0ff;
+  background-color: rgba(236, 144, 184, 0.1);
   padding: 40px;
   margin: 5rem auto;
   border-radius: 20px;
@@ -21,7 +21,7 @@ html, body {
   text-align: center;
   font-size: 2rem;
   margin-bottom: 20px;
-  background-color: #e6f0ff;
+  background-color: rgba(236, 144, 184, 0.1);
 }
 
 /* Form Row */
@@ -29,7 +29,7 @@ html, body {
   display: flex;
   flex-direction: column;
   margin-bottom: 15px;
-  background-color: #e6f0ff;
+  background-color: rgba(236, 144, 184, 0.1);
 }
 
 /* Label */
@@ -47,7 +47,7 @@ html, body {
   border: 1px solid #ccc;
   width: 100%;
   box-sizing: border-box;
-  background-color: #e6f0ff;
+  background-color: rgba(236, 144, 184, 0.08);
 }
 
 /* Submit Button */
@@ -55,7 +55,7 @@ html, body {
   margin-top: 20px;
   padding: 12px;
   width: 100%;
-  background-color:  #323B67;
+  background-color: #6d2c2c;
   color: white;
   font-weight: bold;
   font-size: 1rem;
@@ -66,7 +66,7 @@ html, body {
 }
 
 .signup-form button:hover {
-  background-color:  #202647;
+  background-color: #ec90b8;
 }
 
 /* === Super Small Screens (<500px) === */

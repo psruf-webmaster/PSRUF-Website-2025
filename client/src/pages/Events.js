@@ -1,27 +1,91 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import {
+  CalendarDays,
+  Clock3,
+  Filter,
+  ImagePlus,
+  MapPin,
+  Plus,
+  Search,
+  ShieldAlert,
+  Sparkles,
+  Users,
+  X,
+} from "lucide-react";
+import "./Events.css";
 import { useAuth } from "../context/AuthContext";
 
 const ROLE_OPTIONS = [
   "pending", "pnm", "candidate", "candOfficer", "member",
   "alumni", "officer", "exec", "webmaster", "webdev",
 ];
+
 const MEMBER_STATUS_OPTIONS = [
   "active", "inactive", "probation", "seniorStatus",
   "scholarship", "co-op", "dropped",
 ];
+
 const POINT_OPTIONS = ["phi", "sigma", "rho", "tau"];
+
+const EVENT_PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+    <defs>
+      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f6d7d2" />
+        <stop offset="50%" stop-color="#f4efe6" />
+        <stop offset="100%" stop-color="#c86b5e" />
+      </linearGradient>
+    </defs>
+    <rect width="1200" height="720" fill="url(#grad)" />
+    <circle cx="940" cy="160" r="180" fill="rgba(255,255,255,0.22)" />
+    <circle cx="260" cy="620" r="210" fill="rgba(124,41,41,0.16)" />
+    <rect x="80" y="88" width="420" height="84" rx="42" fill="rgba(124,41,41,0.14)" />
+    <text x="110" y="143" font-family="Georgia, serif" font-size="42" fill="#6f2b2a">Chapter Event</text>
+    <text x="110" y="222" font-family="Arial, sans-serif" font-size="28" fill="#7a3e3a">Upload a custom cover to personalize this card.</text>
+  </svg>
+`)}`;
+
+const VIEW_OPTIONS = [
+  { key: "week", label: "This Week" },
+  { key: "month", label: "This Month" },
+  { key: "nextMonth", label: "Next Month" },
+  { key: "mine", label: "My Events" },
+];
+
+const MINE_FILTERS = [
+  { key: "upcoming", label: "Upcoming" },
+  { key: "past", label: "Past" },
+  { key: "thisMonth", label: "This Month" },
+];
+
+const EVENT_FILTERS = [
+  { key: "all", label: "All Events" },
+  { key: "mandatory", label: "Mandatory" },
+  { key: "optional", label: "Optional" },
+  { key: "phi", label: "Phi" },
+  { key: "sigma", label: "Sigma" },
+  { key: "rho", label: "Rho" },
+  { key: "tau", label: "Tau" },
+];
+
+function toTitleCase(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+}
 
 function hasRole(user, role) {
   const roles = Array.isArray(user?.role) ? user.role : (user?.role ? [user.role] : []);
-  return roles.map(r => String(r).toLowerCase()).includes(String(role).toLowerCase());
+  return roles.map((entry) => String(entry).toLowerCase()).includes(String(role).toLowerCase());
 }
 
 function isCreatorRole(user) {
-  return ["officer", "exec", "webmaster", "webdev", "candofficer"].some(r => hasRole(user, r));
+  return ["officer", "exec", "webmaster", "webdev", "candofficer"].some((role) => hasRole(user, role));
 }
 
 function isOfficerManager(user) {
-  return ["officer", "exec", "webmaster", "webdev"].some(r => hasRole(user, r));
+  return ["officer", "exec", "webmaster", "webdev"].some((role) => hasRole(user, role));
 }
 
 function canRsvp(user) {
@@ -31,10 +95,10 @@ function canRsvp(user) {
 function isManager(user, event) {
   if (!user || !event) return false;
   if (isOfficerManager(user)) return true;
-  const uid = user._id || user.id;
-  if (uid && (event.createdBy === uid || String(event.createdBy) === String(uid))) return true;
-  if (Array.isArray(event.coHosts) && uid) {
-    return event.coHosts.some(h => String(h) === String(uid) || String(h?._id) === String(uid));
+  const userId = user._id || user.id;
+  if (userId && (event.createdBy === userId || String(event.createdBy) === String(userId))) return true;
+  if (Array.isArray(event.coHosts) && userId) {
+    return event.coHosts.some((host) => String(host) === String(userId) || String(host?._id) === String(userId));
   }
   return false;
 }
@@ -46,10 +110,164 @@ function fmtRange(startAt, endAt) {
   const datePart = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
   const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  return sameDay ? `${datePart} - ${startTime} to ${endTime}` : `${datePart} ${startTime} -> ${end.toLocaleString()}`;
+  return sameDay ? `${datePart} at ${startTime} - ${endTime}` : `${datePart} ${startTime} -> ${end.toLocaleString()}`;
+}
+
+function formatDurationHours(startAt, endAt) {
+  const durationMs = Math.max(0, new Date(endAt).getTime() - new Date(startAt).getTime());
+  const hours = durationMs / (1000 * 60 * 60);
+  const roundedHours = Math.round(hours * 10) / 10;
+  if (roundedHours === 1) return "1 hour";
+  return `${roundedHours} hours`;
+}
+
+function formatDateDetail(dateValue) {
+  return new Date(dateValue).toLocaleString(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function toDateTimeLocalValue(dateValue) {
+  if (!dateValue) return "";
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (value) => String(value).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  const mm = pad(date.getMonth() + 1);
+  const dd = pad(date.getDate());
+  const hh = pad(date.getHours());
+  const min = pad(date.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+}
+
+function computePoints(event) {
+  const override = event?.points?.overrideTotalPoints;
+  if (override != null) return override;
+  const defaultRate = event?.points?.defaultRatePerHour || 0;
+  const durationMs = Math.max(0, new Date(event?.endAt).getTime() - new Date(event?.startAt).getTime());
+  const hours = durationMs / (1000 * 60 * 60);
+  return Math.ceil(hours * defaultRate);
+}
+
+function getEventImage(event) {
+  return event?.imageUrl || EVENT_PLACEHOLDER;
+}
+
+function EventCard({ event, user, userId, view, onRsvp, onManage }) {
+  const [imageSrc, setImageSrc] = useState(getEventImage(event));
+
+  useEffect(() => {
+    setImageSrc(getEventImage(event));
+  }, [event]);
+
+  const currentRsvp = event.currentUserRsvp || event.rsvps?.find((rsvp) => String(rsvp.user) === String(userId))?.status;
+  const hasActiveRsvp = currentRsvp === "going" || currentRsvp === "maybe";
+  const totalGoing = event.totalGoing ?? (event.rsvps?.filter((rsvp) => rsvp.status === "going").length || 0);
+  const totalMaybe = event.totalMaybe ?? (event.rsvps?.filter((rsvp) => rsvp.status === "maybe").length || 0);
+  const estimatedPoints = computePoints(event);
+
+  return (
+    <motion.article
+      className="events-card"
+      initial={{ opacity: 0, y: 22 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.38, ease: "easeOut" }}
+      whileHover={{ y: -6 }}
+    >
+      <div className="events-card-media">
+        <img
+          src={imageSrc}
+          alt={event.title}
+          className="events-card-image"
+          onError={() => setImageSrc(EVENT_PLACEHOLDER)}
+        />
+        <div className="events-card-overlay" />
+        <div className="events-card-badges">
+          {hasActiveRsvp ? (
+            <span className="events-badge events-badge-rsvpd">RSVP'D</span>
+          ) : event.isMandatory ? (
+            <span className="events-badge events-badge-mandatory">
+              <ShieldAlert size={13} /> Mandatory
+            </span>
+          ) : (
+            <span className="events-badge events-badge-soft">Optional</span>
+          )}
+          {event.points?.category && <span className="events-badge">{toTitleCase(event.points.category)}</span>}
+        </div>
+      </div>
+
+      <div className="events-card-body">
+        <div className="events-card-heading">
+          <div>
+            <h3>{event.title}</h3>
+            <p>{event.description || "Chapter programming with RSVP, attendance, and points tracking in one place."}</p>
+          </div>
+          <div className="events-card-points">{estimatedPoints} pts</div>
+        </div>
+
+        <div className="events-card-meta">
+          <span><CalendarDays size={15} /> {formatDateDetail(event.startAt)}</span>
+          <span><MapPin size={15} /> {event.location || "Location announced soon"}</span>
+          <span><Users size={15} /> {totalGoing} going{event.capacityMax ? ` / ${event.capacityMax} max` : ""}</span>
+          <span><Clock3 size={15} /> {formatDurationHours(event.startAt, event.endAt)}</span>
+        </div>
+
+        {event.visibility?.rolesAllowed?.length ? (
+          <div className="events-role-pills">
+            {event.visibility.rolesAllowed.slice(0, 4).map((role) => (
+              <span key={role} className="events-role-pill">{role}</span>
+            ))}
+          </div>
+        ) : null}
+
+        {view !== "mine" && canRsvp(user) ? (
+          <div className="events-card-footer">
+            <div className="events-attendance-copy">{totalMaybe} maybe attending</div>
+            <div className="events-rsvp-actions">
+              {[
+                { key: "going", label: "RSVP Now" },
+                { key: "maybe", label: "Maybe" },
+                { key: "notGoing", label: "Pass" },
+              ].map((option) => (
+                <motion.button
+                  key={option.key}
+                  type="button"
+                  className={currentRsvp === option.key ? "events-rsvp-button active" : "events-rsvp-button"}
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => onRsvp(event._id, option.key)}
+                >
+                  {option.label}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="events-card-footer events-card-footer-mine">
+            <div className="events-mine-statuses">
+              {hasActiveRsvp ? <span className="events-role-pill">{currentRsvp.toUpperCase()}</span> : null}
+              {event.attendance?.status ? <span className="events-role-pill">Attendance: {event.attendance.status}</span> : null}
+              {event.attendance?.pointsAwarded != null ? <span className="events-role-pill">Points: {event.attendance.pointsAwarded}</span> : null}
+            </div>
+          </div>
+        )}
+
+        {view !== "mine" && isManager(user, event) ? (
+          <div className="events-manage-row">
+            <button type="button" className="events-secondary-button" onClick={() => onManage(event._id)}>Manage Event</button>
+          </div>
+        ) : null}
+      </div>
+    </motion.article>
+  );
 }
 
 function CreateEventModal({ open, onClose, onCreated, user }) {
+  const initialRoles = useMemo(() => (hasRole(user, "candOfficer") ? ["candidate"] : []), [user]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startAt, setStartAt] = useState("");
@@ -59,73 +277,81 @@ function CreateEventModal({ open, onClose, onCreated, user }) {
   const [pointsCategory, setPointsCategory] = useState("phi");
   const [defaultRate, setDefaultRate] = useState(10);
   const [overridePoints, setOverridePoints] = useState("");
-  const initialRoles = useMemo(() => (
-    hasRole(user, "candOfficer") ? ["candidate"] : []
-  ), [user]);
   const [rolesAllowed, setRolesAllowed] = useState(initialRoles);
   const [memberStatusesAllowed, setMemberStatusesAllowed] = useState([]);
+  const [isMandatory, setIsMandatory] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (open) {
-      setTitle("");
-      setDescription("");
-      setStartAt("");
-      setEndAt("");
-      setLocation("");
-      setCapacityMax("");
-      setPointsCategory("phi");
-      setDefaultRate(10);
-      setOverridePoints("");
-      setRolesAllowed(hasRole(user, "candOfficer") ? ["candidate"] : []);
-      setMemberStatusesAllowed([]);
-      setError("");
-    }
+    if (!imageFile) return undefined;
+    const objectUrl = URL.createObjectURL(imageFile);
+    setImagePreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [imageFile]);
+
+  useEffect(() => {
+    if (!open) return;
+    setTitle("");
+    setDescription("");
+    setStartAt("");
+    setEndAt("");
+    setLocation("");
+    setCapacityMax("");
+    setPointsCategory("phi");
+    setDefaultRate(10);
+    setOverridePoints("");
+    setRolesAllowed(hasRole(user, "candOfficer") ? ["candidate"] : []);
+    setMemberStatusesAllowed([]);
+    setIsMandatory(false);
+    setImageFile(null);
+    setImagePreview("");
+    setError("");
   }, [open, user]);
 
   const toggleRole = (role) => {
-    setRolesAllowed(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
+    setRolesAllowed((prev) => (prev.includes(role) ? prev.filter((entry) => entry !== role) : [...prev, role]));
   };
 
   const toggleMemberStatus = (status) => {
-    setMemberStatusesAllowed(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]);
+    setMemberStatusesAllowed((prev) => (prev.includes(status) ? prev.filter((entry) => entry !== status) : [...prev, status]));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setSaving(true);
     setError("");
-    try {
-      const payload = {
-        title,
-        description,
-        startAt: startAt ? new Date(startAt).toISOString() : null,
-        endAt: endAt ? new Date(endAt).toISOString() : null,
-        location,
-        capacityMax: capacityMax ? Number(capacityMax) : undefined,
-        visibility: {
-          rolesAllowed,
-          memberStatusesAllowed: memberStatusesAllowed.length ? memberStatusesAllowed : undefined,
-        },
-        points: {
-          category: pointsCategory,
-          defaultRatePerHour: defaultRate ? Number(defaultRate) : undefined,
-          overrideTotalPoints: overridePoints ? Number(overridePoints) : undefined,
-        },
-      };
 
-      const res = await fetch("/api/events", {
+    try {
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("startAt", startAt ? new Date(startAt).toISOString() : "");
+      formData.append("endAt", endAt ? new Date(endAt).toISOString() : "");
+      formData.append("location", location);
+      formData.append("capacityMax", capacityMax);
+      formData.append("isMandatory", String(isMandatory));
+      formData.append("visibility", JSON.stringify({ rolesAllowed, memberStatusesAllowed }));
+      formData.append("points", JSON.stringify({
+        category: pointsCategory,
+        defaultRatePerHour: defaultRate,
+        overrideTotalPoints: overridePoints,
+      }));
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      const userId = user?._id || user?.id;
+      const response = await fetch("/api/events", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(user?._id || user?.id ? { Authorization: `Bearer ${user._id || user.id}` } : {}),
-        },
-        body: JSON.stringify(payload),
+        headers: userId ? { Authorization: `Bearer ${userId}` } : undefined,
         credentials: "include",
+        body: formData,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to create event");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to create event");
       onCreated();
       onClose();
     } catch (err) {
@@ -135,102 +361,535 @@ function CreateEventModal({ open, onClose, onCreated, user }) {
     }
   };
 
-  if (!open) return null;
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div className="events-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div
+            className="events-modal-card"
+            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.98 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+          >
+            <div className="events-modal-header">
+              <div>
+                <h3>Create an Event</h3>
+                <p>Set visibility, attach a cover image, and decide whether attendance is mandatory.</p>
+                <p className="events-required-note"><span aria-hidden="true">*</span> Required fields</p>
+              </div>
+              <button type="button" className="events-icon-button" onClick={onClose} aria-label="Close create event modal">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form className="events-form" onSubmit={handleSubmit}>
+              <div className="events-form-grid events-form-grid-featured">
+                <label className="events-field events-field-wide">
+                  <span>Event title <strong className="events-required-asterisk" aria-hidden="true">*</strong></span>
+                  <input value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Spring Recruitment Info Session" />
+                </label>
+
+                <label className="events-field">
+                  <span>Points category</span>
+                  <select value={pointsCategory} onChange={(e) => setPointsCategory(e.target.value)}>
+                    {POINT_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{toTitleCase(option)}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <label className="events-field">
+                <span>Description</span>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} placeholder="Add a short event summary, RSVP expectations, and any notes attendees should know." />
+              </label>
+
+              <div className="events-form-grid">
+                <label className="events-field">
+                  <span>Start <strong className="events-required-asterisk" aria-hidden="true">*</strong></span>
+                  <input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} required />
+                </label>
+                <label className="events-field">
+                  <span>End <strong className="events-required-asterisk" aria-hidden="true">*</strong></span>
+                  <input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} required />
+                </label>
+              </div>
+
+              <div className="events-form-grid">
+                <label className="events-field">
+                  <span>Location</span>
+                  <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Engineering Building, Room 205" />
+                </label>
+                <label className="events-field">
+                  <span>Capacity</span>
+                  <input type="number" value={capacityMax} onChange={(e) => setCapacityMax(e.target.value)} placeholder="50" />
+                </label>
+              </div>
+
+              <div className="events-form-grid">
+                <label className="events-field">
+                  <span>Default rate per hour</span>
+                  <input type="number" value={defaultRate} onChange={(e) => setDefaultRate(e.target.value)} min="0" />
+                </label>
+                <label className="events-field">
+                  <span>Override total points</span>
+                  <input type="number" value={overridePoints} onChange={(e) => setOverridePoints(e.target.value)} min="0" placeholder="Optional" />
+                </label>
+              </div>
+
+              <div className="events-toggle-panel">
+                <div>
+                  <h3>Attendance requirement</h3>
+                  <p>Use the mandatory option for events where absence should stand out to members.</p>
+                </div>
+                <div className="events-segmented-control">
+                  <button type="button" className={isMandatory ? "events-segment" : "events-segment active"} onClick={() => setIsMandatory(false)}>Optional</button>
+                  <button type="button" className={isMandatory ? "events-segment active" : "events-segment"} onClick={() => setIsMandatory(true)}>Mandatory</button>
+                </div>
+              </div>
+
+              <div className="events-upload-panel">
+                <div className="events-upload-copy">
+                  <h3>Cover image</h3>
+                  <p>Upload a photo for the event card. If you skip this, the page falls back to a branded placeholder.</p>
+                </div>
+                <label className="events-upload-box">
+                  <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
+                  <div className="events-upload-preview">
+                    <img src={imagePreview || EVENT_PLACEHOLDER} alt="Event cover preview" />
+                    <div className="events-upload-overlay">
+                      <ImagePlus size={18} />
+                      <span>{imageFile ? imageFile.name : "Choose image"}</span>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div className="events-visibility-panel">
+                <div>
+                  <h3>Visibility roles</h3>
+                  <p>Choose which member groups should see this event.</p>
+                </div>
+                <div className="events-chip-row">
+                  {ROLE_OPTIONS.map((role) => (
+                    <button type="button" key={role} className={rolesAllowed.includes(role) ? "events-chip active" : "events-chip"} onClick={() => toggleRole(role)}>
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="events-visibility-panel">
+                <div>
+                  <h3>Member statuses</h3>
+                  <p>Optional restriction for specific membership states.</p>
+                </div>
+                <div className="events-chip-row">
+                  {MEMBER_STATUS_OPTIONS.map((status) => (
+                    <button type="button" key={status} className={memberStatusesAllowed.includes(status) ? "events-chip active" : "events-chip"} onClick={() => toggleMemberStatus(status)}>
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {error ? <div className="events-form-error">{error}</div> : null}
+
+              <div className="events-modal-actions">
+                <button type="button" className="events-secondary-button" onClick={onClose}>Cancel</button>
+                <motion.button type="submit" className="events-primary-button" whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} disabled={saving}>
+                  {saving ? "Creating..." : "Create Event"}
+                </motion.button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+function ManageEventModal({
+  manageId,
+  manageData,
+  manageTab,
+  setManageTab,
+  setManageId,
+  setManageData,
+  cohostOptions,
+  cohostSelection,
+  setCohostSelection,
+  saveCohosts,
+  savingCohosts,
+  attendanceEdits,
+  updateAttendanceRow,
+  saveAttendance,
+  savingAttendance,
+  saveDetails,
+  savingDetails,
+}) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [startAt, setStartAt] = useState("");
+  const [endAt, setEndAt] = useState("");
+  const [location, setLocation] = useState("");
+  const [capacityMax, setCapacityMax] = useState("");
+  const [pointsCategory, setPointsCategory] = useState("phi");
+  const [defaultRate, setDefaultRate] = useState(10);
+  const [overridePoints, setOverridePoints] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [isMandatory, setIsMandatory] = useState(false);
+  const [isPublished, setIsPublished] = useState(true);
+  const [rolesAllowed, setRolesAllowed] = useState([]);
+  const [memberStatusesAllowed, setMemberStatusesAllowed] = useState([]);
+
+  useEffect(() => {
+    if (!imageFile) return undefined;
+    const objectUrl = URL.createObjectURL(imageFile);
+    setImagePreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [imageFile]);
+
+  useEffect(() => {
+    const event = manageData?.event;
+    if (!event) return;
+    setTitle(event.title || "");
+    setDescription(event.description || "");
+    setStartAt(toDateTimeLocalValue(event.startAt));
+    setEndAt(toDateTimeLocalValue(event.endAt));
+    setLocation(event.location || "");
+    setCapacityMax(event.capacityMax ?? "");
+    setPointsCategory(event.points?.category || "phi");
+    setDefaultRate(event.points?.defaultRatePerHour ?? 10);
+    setOverridePoints(event.points?.overrideTotalPoints ?? "");
+    setImageFile(null);
+    setImagePreview(event.imageUrl || "");
+    setIsMandatory(!!event.isMandatory);
+    setIsPublished(event.isPublished !== false);
+    setRolesAllowed(Array.isArray(event.visibility?.rolesAllowed) ? event.visibility.rolesAllowed : []);
+    setMemberStatusesAllowed(Array.isArray(event.visibility?.memberStatusesAllowed) ? event.visibility.memberStatusesAllowed : []);
+  }, [manageData]);
+
+  const toggleRole = (role) => {
+    setRolesAllowed((prev) => (prev.includes(role) ? prev.filter((entry) => entry !== role) : [...prev, role]));
+  };
+
+  const toggleMemberStatus = (status) => {
+    setMemberStatusesAllowed((prev) => (prev.includes(status) ? prev.filter((entry) => entry !== status) : [...prev, status]));
+  };
+
+  const handleDetailsSubmit = async (event) => {
+    event.preventDefault();
+    const payload = {
+      title,
+      description,
+      startAt: startAt ? new Date(startAt).toISOString() : "",
+      endAt: endAt ? new Date(endAt).toISOString() : "",
+      location,
+      isMandatory,
+      isPublished,
+      visibility: {
+        rolesAllowed,
+        memberStatusesAllowed,
+      },
+      points: {
+        category: pointsCategory,
+        defaultRatePerHour: Number(defaultRate),
+        ...(overridePoints === "" ? {} : { overrideTotalPoints: Number(overridePoints) }),
+      },
+    };
+    if (capacityMax !== "") {
+      payload.capacityMax = Number(capacityMax);
+    }
+    await saveDetails(payload, imageFile);
+  };
 
   return (
-    <div style={styles.modalBackdrop}>
-      <div style={styles.modalCard}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <h2 style={{ margin: 0 }}>Create Event</h2>
-          <button onClick={onClose} style={styles.secondaryBtn}>Close</button>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <div style={styles.field}>
-            <label>Title *</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} required style={styles.input} />
-          </div>
-          <div style={styles.field}>
-            <label>Description</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} style={styles.textarea} />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div style={styles.field}>
-              <label>Start *</label>
-              <input type="datetime-local" value={startAt} onChange={e => setStartAt(e.target.value)} required style={styles.input} />
+    <AnimatePresence>
+      {manageId && manageData ? (
+        <motion.div className="events-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div
+            className="events-modal-card events-manage-modal"
+            initial={{ opacity: 0, y: 26, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+          >
+            <div className="events-modal-header">
+              <div>
+                <div className="events-kicker">Manage event</div>
+                <h2>{manageData.event?.title}</h2>
+                <p>{fmtRange(manageData.event?.startAt, manageData.event?.endAt)}</p>
+              </div>
+              <button
+                type="button"
+                className="events-icon-button"
+                onClick={() => {
+                  setManageId(null);
+                  setManageData(null);
+                }}
+                aria-label="Close manage event modal"
+              >
+                <X size={18} />
+              </button>
             </div>
-            <div style={styles.field}>
-              <label>End *</label>
-              <input type="datetime-local" value={endAt} onChange={e => setEndAt(e.target.value)} required style={styles.input} />
-            </div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div style={styles.field}>
-              <label>Location</label>
-              <input value={location} onChange={e => setLocation(e.target.value)} style={styles.input} />
-            </div>
-            <div style={styles.field}>
-              <label>Capacity (optional)</label>
-              <input type="number" value={capacityMax} onChange={e => setCapacityMax(e.target.value)} style={styles.input} />
-            </div>
-          </div>
-          <div style={styles.field}>
-            <label>Points Category *</label>
-            <select value={pointsCategory} onChange={e => setPointsCategory(e.target.value)} required style={styles.input}>
-              {POINT_OPTIONS.map(p => <option key={p} value={p}>{p.toUpperCase()}</option>)}
-            </select>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div style={styles.field}>
-              <label>Default rate per hour</label>
-              <input type="number" value={defaultRate} onChange={e => setDefaultRate(e.target.value)} style={styles.input} />
-            </div>
-            <div style={styles.field}>
-              <label>Override total points</label>
-              <input type="number" value={overridePoints} onChange={e => setOverridePoints(e.target.value)} style={styles.input} />
-            </div>
-          </div>
-          <div style={styles.field}>
-            <label>Visibility Roles *</label>
-            <div style={styles.chipRow}>
-              {ROLE_OPTIONS.map(r => (
-                <button
-                  type="button"
-                  key={r}
-                  onClick={() => toggleRole(r)}
-                  style={rolesAllowed.includes(r) ? styles.chipActive : styles.chip}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div style={styles.field}>
-            <label>Visibility Member Statuses (optional)</label>
-            <div style={styles.chipRow}>
-              {MEMBER_STATUS_OPTIONS.map(s => (
-                <button
-                  type="button"
-                  key={s}
-                  onClick={() => toggleMemberStatus(s)}
-                  style={memberStatusesAllowed.includes(s) ? styles.chipActive : styles.chip}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
 
-          {error && <div style={{ color: "red", marginTop: 8 }}>{error}</div>}
+            <div className="events-manage-split">
+              <section className="events-manage-panel">
+                <div className="events-manage-panel-head">
+                  <h3>Co-hosts</h3>
+                  <p>Choose up to seven additional managers for this event.</p>
+                </div>
+                <select
+                  multiple
+                  value={cohostSelection}
+                  onChange={(e) => {
+                    const values = Array.from(e.target.selectedOptions).map((option) => option.value);
+                    if (values.length <= 7) setCohostSelection(values);
+                  }}
+                  className="events-multi-select"
+                >
+                  {cohostOptions.map((option) => (
+                    <option key={option._id} value={option._id}>
+                      {option.firstName} {option.lastName} {option.role?.join ? `(${option.role.join(",")})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" className="events-secondary-button" onClick={saveCohosts} disabled={savingCohosts}>
+                  {savingCohosts ? "Saving..." : "Save Co-hosts"}
+                </button>
+              </section>
 
-          <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <button type="button" onClick={onClose} style={styles.secondaryBtn}>Cancel</button>
-            <button type="submit" disabled={saving} style={styles.primaryBtn}>
-              {saving ? "Saving..." : "Create Event"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              <section className="events-manage-panel events-manage-panel-wide">
+                <div className="events-manage-tabs">
+                  <button type="button" className={manageTab === "details" ? "events-tab active" : "events-tab"} onClick={() => setManageTab("details")}>Details</button>
+                  <button type="button" className={manageTab === "rsvps" ? "events-tab active" : "events-tab"} onClick={() => setManageTab("rsvps")}>RSVPs</button>
+                  <button type="button" className={manageTab === "attendance" ? "events-tab active" : "events-tab"} onClick={() => setManageTab("attendance")}>Attendance</button>
+                </div>
+
+                {manageTab === "details" ? (
+                  <form className="events-form" onSubmit={handleDetailsSubmit}>
+                    <div className="events-form-grid events-form-grid-featured">
+                      <label className="events-field events-field-wide">
+                        <span>Event title <strong className="events-required-asterisk" aria-hidden="true">*</strong></span>
+                        <input value={title} onChange={(e) => setTitle(e.target.value)} required />
+                      </label>
+
+                      <label className="events-field">
+                        <span>Points category</span>
+                        <select value={pointsCategory} onChange={(e) => setPointsCategory(e.target.value)}>
+                          {POINT_OPTIONS.map((option) => (
+                            <option key={option} value={option}>{toTitleCase(option)}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    <label className="events-field">
+                      <span>Description</span>
+                      <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} />
+                    </label>
+
+                    <div className="events-form-grid">
+                      <label className="events-field">
+                        <span>Start <strong className="events-required-asterisk" aria-hidden="true">*</strong></span>
+                        <input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} required />
+                      </label>
+                      <label className="events-field">
+                        <span>End <strong className="events-required-asterisk" aria-hidden="true">*</strong></span>
+                        <input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} required />
+                      </label>
+                    </div>
+
+                    <div className="events-form-grid">
+                      <label className="events-field">
+                        <span>Location</span>
+                        <input value={location} onChange={(e) => setLocation(e.target.value)} />
+                      </label>
+                      <label className="events-field">
+                        <span>Capacity</span>
+                        <input type="number" min="1" value={capacityMax} onChange={(e) => setCapacityMax(e.target.value)} placeholder="Leave blank to keep current" />
+                      </label>
+                    </div>
+
+                    <div className="events-form-grid">
+                      <label className="events-field">
+                        <span>Default rate per hour</span>
+                        <input type="number" min="0" value={defaultRate} onChange={(e) => setDefaultRate(e.target.value)} />
+                      </label>
+                      <label className="events-field">
+                        <span>Override total points</span>
+                        <input type="number" min="0" value={overridePoints} onChange={(e) => setOverridePoints(e.target.value)} placeholder="Optional" />
+                      </label>
+                    </div>
+
+                    <div className="events-upload-panel">
+                      <div className="events-upload-copy">
+                        <h3>Cover image</h3>
+                        <p>Upload a new image to replace the current event cover.</p>
+                      </div>
+                      <label className="events-upload-box">
+                        <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
+                        <div className="events-upload-preview">
+                          <img src={imagePreview || EVENT_PLACEHOLDER} alt="Event cover preview" />
+                          <div className="events-upload-overlay">
+                            <ImagePlus size={18} />
+                            <span>{imageFile ? imageFile.name : "Choose image"}</span>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="events-toggle-panel">
+                      <div>
+                        <h3>Attendance requirement</h3>
+                        <p>Choose whether this event is mandatory for eligible members.</p>
+                      </div>
+                      <div className="events-segmented-control">
+                        <button type="button" className={isMandatory ? "events-segment" : "events-segment active"} onClick={() => setIsMandatory(false)}>Optional</button>
+                        <button type="button" className={isMandatory ? "events-segment active" : "events-segment"} onClick={() => setIsMandatory(true)}>Mandatory</button>
+                      </div>
+                    </div>
+
+                    <div className="events-toggle-panel">
+                      <div>
+                        <h3>Publish status</h3>
+                        <p>Published events are visible to allowed members.</p>
+                      </div>
+                      <div className="events-segmented-control">
+                        <button type="button" className={isPublished ? "events-segment active" : "events-segment"} onClick={() => setIsPublished(true)}>Published</button>
+                        <button type="button" className={isPublished ? "events-segment" : "events-segment active"} onClick={() => setIsPublished(false)}>Hidden</button>
+                      </div>
+                    </div>
+
+                    <div className="events-visibility-panel">
+                      <div>
+                        <h3>Visibility roles</h3>
+                        <p>Pick which groups can see this event.</p>
+                      </div>
+                      <div className="events-chip-row">
+                        {ROLE_OPTIONS.map((role) => (
+                          <button type="button" key={role} className={rolesAllowed.includes(role) ? "events-chip active" : "events-chip"} onClick={() => toggleRole(role)}>
+                            {role}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="events-visibility-panel">
+                      <div>
+                        <h3>Member statuses</h3>
+                        <p>Optional status filter for visibility.</p>
+                      </div>
+                      <div className="events-chip-row">
+                        {MEMBER_STATUS_OPTIONS.map((status) => (
+                          <button type="button" key={status} className={memberStatusesAllowed.includes(status) ? "events-chip active" : "events-chip"} onClick={() => toggleMemberStatus(status)}>
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="events-modal-actions">
+                      <button type="submit" className="events-primary-button" disabled={savingDetails}>
+                        {savingDetails ? "Saving..." : "Save Details"}
+                      </button>
+                    </div>
+                  </form>
+                ) : manageTab === "rsvps" ? (
+                  <div className="events-rsvp-columns">
+                    {["going", "maybe", "notGoing"].map((status) => (
+                      <div key={status} className="events-rsvp-column">
+                        <h4>{status}</h4>
+                        {(manageData.rsvps || []).filter((entry) => entry.status === status).length ? (
+                          (manageData.rsvps || [])
+                            .filter((entry) => entry.status === status)
+                            .map((entry) => (
+                              <div key={String(entry.user)} className="events-rsvp-entry">
+                                {entry.userInfo ? `${entry.userInfo.firstName || ""} ${entry.userInfo.lastName || ""}` : entry.user}
+                              </div>
+                            ))
+                        ) : (
+                          <div className="events-empty-note">No RSVPs</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="events-attendance-table-wrap">
+                    {(() => {
+                      const byId = new Map();
+                      (manageData.rsvps || []).forEach((rsvp) => {
+                        byId.set(String(rsvp.user), { rsvp });
+                      });
+                      (manageData.attendance || []).forEach((attendance) => {
+                        const existing = byId.get(String(attendance.user)) || {};
+                        byId.set(String(attendance.user), { ...existing, attendance });
+                      });
+                      const rows = Array.from(byId.entries()).map(([uid, value]) => ({ uid, ...value }));
+
+                      return (
+                        <table className="events-attendance-table">
+                          <thead>
+                            <tr>
+                              <th>Name</th>
+                              <th>RSVP</th>
+                              <th>Attendance</th>
+                              <th>Points</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map((row) => {
+                              const edit = attendanceEdits[row.uid] || {};
+                              const rsvp = row.rsvp;
+                              const attendance = row.attendance;
+                              const name = rsvp?.userInfo
+                                ? `${rsvp.userInfo.firstName || ""} ${rsvp.userInfo.lastName || ""}`
+                                : attendance?.userInfo
+                                  ? `${attendance.userInfo.firstName || ""} ${attendance.userInfo.lastName || ""}`
+                                  : row.uid;
+                              return (
+                                <tr key={row.uid}>
+                                  <td>{name}</td>
+                                  <td>{rsvp?.status || "-"}</td>
+                                  <td>
+                                    <select value={edit.status || attendance?.status || ""} onChange={(e) => updateAttendanceRow(row.uid, "status", e.target.value)}>
+                                      <option value="">Select</option>
+                                      <option value="present">Present</option>
+                                      <option value="absent">Absent</option>
+                                      <option value="excused">Excused</option>
+                                    </select>
+                                  </td>
+                                  <td>
+                                    <input
+                                      type="number"
+                                      value={edit.pointsAwarded ?? attendance?.pointsAwarded ?? ""}
+                                      onChange={(e) => updateAttendanceRow(row.uid, "pointsAwarded", e.target.value === "" ? undefined : Number(e.target.value))}
+                                      placeholder="auto"
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      );
+                    })()}
+                    <div className="events-table-actions">
+                      <button type="button" className="events-primary-button" onClick={saveAttendance} disabled={savingAttendance}>
+                        {savingAttendance ? "Saving..." : "Save Attendance"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </section>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 
@@ -242,7 +901,8 @@ export default function Events() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const userId = user?._id || user?.id;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [eventFilter, setEventFilter] = useState("all");
   const [manageId, setManageId] = useState(null);
   const [manageData, setManageData] = useState(null);
   const [manageTab, setManageTab] = useState("rsvps");
@@ -251,18 +911,22 @@ export default function Events() {
   const [attendanceEdits, setAttendanceEdits] = useState({});
   const [savingAttendance, setSavingAttendance] = useState(false);
   const [savingCohosts, setSavingCohosts] = useState(false);
+  const [savingDetails, setSavingDetails] = useState(false);
+  const userId = user?._id || user?.id;
 
-  const loadEvents = async () => {
+  const canCreate = isCreatorRole(user);
+
+  const loadEvents = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const url = view === 'mine' ? '/api/events/mine' : `/api/events?view=${view}`;
-      const res = await fetch(url, {
+      const url = view === "mine" ? "/api/events/mine" : `/api/events?view=${view}`;
+      const response = await fetch(url, {
         credentials: "include",
         headers: userId ? { Authorization: `Bearer ${userId}` } : undefined,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to load events");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to load events");
       setEvents(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
@@ -270,31 +934,57 @@ export default function Events() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, view]);
 
   useEffect(() => {
     loadEvents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view]);
+  }, [view, userId]);
 
-  const canCreate = isCreatorRole(user);
+  const filteredEvents = useMemo(() => {
+    const now = new Date();
+    return events
+      .filter((event) => {
+        if (view !== "mine") return true;
+        const start = new Date(event.startAt);
+        if (myFilter === "upcoming") return start >= now;
+        if (myFilter === "past") return start < now;
+        if (myFilter === "thisMonth") {
+          return start.getFullYear() === now.getFullYear() && start.getMonth() === now.getMonth();
+        }
+        return true;
+      })
+      .filter((event) => {
+        const haystack = [event.title, event.description, event.location].filter(Boolean).join(" ").toLowerCase();
+        return haystack.includes(searchQuery.trim().toLowerCase());
+      })
+      .filter((event) => {
+        if (eventFilter === "all") return true;
+        if (eventFilter === "mandatory") return !!event.isMandatory;
+        if (eventFilter === "optional") return !event.isMandatory;
+        return String(event.points?.category || event.pointsCategory || "").toLowerCase() === eventFilter;
+      });
+  }, [events, eventFilter, myFilter, searchQuery, view]);
 
   const handleRsvp = async (eventId, status) => {
     if (!userId) return;
-    // optimistic update
-    setEvents(prev => prev.map(ev => {
-      if (ev._id !== eventId) return ev;
-      const rsvps = Array.isArray(ev.rsvps) ? [...ev.rsvps] : [];
-      const idx = rsvps.findIndex(r => String(r.user) === String(userId));
-      if (idx >= 0) rsvps[idx] = { ...rsvps[idx], status };
+
+    setEvents((prev) => prev.map((event) => {
+      if (event._id !== eventId) return event;
+      const rsvps = Array.isArray(event.rsvps) ? [...event.rsvps] : [];
+      const index = rsvps.findIndex((entry) => String(entry.user) === String(userId));
+      if (index >= 0) rsvps[index] = { ...rsvps[index], status };
       else rsvps.push({ user: userId, status });
-      const totalGoing = rsvps.filter(r => r.status === "going").length;
-      const totalMaybe = rsvps.filter(r => r.status === "maybe").length;
-      return { ...ev, rsvps, totalGoing, totalMaybe, currentUserRsvp: status };
+      return {
+        ...event,
+        rsvps,
+        totalGoing: rsvps.filter((entry) => entry.status === "going").length,
+        totalMaybe: rsvps.filter((entry) => entry.status === "maybe").length,
+        currentUserRsvp: status,
+      };
     }));
 
     try {
-      const res = await fetch(`/api/events/${eventId}/rsvp`, {
+      const response = await fetch(`/api/events/${eventId}/rsvp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -303,12 +993,11 @@ export default function Events() {
         credentials: "include",
         body: JSON.stringify({ status }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "RSVP failed");
-      setEvents(prev => prev.map(ev => ev._id === eventId ? data : ev));
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "RSVP failed");
+      setEvents((prev) => prev.map((event) => (event._id === eventId ? data : event)));
     } catch (err) {
       setError(err.message);
-      // reload to sync
       loadEvents();
     }
   };
@@ -319,49 +1008,44 @@ export default function Events() {
     setManageTab("rsvps");
     setError("");
     try {
-      const res = await fetch(`/api/events/${id}/manage`, {
-        headers: {
-          ...(userId ? { Authorization: `Bearer ${userId}` } : {}),
-        },
+      const response = await fetch(`/api/events/${id}/manage`, {
+        headers: userId ? { Authorization: `Bearer ${userId}` } : undefined,
         credentials: "include",
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to load event");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to load event");
       setManageData(data);
-      setCohostSelection((data.event?.coHosts || []).map(u => u?._id || u).filter(Boolean));
-      const att = {};
-      (data.attendance || []).forEach(a => {
-        att[String(a.user)] = { status: a.status, pointsAwarded: a.pointsAwarded };
+      setCohostSelection((data.event?.coHosts || []).map((entry) => entry?._id || entry).filter(Boolean));
+      const nextAttendance = {};
+      (data.attendance || []).forEach((entry) => {
+        nextAttendance[String(entry.user)] = { status: entry.status, pointsAwarded: entry.pointsAwarded };
       });
-      setAttendanceEdits(att);
+      setAttendanceEdits(nextAttendance);
     } catch (err) {
       setError(err.message);
       setManageId(null);
     }
   };
 
-  const loadCohostOptions = async () => {
+  const loadCohostOptions = useCallback(async () => {
     try {
-      const res = await fetch('/api/users/cohosts', {
+      const response = await fetch("/api/users/cohosts", {
         headers: userId ? { Authorization: `Bearer ${userId}` } : undefined,
         credentials: "include",
       });
-      const data = await res.json();
+      const data = await response.json();
       if (Array.isArray(data)) setCohostOptions(data);
-    } catch (e) {
-      // ignore
+    } catch (_err) {
+      // ignore co-host load failures in the UI
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
-    if (manageId) {
-      loadCohostOptions();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (manageId) loadCohostOptions();
   }, [manageId]);
 
   const updateAttendanceRow = (uid, key, value) => {
-    setAttendanceEdits(prev => ({
+    setAttendanceEdits((prev) => ({
       ...prev,
       [uid]: { ...(prev[uid] || {}), [key]: value },
     }));
@@ -372,12 +1056,14 @@ export default function Events() {
     setSavingAttendance(true);
     setError("");
     try {
-      const entries = Object.entries(attendanceEdits).map(([userId, val]) => ({
-        userId,
-        status: val.status,
-        pointsAwarded: val.pointsAwarded,
-      })).filter(e => e.status);
-      const res = await fetch(`/api/events/${manageId}/attendance`, {
+      const entries = Object.entries(attendanceEdits)
+        .map(([entryUserId, value]) => ({
+          userId: entryUserId,
+          status: value.status,
+          pointsAwarded: value.pointsAwarded,
+        }))
+        .filter((entry) => entry.status);
+      const response = await fetch(`/api/events/${manageId}/attendance`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -386,12 +1072,13 @@ export default function Events() {
         credentials: "include",
         body: JSON.stringify({ entries }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to save attendance");
-      // refresh manage data
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to save attendance");
       openManage(manageId);
+      return data;
     } catch (err) {
       setError(err.message);
+      return null;
     } finally {
       setSavingAttendance(false);
     }
@@ -402,7 +1089,7 @@ export default function Events() {
     setSavingCohosts(true);
     setError("");
     try {
-      const res = await fetch(`/api/events/${manageId}/cohosts`, {
+      const response = await fetch(`/api/events/${manageId}/cohosts`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -411,409 +1098,145 @@ export default function Events() {
         credentials: "include",
         body: JSON.stringify({ coHostIds: cohostSelection }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to save co-hosts");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to save co-hosts");
       openManage(manageId);
+      return data;
     } catch (err) {
       setError(err.message);
+      return null;
     } finally {
       setSavingCohosts(false);
     }
   };
 
+  const saveDetails = async (payload, imageFile) => {
+    if (!manageId) return null;
+    setSavingDetails(true);
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.append("title", payload.title);
+      formData.append("description", payload.description || "");
+      formData.append("startAt", payload.startAt);
+      formData.append("endAt", payload.endAt);
+      formData.append("location", payload.location || "");
+      formData.append("isMandatory", String(payload.isMandatory));
+      formData.append("isPublished", String(payload.isPublished));
+      if (payload.capacityMax != null) formData.append("capacityMax", String(payload.capacityMax));
+      formData.append("visibility", JSON.stringify(payload.visibility));
+      formData.append("points", JSON.stringify(payload.points));
+      if (imageFile) formData.append("image", imageFile);
+
+      const response = await fetch(`/api/events/${manageId}`, {
+        method: "PATCH",
+        headers: {
+          ...(userId ? { Authorization: `Bearer ${userId}` } : {}),
+        },
+        credentials: "include",
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to save event details");
+      await loadEvents();
+      await openManage(manageId);
+      setManageTab("details");
+      return data;
+    } catch (err) {
+      setError(err.message);
+      return null;
+    } finally {
+      setSavingDetails(false);
+    }
+  };
+
   return (
-    <div style={{ padding: 24, maxWidth: 960, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h1 style={{ margin: 0 }}>Events</h1>
-        {canCreate && view !== 'mine' && (
-          <button onClick={() => setModalOpen(true)} style={styles.primaryBtn}>+ Create Event</button>
-        )}
-      </div>
+    <motion.div className="events-page-shell" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.42, ease: "easeOut" }}>
+      <motion.section className="events-hero" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.46, ease: "easeOut" }}>
+        <div className="events-hero-copy">
+          <h1>Events</h1>
+          <p>Discover and RSVP to upcoming chapter events!</p>
+        </div>
+        {canCreate && view !== "mine" ? (
+          <motion.button type="button" className="events-primary-button" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} onClick={() => setModalOpen(true)}>
+            <Plus size={16} /> Create Event
+          </motion.button>
+        ) : null}
+      </motion.section>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        {["week", "month", "nextMonth", "mine"].map(v => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            style={view === v ? styles.tabActive : styles.tab}
-          >
-            {v === "week" ? "This Week" : v === "month" ? "This Month" : v === "nextMonth" ? "Next Month" : "My Events"}
-          </button>
-        ))}
-      </div>
-
-      {view === 'mine' && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          {[
-            { key: 'upcoming', label: 'Upcoming' },
-            { key: 'past', label: 'Past' },
-            { key: 'thisMonth', label: 'This Month' },
-          ].map(f => (
-            <button
-              key={f.key}
-              onClick={() => setMyFilter(f.key)}
-              style={myFilter === f.key ? styles.tabActive : styles.tab}
-            >
-              {f.label}
+      <motion.section className="events-toolbar" initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.48, delay: 0.06, ease: "easeOut" }}>
+        <div className="events-tab-row">
+          {VIEW_OPTIONS.map((option) => (
+            <button key={option.key} type="button" className={view === option.key ? "events-tab active" : "events-tab"} onClick={() => setView(option.key)}>
+              {option.label}
             </button>
           ))}
         </div>
-      )}
 
-      {error && <div style={{ marginBottom: 12, color: "red" }}>{error}</div>}
+        <div className="events-controls-row">
+          <label className="events-search-box">
+            <Search size={16} />
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search events, locations, or descriptions" />
+          </label>
+
+          <label className="events-filter-select">
+            <Filter size={16} />
+            <select value={eventFilter} onChange={(e) => setEventFilter(e.target.value)}>
+              {EVENT_FILTERS.map((option) => (
+                <option key={option.key} value={option.key}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {view === "mine" ? (
+          <div className="events-tab-row events-tab-row-secondary">
+            {MINE_FILTERS.map((option) => (
+              <button key={option.key} type="button" className={myFilter === option.key ? "events-tab active" : "events-tab"} onClick={() => setMyFilter(option.key)}>
+                {option.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </motion.section>
+
+      {error ? <div className="events-inline-error">{error}</div> : null}
 
       {loading ? (
-        <div>Loading...</div>
-      ) : events.length === 0 ? (
-        <div>No events found for this range.</div>
+        <div className="events-empty-state">Loading events...</div>
+      ) : filteredEvents.length === 0 ? (
+        <div className="events-empty-state">No events matched this view. Adjust the filter or create a new event.</div>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {(() => {
-            const now = new Date();
-            const filtered = view === 'mine'
-              ? events.filter(ev => {
-                  const start = new Date(ev.startAt);
-                  if (myFilter === 'upcoming') return start >= now;
-                  if (myFilter === 'past') return start < now;
-                  if (myFilter === 'thisMonth') {
-                    return start.getFullYear() === now.getFullYear() && start.getMonth() === now.getMonth();
-                  }
-                  return true;
-                })
-              : events;
-            return filtered.map(ev => (
-            <div key={ev._id} style={styles.card}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 18 }}>{ev.title}</div>
-                  <div style={{ color: "#4b5563", fontSize: 14 }}>{fmtRange(ev.startAt, ev.endAt)}</div>
-                  {ev.location && <div style={{ color: "#4b5563", fontSize: 14 }}>{ev.location}</div>}
-                </div>
-                <div style={{ textTransform: "uppercase", fontWeight: 700, color: "#5b3ca5" }}>
-                  {ev.points?.category || ev.pointsCategory || ""}
-                </div>
-              </div>
-              {ev.description && <p style={{ marginTop: 8, color: "#374151" }}>{ev.description}</p>}
-              {ev.visibility?.rolesAllowed && (
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-                  {(ev.visibility?.rolesAllowed || []).map(r => (
-                    <span key={r} style={styles.rolePill}>{r}</span>
-                  ))}
-                </div>
-              )}
-              {view !== 'mine' && canRsvp(user) && (
-                <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <div style={{ fontSize: 12, color: "#6b7280" }}>
-                    Going: {ev.totalGoing ?? (ev.rsvps?.filter(r => r.status === "going").length || 0)}
-                    {" • "}Maybe: {ev.totalMaybe ?? (ev.rsvps?.filter(r => r.status === "maybe").length || 0)}
-                  </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {["going", "maybe", "notGoing"].map(s => (
-                      <button
-                        key={s}
-                        onClick={() => handleRsvp(ev._id, s)}
-                        style={(ev.currentUserRsvp || ev.rsvps?.find(r => String(r.user) === String(userId))?.status) === s ? styles.rsvpBtnActive : styles.rsvpBtn}
-                      >
-                        {s === "going" ? "Going" : s === "maybe" ? "Maybe" : "Not Going"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {view === 'mine' && (
-                <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {ev.currentUserRsvp && (
-                    <span style={styles.rolePill}>{ev.currentUserRsvp.toUpperCase()}</span>
-                  )}
-                  {ev.attendance?.status && (
-                    <span style={styles.rolePill}>Attendance: {ev.attendance.status}</span>
-                  )}
-                  {ev.attendance?.pointsAwarded != null && (
-                    <span style={styles.rolePill}>Points: {ev.attendance.pointsAwarded}</span>
-                  )}
-                </div>
-              )}
-              {view !== 'mine' && isManager(user, ev) && (
-                <div style={{ marginTop: 10 }}>
-                  <button style={styles.secondaryBtn} onClick={() => openManage(ev._id)}>Manage</button>
-                </div>
-              )}
-            </div>
-            ));
-          })()}
-        </div>
+        <motion.section className="events-grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.45, delay: 0.1, ease: "easeOut" }}>
+          {filteredEvents.map((event, index) => (
+            <motion.div key={event._id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.34, delay: index * 0.04, ease: "easeOut" }}>
+              <EventCard event={event} user={user} userId={userId} view={view} onRsvp={handleRsvp} onManage={openManage} />
+            </motion.div>
+          ))}
+        </motion.section>
       )}
 
-      <CreateEventModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onCreated={loadEvents}
-        user={user}
+      <CreateEventModal open={modalOpen} onClose={() => setModalOpen(false)} onCreated={loadEvents} user={user} />
+
+      <ManageEventModal
+        manageId={manageId}
+        manageData={manageData}
+        manageTab={manageTab}
+        setManageTab={setManageTab}
+        setManageId={setManageId}
+        setManageData={setManageData}
+        cohostOptions={cohostOptions}
+        cohostSelection={cohostSelection}
+        setCohostSelection={setCohostSelection}
+        saveCohosts={saveCohosts}
+        savingCohosts={savingCohosts}
+        attendanceEdits={attendanceEdits}
+        updateAttendanceRow={updateAttendanceRow}
+        saveAttendance={saveAttendance}
+        savingAttendance={savingAttendance}
+        saveDetails={saveDetails}
+        savingDetails={savingDetails}
       />
-
-      {manageId && manageData && (
-        <div style={styles.modalBackdrop}>
-          <div style={{ ...styles.modalCard, maxWidth: 800 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontWeight: 700 }}>{manageData.event?.title}</div>
-                <div style={{ color: "#6b7280", fontSize: 13 }}>{fmtRange(manageData.event?.startAt, manageData.event?.endAt)}</div>
-              </div>
-              <button style={styles.secondaryBtn} onClick={() => { setManageId(null); setManageData(null); }}>Close</button>
-            </div>
-
-            <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-              <button onClick={() => setManageTab("rsvps")} style={manageTab === "rsvps" ? styles.tabActive : styles.tab}>RSVPs</button>
-              <button onClick={() => setManageTab("attendance")} style={manageTab === "attendance" ? styles.tabActive : styles.tab}>Attendance</button>
-            </div>
-
-            <div style={{ marginTop: 12 }}>
-              <div style={{ marginBottom: 12, background: "#f9fafb", padding: 10, borderRadius: 8 }}>
-                <div style={{ fontWeight: 600 }}>Co-hosts</div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
-                  <select
-                    multiple
-                    value={cohostSelection}
-                    onChange={(e) => {
-                      const vals = Array.from(e.target.selectedOptions).map(o => o.value);
-                      if (vals.length <= 7) setCohostSelection(vals);
-                    }}
-                    style={{ minWidth: 220, padding: 6, borderRadius: 8, border: "1px solid #d1d5db" }}
-                  >
-                    {cohostOptions.map(u => (
-                      <option key={u._id} value={u._id}>{u.firstName} {u.lastName} {u.role?.join ? `(${u.role.join(',')})` : ''}</option>
-                    ))}
-                  </select>
-                  <button style={styles.secondaryBtn} onClick={saveCohosts} disabled={savingCohosts}>
-                    {savingCohosts ? "Saving..." : "Save Co-hosts"}
-                  </button>
-                  <div style={{ fontSize: 12, color: "#6b7280" }}>Max 7</div>
-                </div>
-              </div>
-
-              {manageTab === "rsvps" && (
-                <div>
-                  <h3 style={{ marginTop: 0 }}>RSVPs</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                    {["going", "maybe", "notGoing"].map(status => (
-                      <div key={status} style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 10 }}>
-                        <div style={{ fontWeight: 600, textTransform: "capitalize" }}>{status}</div>
-                        <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
-                          {(manageData.rsvps || []).filter(r => r.status === status).map(r => (
-                            <div key={String(r.user)} style={{ fontSize: 14 }}>
-                              {r.userInfo ? `${r.userInfo.firstName || ''} ${r.userInfo.lastName || ''}` : r.user}
-                              {r.userInfo?.role?.length ? ` — ${Array.isArray(r.userInfo.role) ? r.userInfo.role.join(', ') : r.userInfo.role}` : ""}
-                            </div>
-                          ))}
-                          {(manageData.rsvps || []).filter(r => r.status === status).length === 0 && (
-                            <div style={{ color: "#6b7280", fontSize: 13 }}>No RSVPs</div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {manageTab === "attendance" && (
-                <div>
-                  <h3 style={{ marginTop: 0 }}>Attendance</h3>
-                  {(() => {
-                    const byId = new Map();
-                    (manageData.rsvps || []).forEach(r => {
-                      byId.set(String(r.user), { rsvp: r });
-                    });
-                    (manageData.attendance || []).forEach(a => {
-                      const existing = byId.get(String(a.user)) || {};
-                      byId.set(String(a.user), { ...existing, attendance: a });
-                    });
-                    const rows = Array.from(byId.entries()).map(([uid, val]) => ({ uid, ...val }));
-                    return (
-                    <div style={{ overflowX: "auto" }}>
-                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                        <thead>
-                          <tr style={{ background: "#f3f4f6", textAlign: "left" }}>
-                            <th style={styles.th}>Name</th>
-                          <th style={styles.th}>RSVP</th>
-                          <th style={styles.th}>Attendance</th>
-                          <th style={styles.th}>Points Awarded</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {rows.map(row => {
-                          const uid = row.uid;
-                          const edit = attendanceEdits[uid] || {};
-                          const rsvp = row.rsvp;
-                          const att = row.attendance;
-                          const name = rsvp?.userInfo
-                            ? `${rsvp.userInfo.firstName || ''} ${rsvp.userInfo.lastName || ''}`
-                            : att?.userInfo
-                              ? `${att.userInfo.firstName || ''} ${att.userInfo.lastName || ''}`
-                              : uid;
-                          const rsvpStatus = rsvp?.status || '—';
-                          return (
-                            <tr key={uid} style={{ borderTop: "1px solid #e5e7eb" }}>
-                              <td style={styles.td}>{name}</td>
-                              <td style={styles.td}>{rsvpStatus}</td>
-                              <td style={styles.td}>
-                                <select
-                                  value={edit.status || att?.status || ""}
-                                  onChange={e => updateAttendanceRow(uid, "status", e.target.value)}
-                                  style={styles.input}
-                                >
-                                  <option value="">Select</option>
-                                  <option value="present">Present</option>
-                                  <option value="absent">Absent</option>
-                                  <option value="excused">Excused</option>
-                                </select>
-                              </td>
-                              <td style={styles.td}>
-                                <input
-                                  type="number"
-                                  value={edit.pointsAwarded ?? att?.pointsAwarded ?? ""}
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    updateAttendanceRow(uid, "pointsAwarded", val === "" ? undefined : Number(val));
-                                  }}
-                                  style={{ ...styles.input, maxWidth: 120 }}
-                                  placeholder="auto"
-                                />
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        </tbody>
-                      </table>
-                    </div>
-                    );
-                  })()}
-                  <div style={{ marginTop: 12, textAlign: "right" }}>
-                    <button style={styles.primaryBtn} onClick={saveAttendance} disabled={savingAttendance}>
-                      {savingAttendance ? "Saving..." : "Save Attendance"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </motion.div>
   );
 }
-
-const styles = {
-  primaryBtn: {
-    padding: "10px 14px",
-    borderRadius: 8,
-    border: "none",
-    background: "#5b3ca5",
-    color: "white",
-    cursor: "pointer",
-    fontWeight: 600,
-  },
-  secondaryBtn: {
-    padding: "8px 12px",
-    borderRadius: 8,
-    border: "1px solid #d1d5db",
-    background: "white",
-    cursor: "pointer",
-  },
-  tab: {
-    padding: "8px 12px",
-    borderRadius: 8,
-    border: "1px solid #d1d5db",
-    background: "white",
-    cursor: "pointer",
-  },
-  tabActive: {
-    padding: "8px 12px",
-    borderRadius: 8,
-    border: "1px solid #5b3ca5",
-    background: "#ede9fe",
-    color: "#4c1d95",
-    cursor: "pointer",
-    fontWeight: 600,
-  },
-  card: {
-    border: "1px solid #e5e7eb",
-    borderRadius: 12,
-    padding: 16,
-    background: "white",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
-  },
-  rolePill: {
-    padding: "4px 8px",
-    borderRadius: 999,
-    background: "#f3f4f6",
-    fontSize: 12,
-    color: "#374151"
-  },
-  modalBackdrop: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.4)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-    padding: 12,
-  },
-  modalCard: {
-    background: "white",
-    borderRadius: 12,
-    padding: 16,
-    width: "100%",
-    maxWidth: 640,
-    maxHeight: "90vh",
-    overflowY: "auto",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
-  },
-  field: { marginBottom: 12, display: "flex", flexDirection: "column", gap: 4 },
-  input: {
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid #d1d5db",
-  },
-  textarea: {
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid #d1d5db",
-    resize: "vertical",
-  },
-  chipRow: { display: "flex", flexWrap: "wrap", gap: 8 },
-  chip: {
-    padding: "6px 10px",
-    borderRadius: 16,
-    border: "1px solid #d1d5db",
-    background: "white",
-    cursor: "pointer"
-  },
-  chipActive: {
-    padding: "6px 10px",
-    borderRadius: 16,
-    border: "1px solid #5b3ca5",
-    background: "#ede9fe",
-    color: "#4c1d95",
-    cursor: "pointer"
-  },
-  rsvpBtn: {
-    padding: "6px 10px",
-    borderRadius: 8,
-    border: "1px solid #d1d5db",
-    background: "white",
-    cursor: "pointer",
-    fontSize: 13,
-  },
-  rsvpBtnActive: {
-    padding: "6px 10px",
-    borderRadius: 8,
-    border: "1px solid #5b3ca5",
-    background: "#ede9fe",
-    color: "#4c1d95",
-    cursor: "pointer",
-    fontSize: 13,
-  },
-  th: { padding: 8, fontSize: 13 },
-  td: { padding: 8, fontSize: 13 }
-};
