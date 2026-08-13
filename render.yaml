@@ -1,10 +1,7 @@
 services:
-  - type: static
-    name: psruf-client
-    rootDir: client
-    buildCommand: npm install && npm run build
-    staticPublishPath: build
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+  - type: web
+    name: psruf-website-2026
+    env: node
+    rootDir: server
+    buildCommand: npm install && npm run build:client
+    startCommand: npm start
