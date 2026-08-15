@@ -1,15 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { Link } from "react-router-dom";
 import {
   CalendarDays,
   Clock3,
+  Download,
   Filter,
   ImagePlus,
   MapPin,
+  Paperclip,
   Plus,
   Search,
   ShieldAlert,
-  Sparkles,
   Users,
   X,
 } from "lucide-react";
@@ -23,10 +25,18 @@ const ROLE_OPTIONS = [
 
 const MEMBER_STATUS_OPTIONS = [
   "active", "inactive", "probation", "seniorStatus",
-  "scholarship", "co-op", "dropped",
+  "co-op", "dropped",
 ];
 
 const POINT_OPTIONS = ["phi", "sigma", "rho", "tau"];
+
+const RECURRENCE_OPTIONS = [
+  { key: "none", label: "Does not repeat" },
+  { key: "daily", label: "Daily" },
+  { key: "weekly", label: "Weekly" },
+  { key: "biweekly", label: "Bi-weekly" },
+  { key: "monthly", label: "Monthly" },
+];
 
 const EVENT_PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
@@ -40,16 +50,19 @@ const EVENT_PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent
     <rect width="1200" height="720" fill="url(#grad)" />
     <circle cx="940" cy="160" r="180" fill="rgba(255,255,255,0.22)" />
     <circle cx="260" cy="620" r="210" fill="rgba(124,41,41,0.16)" />
-    <rect x="80" y="88" width="420" height="84" rx="42" fill="rgba(124,41,41,0.14)" />
-    <text x="110" y="143" font-family="Georgia, serif" font-size="42" fill="#6f2b2a">Chapter Event</text>
-    <text x="110" y="222" font-family="Arial, sans-serif" font-size="28" fill="#7a3e3a">Upload a custom cover to personalize this card.</text>
+    <rect x="80" y="96" width="360" height="72" rx="36" fill="rgba(124,41,41,0.12)" />
+    <rect x="80" y="198" width="520" height="28" rx="14" fill="rgba(124,41,41,0.12)" />
+    <rect x="80" y="246" width="420" height="28" rx="14" fill="rgba(124,41,41,0.1)" />
+    <rect x="80" y="294" width="300" height="28" rx="14" fill="rgba(124,41,41,0.08)" />
   </svg>
 `)}`;
 
 const VIEW_OPTIONS = [
   { key: "week", label: "This Week" },
+  { key: "allUpcoming", label: "All Upcoming" },
   { key: "month", label: "This Month" },
   { key: "nextMonth", label: "Next Month" },
+  { key: "past", label: "Past Events" },
   { key: "mine", label: "My Events" },
 ];
 
@@ -157,18 +170,136 @@ function getEventImage(event) {
   return event?.imageUrl || EVENT_PLACEHOLDER;
 }
 
+function formatFileSize(size) {
+  const numeric = Number(size || 0);
+  if (!numeric) return "File";
+  if (numeric >= 1024 * 1024) return `${(numeric / (1024 * 1024)).toFixed(1)} MB`;
+  if (numeric >= 1024) return `${Math.round(numeric / 1024)} KB`;
+  return `${numeric} B`;
+}
+
+function createShiftDraft(index = 0) {
+  return {
+    shiftId: `draft-${Date.now()}-${index}`,
+    label: `Shift ${index + 1}`,
+    startAt: "",
+    endAt: "",
+    capacityMax: "",
+  };
+}
+
+function countShiftGoing(event, shiftId) {
+  return (event?.rsvps || []).filter((entry) => entry.status === "going" && String(entry.shiftId || "") === String(shiftId || "")).length;
+}
+
+function describeShift(shift) {
+  if (!shift) return "";
+  return `${shift.label}: ${formatDateDetail(shift.startAt)} - ${new Date(shift.endAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+}
+
+function AttachmentLinks({ attachments, editable = false, onRemove }) {
+  if (!attachments?.length) return null;
+
+  return (
+    <div className="events-attachment-list">
+      {attachments.map((attachment) => (
+        <div key={`${attachment.url}-${attachment.name}`} className="events-attachment-item">
+          <a href={attachment.url} target="_blank" rel="noreferrer" className="events-attachment-link">
+            <Paperclip size={14} />
+            <span>{attachment.name}</span>
+            <small>{formatFileSize(attachment.size)}</small>
+            <Download size={14} />
+          </a>
+          {editable ? (
+            <button type="button" className="events-icon-button" onClick={() => onRemove?.(attachment)} aria-label={`Remove ${attachment.name}`}>
+              <X size={14} />
+            </button>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ShiftEditor({ shifts, setShifts }) {
+  const updateShift = (shiftId, key, value) => {
+    setShifts((prev) => prev.map((shift) => (shift.shiftId === shiftId ? { ...shift, [key]: value } : shift)));
+  };
+
+  const addShift = () => {
+    setShifts((prev) => [...prev, createShiftDraft(prev.length)]);
+  };
+
+  const removeShift = (shiftId) => {
+    setShifts((prev) => prev.filter((shift) => shift.shiftId !== shiftId));
+  };
+
+  return (
+    <div className="events-stack-panel">
+      <div className="events-stack-panel-head">
+        <div>
+          <h3>Registration shifts</h3>
+          <p>Members RSVP for one defined time block instead of a blanket event response.</p>
+        </div>
+        <button type="button" className="events-secondary-button" onClick={addShift}>
+          <Plus size={14} /> Add Shift
+        </button>
+      </div>
+
+      {shifts.length === 0 ? <div className="events-empty-note">No shifts added yet.</div> : null}
+
+      {shifts.map((shift, index) => (
+        <div key={shift.shiftId} className="events-inline-card">
+          <div className="events-form-grid events-form-grid-featured">
+            <label className="events-field events-field-wide">
+              <span>Shift label</span>
+              <input value={shift.label} onChange={(e) => updateShift(shift.shiftId, "label", e.target.value)} placeholder={`Shift ${index + 1}`} />
+            </label>
+
+            <label className="events-field">
+              <span>Capacity</span>
+              <input type="number" min="1" value={shift.capacityMax} onChange={(e) => updateShift(shift.shiftId, "capacityMax", e.target.value)} placeholder="Optional" />
+            </label>
+          </div>
+
+          <div className="events-form-grid">
+            <label className="events-field">
+              <span>Shift start</span>
+              <input type="datetime-local" value={shift.startAt} onChange={(e) => updateShift(shift.shiftId, "startAt", e.target.value)} />
+            </label>
+            <label className="events-field">
+              <span>Shift end</span>
+              <input type="datetime-local" value={shift.endAt} onChange={(e) => updateShift(shift.shiftId, "endAt", e.target.value)} />
+            </label>
+          </div>
+
+          <div className="events-inline-actions">
+            <button type="button" className="events-secondary-button" onClick={() => removeShift(shift.shiftId)}>
+              Remove Shift
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function EventCard({ event, user, userId, view, onRsvp, onManage }) {
   const [imageSrc, setImageSrc] = useState(getEventImage(event));
+  const [selectedShiftId, setSelectedShiftId] = useState(event.currentUserShiftId || event.shifts?.[0]?.shiftId || "");
 
   useEffect(() => {
     setImageSrc(getEventImage(event));
+    setSelectedShiftId(event.currentUserShiftId || event.shifts?.[0]?.shiftId || "");
   }, [event]);
 
   const currentRsvp = event.currentUserRsvp || event.rsvps?.find((rsvp) => String(rsvp.user) === String(userId))?.status;
+  const currentShiftId = event.currentUserShiftId || event.rsvps?.find((rsvp) => String(rsvp.user) === String(userId))?.shiftId;
   const hasActiveRsvp = currentRsvp === "going" || currentRsvp === "maybe";
   const totalGoing = event.totalGoing ?? (event.rsvps?.filter((rsvp) => rsvp.status === "going").length || 0);
   const totalMaybe = event.totalMaybe ?? (event.rsvps?.filter((rsvp) => rsvp.status === "maybe").length || 0);
   const estimatedPoints = computePoints(event);
+  const selectedShift = event.shifts?.find((shift) => String(shift.shiftId) === String(selectedShiftId));
 
   return (
     <motion.article
@@ -204,7 +335,7 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
         <div className="events-card-heading">
           <div>
             <h3>{event.title}</h3>
-            <p>{event.description || "Chapter programming with RSVP, attendance, and points tracking in one place."}</p>
+            {event.description ? <p>{event.description}</p> : null}
           </div>
           <div className="events-card-points">{estimatedPoints} pts</div>
         </div>
@@ -216,6 +347,12 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
           <span><Clock3 size={15} /> {formatDurationHours(event.startAt, event.endAt)}</span>
         </div>
 
+        {event.recurrence?.frequency && event.recurrence.frequency !== "none" ? (
+          <div className="events-role-pills">
+            <span className="events-role-pill">Repeats {toTitleCase(event.recurrence.frequency)}</span>
+          </div>
+        ) : null}
+
         {event.visibility?.rolesAllowed?.length ? (
           <div className="events-role-pills">
             {event.visibility.rolesAllowed.slice(0, 4).map((role) => (
@@ -223,6 +360,33 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
             ))}
           </div>
         ) : null}
+
+        {event.shiftBasedRegistration ? (
+          <div className="events-inline-card">
+            <div className="events-stack-panel-head">
+              <div>
+                <h3>Choose a shift</h3>
+                <p>Select the time block you plan to attend.</p>
+              </div>
+            </div>
+
+            <label className="events-field">
+              <span>Available shifts</span>
+              <select value={selectedShiftId} onChange={(e) => setSelectedShiftId(e.target.value)}>
+                {(event.shifts || []).map((shift) => (
+                  <option key={shift.shiftId} value={shift.shiftId}>
+                    {shift.label} ({countShiftGoing(event, shift.shiftId)} going{shift.capacityMax ? ` / ${shift.capacityMax}` : ""})
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {selectedShift ? <div className="events-empty-note">{describeShift(selectedShift)}</div> : null}
+            {currentShiftId ? <div className="events-empty-note">Current shift: {(event.shifts || []).find((shift) => String(shift.shiftId) === String(currentShiftId))?.label || "Saved"}</div> : null}
+          </div>
+        ) : null}
+
+        <AttachmentLinks attachments={event.attachments} />
 
         {view !== "mine" && canRsvp(user) ? (
           <div className="events-card-footer">
@@ -239,7 +403,8 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
                   className={currentRsvp === option.key ? "events-rsvp-button active" : "events-rsvp-button"}
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => onRsvp(event._id, option.key)}
+                  onClick={() => onRsvp(event, option.key, event.shiftBasedRegistration ? selectedShiftId : undefined)}
+                  disabled={event.shiftBasedRegistration && !selectedShiftId}
                 >
                   {option.label}
                 </motion.button>
@@ -250,6 +415,7 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
           <div className="events-card-footer events-card-footer-mine">
             <div className="events-mine-statuses">
               {hasActiveRsvp ? <span className="events-role-pill">{currentRsvp.toUpperCase()}</span> : null}
+              {currentShiftId ? <span className="events-role-pill">Shift: {(event.shifts || []).find((shift) => String(shift.shiftId) === String(currentShiftId))?.label || "Saved"}</span> : null}
               {event.attendance?.status ? <span className="events-role-pill">Attendance: {event.attendance.status}</span> : null}
               {event.attendance?.pointsAwarded != null ? <span className="events-role-pill">Points: {event.attendance.pointsAwarded}</span> : null}
             </div>
@@ -258,9 +424,14 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
 
         {view !== "mine" && isManager(user, event) ? (
           <div className="events-manage-row">
+            <Link to={`/events/${event._id}`} className="events-secondary-button events-link-button">View Details</Link>
             <button type="button" className="events-secondary-button" onClick={() => onManage(event._id)}>Manage Event</button>
           </div>
-        ) : null}
+        ) : (
+          <div className="events-manage-row">
+            <Link to={`/events/${event._id}`} className="events-secondary-button events-link-button">View Details</Link>
+          </div>
+        )}
       </div>
     </motion.article>
   );
@@ -282,6 +453,11 @@ function CreateEventModal({ open, onClose, onCreated, user }) {
   const [isMandatory, setIsMandatory] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [attachmentFiles, setAttachmentFiles] = useState([]);
+  const [shiftBasedRegistration, setShiftBasedRegistration] = useState(false);
+  const [shifts, setShifts] = useState([]);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState("none");
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -308,6 +484,11 @@ function CreateEventModal({ open, onClose, onCreated, user }) {
     setIsMandatory(false);
     setImageFile(null);
     setImagePreview("");
+    setAttachmentFiles([]);
+    setShiftBasedRegistration(false);
+    setShifts([]);
+    setRecurrenceFrequency("none");
+    setRecurrenceEndDate("");
     setError("");
   }, [open, user]);
 
@@ -333,15 +514,26 @@ function CreateEventModal({ open, onClose, onCreated, user }) {
       formData.append("location", location);
       formData.append("capacityMax", capacityMax);
       formData.append("isMandatory", String(isMandatory));
+      formData.append("shiftBasedRegistration", String(shiftBasedRegistration));
       formData.append("visibility", JSON.stringify({ rolesAllowed, memberStatusesAllowed }));
       formData.append("points", JSON.stringify({
         category: pointsCategory,
         defaultRatePerHour: defaultRate,
         overrideTotalPoints: overridePoints,
       }));
+      formData.append("shifts", JSON.stringify(shifts.map((shift) => ({
+        ...shift,
+        startAt: shift.startAt ? new Date(shift.startAt).toISOString() : "",
+        endAt: shift.endAt ? new Date(shift.endAt).toISOString() : "",
+      }))));
+      formData.append("recurrence", JSON.stringify({
+        frequency: recurrenceFrequency,
+        endDate: recurrenceEndDate ? new Date(recurrenceEndDate).toISOString() : "",
+      }));
       if (imageFile) {
         formData.append("image", imageFile);
       }
+      attachmentFiles.forEach((file) => formData.append("attachments", file));
 
       const userId = user?._id || user?.id;
       const response = await fetch("/api/events", {
@@ -375,7 +567,7 @@ function CreateEventModal({ open, onClose, onCreated, user }) {
             <div className="events-modal-header">
               <div>
                 <h3>Create an Event</h3>
-                <p>Set visibility, attach a cover image, and decide whether attendance is mandatory.</p>
+                <p>Set visibility, add attachments, define shifts, and optionally generate recurring instances.</p>
                 <p className="events-required-note"><span aria-hidden="true">*</span> Required fields</p>
               </div>
               <button type="button" className="events-icon-button" onClick={onClose} aria-label="Close create event modal">
@@ -449,6 +641,40 @@ function CreateEventModal({ open, onClose, onCreated, user }) {
                 </div>
               </div>
 
+              <div className="events-toggle-panel">
+                <div>
+                  <h3>Registration mode</h3>
+                  <p>Turn this on when members must RSVP to a specific time slot.</p>
+                </div>
+                <div className="events-segmented-control">
+                  <button type="button" className={shiftBasedRegistration ? "events-segment" : "events-segment active"} onClick={() => setShiftBasedRegistration(false)}>Standard RSVP</button>
+                  <button type="button" className={shiftBasedRegistration ? "events-segment active" : "events-segment"} onClick={() => setShiftBasedRegistration(true)}>Shift-Based</button>
+                </div>
+              </div>
+
+              {shiftBasedRegistration ? <ShiftEditor shifts={shifts} setShifts={setShifts} /> : null}
+
+              <div className="events-toggle-panel">
+                <div>
+                  <h3>Recurring event</h3>
+                  <p>Create daily, weekly, bi-weekly, or monthly follow-up instances through a chosen end date.</p>
+                </div>
+                <div className="events-form-grid">
+                  <label className="events-field">
+                    <span>Frequency</span>
+                    <select value={recurrenceFrequency} onChange={(e) => setRecurrenceFrequency(e.target.value)}>
+                      {RECURRENCE_OPTIONS.map((option) => (
+                        <option key={option.key} value={option.key}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="events-field">
+                    <span>Repeat through</span>
+                    <input type="datetime-local" value={recurrenceEndDate} onChange={(e) => setRecurrenceEndDate(e.target.value)} disabled={recurrenceFrequency === "none"} />
+                  </label>
+                </div>
+              </div>
+
               <div className="events-upload-panel">
                 <div className="events-upload-copy">
                   <h3>Cover image</h3>
@@ -465,6 +691,34 @@ function CreateEventModal({ open, onClose, onCreated, user }) {
                   </div>
                 </label>
               </div>
+
+              <div className="events-upload-panel">
+                <div className="events-upload-copy">
+                  <h3>Attachments</h3>
+                  <p>Attach PDFs, docs, slides, or flyers. Members can download them from the event card.</p>
+                </div>
+                <label className="events-upload-box events-upload-box-files">
+                  <input type="file" multiple onChange={(e) => setAttachmentFiles(Array.from(e.target.files || []))} />
+                  <div className="events-file-picker">
+                    <Paperclip size={18} />
+                    <span>{attachmentFiles.length ? `${attachmentFiles.length} file(s) selected` : "Choose files"}</span>
+                  </div>
+                </label>
+              </div>
+
+              {attachmentFiles.length ? (
+                <div className="events-attachment-list">
+                  {attachmentFiles.map((file) => (
+                    <div key={`${file.name}-${file.size}`} className="events-attachment-item">
+                      <div className="events-attachment-link">
+                        <Paperclip size={14} />
+                        <span>{file.name}</span>
+                        <small>{formatFileSize(file.size)}</small>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               <div className="events-visibility-panel">
                 <div>
@@ -528,6 +782,10 @@ function ManageEventModal({
   savingAttendance,
   saveDetails,
   savingDetails,
+  massRsvpMembers,
+  addingMember,
+  addManagedMember,
+  deleteEvent,
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -540,10 +798,26 @@ function ManageEventModal({
   const [overridePoints, setOverridePoints] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [attachmentFiles, setAttachmentFiles] = useState([]);
   const [isMandatory, setIsMandatory] = useState(false);
   const [isPublished, setIsPublished] = useState(true);
   const [rolesAllowed, setRolesAllowed] = useState([]);
   const [memberStatusesAllowed, setMemberStatusesAllowed] = useState([]);
+  const [shiftBasedRegistration, setShiftBasedRegistration] = useState(false);
+  const [shifts, setShifts] = useState([]);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState("none");
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
+  const [bulkRoles, setBulkRoles] = useState([]);
+  const [bulkStatuses, setBulkStatuses] = useState([]);
+  const [bulkStatus, setBulkStatus] = useState("going");
+  const [bulkShiftId, setBulkShiftId] = useState("");
+  const [memberToAdd, setMemberToAdd] = useState("");
+  const [manualRsvpStatus, setManualRsvpStatus] = useState("going");
+  const [manualAttendanceStatus, setManualAttendanceStatus] = useState("present");
+  const [manualShiftId, setManualShiftId] = useState("");
+  const [manualPoints, setManualPoints] = useState("");
+  const [applyToSeries, setApplyToSeries] = useState(false);
 
   useEffect(() => {
     if (!imageFile) return undefined;
@@ -566,10 +840,31 @@ function ManageEventModal({
     setOverridePoints(event.points?.overrideTotalPoints ?? "");
     setImageFile(null);
     setImagePreview(event.imageUrl || "");
+    setAttachments(Array.isArray(event.attachments) ? event.attachments : []);
+    setAttachmentFiles([]);
     setIsMandatory(!!event.isMandatory);
     setIsPublished(event.isPublished !== false);
     setRolesAllowed(Array.isArray(event.visibility?.rolesAllowed) ? event.visibility.rolesAllowed : []);
     setMemberStatusesAllowed(Array.isArray(event.visibility?.memberStatusesAllowed) ? event.visibility.memberStatusesAllowed : []);
+    setShiftBasedRegistration(!!event.shiftBasedRegistration);
+    setShifts((event.shifts || []).map((shift) => ({
+      ...shift,
+      startAt: toDateTimeLocalValue(shift.startAt),
+      endAt: toDateTimeLocalValue(shift.endAt),
+      capacityMax: shift.capacityMax ?? "",
+    })));
+    setRecurrenceFrequency(event.recurrence?.frequency || "none");
+    setRecurrenceEndDate(toDateTimeLocalValue(event.recurrence?.endDate));
+    setBulkRoles([]);
+    setBulkStatuses([]);
+    setBulkStatus("going");
+    setBulkShiftId(event.shifts?.[0]?.shiftId || "");
+    setMemberToAdd("");
+    setManualRsvpStatus("going");
+    setManualAttendanceStatus("present");
+    setManualShiftId(event.shifts?.[0]?.shiftId || "");
+    setManualPoints("");
+    setApplyToSeries(false);
   }, [manageData]);
 
   const toggleRole = (role) => {
@@ -578,6 +873,14 @@ function ManageEventModal({
 
   const toggleMemberStatus = (status) => {
     setMemberStatusesAllowed((prev) => (prev.includes(status) ? prev.filter((entry) => entry !== status) : [...prev, status]));
+  };
+
+  const toggleBulkRole = (role) => {
+    setBulkRoles((prev) => (prev.includes(role) ? prev.filter((entry) => entry !== role) : [...prev, role]));
+  };
+
+  const toggleBulkStatus = (status) => {
+    setBulkStatuses((prev) => (prev.includes(status) ? prev.filter((entry) => entry !== status) : [...prev, status]));
   };
 
   const handleDetailsSubmit = async (event) => {
@@ -590,6 +893,17 @@ function ManageEventModal({
       location,
       isMandatory,
       isPublished,
+      shiftBasedRegistration,
+      shifts: shifts.map((shift) => ({
+        ...shift,
+        startAt: shift.startAt ? new Date(shift.startAt).toISOString() : "",
+        endAt: shift.endAt ? new Date(shift.endAt).toISOString() : "",
+      })),
+      recurrence: {
+        frequency: recurrenceFrequency,
+        endDate: recurrenceEndDate ? new Date(recurrenceEndDate).toISOString() : "",
+      },
+      applyToSeries,
       visibility: {
         rolesAllowed,
         memberStatusesAllowed,
@@ -599,11 +913,12 @@ function ManageEventModal({
         defaultRatePerHour: Number(defaultRate),
         ...(overridePoints === "" ? {} : { overrideTotalPoints: Number(overridePoints) }),
       },
+      attachments,
     };
     if (capacityMax !== "") {
       payload.capacityMax = Number(capacityMax);
     }
-    await saveDetails(payload, imageFile);
+    await saveDetails(payload, imageFile, attachmentFiles);
   };
 
   return (
@@ -742,6 +1057,36 @@ function ManageEventModal({
                       </label>
                     </div>
 
+                    <div className="events-upload-panel">
+                      <div className="events-upload-copy">
+                        <h3>Attachments</h3>
+                        <p>Keep agendas, waivers, and deck files attached to this event.</p>
+                      </div>
+                      <label className="events-upload-box events-upload-box-files">
+                        <input type="file" multiple onChange={(e) => setAttachmentFiles(Array.from(e.target.files || []))} />
+                        <div className="events-file-picker">
+                          <Paperclip size={18} />
+                          <span>{attachmentFiles.length ? `${attachmentFiles.length} new file(s)` : "Add attachments"}</span>
+                        </div>
+                      </label>
+                    </div>
+
+                    <AttachmentLinks attachments={attachments} editable onRemove={(attachment) => setAttachments((prev) => prev.filter((entry) => entry.url !== attachment.url))} />
+
+                    {attachmentFiles.length ? (
+                      <div className="events-attachment-list">
+                        {attachmentFiles.map((file) => (
+                          <div key={`${file.name}-${file.size}`} className="events-attachment-item">
+                            <div className="events-attachment-link">
+                              <Paperclip size={14} />
+                              <span>{file.name}</span>
+                              <small>{formatFileSize(file.size)}</small>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
                     <div className="events-toggle-panel">
                       <div>
                         <h3>Attendance requirement</h3>
@@ -752,6 +1097,53 @@ function ManageEventModal({
                         <button type="button" className={isMandatory ? "events-segment active" : "events-segment"} onClick={() => setIsMandatory(true)}>Mandatory</button>
                       </div>
                     </div>
+
+                    <div className="events-toggle-panel">
+                      <div>
+                        <h3>Registration mode</h3>
+                        <p>Switch between standard event RSVP and shift-based registration.</p>
+                      </div>
+                      <div className="events-segmented-control">
+                        <button type="button" className={shiftBasedRegistration ? "events-segment" : "events-segment active"} onClick={() => setShiftBasedRegistration(false)}>Standard RSVP</button>
+                        <button type="button" className={shiftBasedRegistration ? "events-segment active" : "events-segment"} onClick={() => setShiftBasedRegistration(true)}>Shift-Based</button>
+                      </div>
+                    </div>
+
+                    {shiftBasedRegistration ? <ShiftEditor shifts={shifts} setShifts={setShifts} /> : null}
+
+                    <div className="events-toggle-panel">
+                      <div>
+                        <h3>Recurring event</h3>
+                        <p>Adjust the recurrence metadata stored with this event series.</p>
+                      </div>
+                      <div className="events-form-grid">
+                        <label className="events-field">
+                          <span>Frequency</span>
+                          <select value={recurrenceFrequency} onChange={(e) => setRecurrenceFrequency(e.target.value)}>
+                            {RECURRENCE_OPTIONS.map((option) => (
+                              <option key={option.key} value={option.key}>{option.label}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="events-field">
+                          <span>Repeat through</span>
+                          <input type="datetime-local" value={recurrenceEndDate} onChange={(e) => setRecurrenceEndDate(e.target.value)} disabled={recurrenceFrequency === "none"} />
+                        </label>
+                      </div>
+                    </div>
+
+                    {manageData.event?.recurrence?.seriesId ? (
+                      <div className="events-toggle-panel">
+                        <div>
+                          <h3>Series-wide changes</h3>
+                          <p>Apply shared settings to all events in this recurring series while preserving each occurrence date.</p>
+                        </div>
+                        <div className="events-segmented-control">
+                          <button type="button" className={applyToSeries ? "events-segment active" : "events-segment"} onClick={() => setApplyToSeries(true)}>Apply To Series</button>
+                          <button type="button" className={applyToSeries ? "events-segment" : "events-segment active"} onClick={() => setApplyToSeries(false)}>Only This Event</button>
+                        </div>
+                      </div>
+                    ) : null}
 
                     <div className="events-toggle-panel">
                       <div>
@@ -793,94 +1185,251 @@ function ManageEventModal({
                     </div>
 
                     <div className="events-modal-actions">
+                      {manageData.event?.recurrence?.seriesId ? (
+                        <button type="button" className="events-secondary-button" onClick={() => deleteEvent("series")}>
+                          Delete Series
+                        </button>
+                      ) : null}
+                      <button type="button" className="events-secondary-button" onClick={() => deleteEvent("single")}>
+                        Delete Event
+                      </button>
                       <button type="submit" className="events-primary-button" disabled={savingDetails}>
                         {savingDetails ? "Saving..." : "Save Details"}
                       </button>
                     </div>
                   </form>
                 ) : manageTab === "rsvps" ? (
-                  <div className="events-rsvp-columns">
-                    {["going", "maybe", "notGoing"].map((status) => (
-                      <div key={status} className="events-rsvp-column">
-                        <h4>{status}</h4>
-                        {(manageData.rsvps || []).filter((entry) => entry.status === status).length ? (
-                          (manageData.rsvps || [])
-                            .filter((entry) => entry.status === status)
-                            .map((entry) => (
-                              <div key={String(entry.user)} className="events-rsvp-entry">
-                                {entry.userInfo ? `${entry.userInfo.firstName || ""} ${entry.userInfo.lastName || ""}` : entry.user}
-                              </div>
-                            ))
-                        ) : (
-                          <div className="events-empty-note">No RSVPs</div>
-                        )}
+                  <div className="events-stack-panel">
+                    {manageData.event?.isMandatory ? (
+                      <div className="events-inline-card">
+                        <div className="events-stack-panel-head">
+                          <div>
+                            <h3>Mass RSVP</h3>
+                            <p>Auto-add members by roster role or member status for mandatory events.</p>
+                          </div>
+                          <button
+                            type="button"
+                            className="events-primary-button"
+                            onClick={() => massRsvpMembers({ roles: bulkRoles, memberStatuses: bulkStatuses, status: bulkStatus, shiftId: bulkShiftId })}
+                          >
+                            Auto RSVP Members
+                          </button>
+                        </div>
+
+                        <div className="events-form-grid">
+                          <label className="events-field">
+                            <span>RSVP state</span>
+                            <select value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)}>
+                              <option value="going">Going</option>
+                              <option value="maybe">Maybe</option>
+                              <option value="notGoing">Pass</option>
+                            </select>
+                          </label>
+                          {manageData.event?.shiftBasedRegistration ? (
+                            <label className="events-field">
+                              <span>Shift</span>
+                              <select value={bulkShiftId} onChange={(e) => setBulkShiftId(e.target.value)}>
+                                {(manageData.event?.shifts || []).map((shift) => (
+                                  <option key={shift.shiftId} value={shift.shiftId}>{shift.label}</option>
+                                ))}
+                              </select>
+                            </label>
+                          ) : null}
+                        </div>
+
+                        <div className="events-visibility-panel">
+                          <div>
+                            <h3>Target roles</h3>
+                            <p>Leave blank to include every visible approved member.</p>
+                          </div>
+                          <div className="events-chip-row">
+                            {ROLE_OPTIONS.map((role) => (
+                              <button type="button" key={role} className={bulkRoles.includes(role) ? "events-chip active" : "events-chip"} onClick={() => toggleBulkRole(role)}>
+                                {role}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="events-visibility-panel">
+                          <div>
+                            <h3>Target member statuses</h3>
+                            <p>Combine with roles when you need a narrower roster segment.</p>
+                          </div>
+                          <div className="events-chip-row">
+                            {MEMBER_STATUS_OPTIONS.map((status) => (
+                              <button type="button" key={status} className={bulkStatuses.includes(status) ? "events-chip active" : "events-chip"} onClick={() => toggleBulkStatus(status)}>
+                                {status}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    ))}
+                    ) : null}
+
+                    <div className="events-rsvp-columns">
+                      {["going", "maybe", "notGoing"].map((status) => (
+                        <div key={status} className="events-rsvp-column">
+                          <h4>{status}</h4>
+                          {(manageData.rsvps || []).filter((entry) => entry.status === status).length ? (
+                            (manageData.rsvps || [])
+                              .filter((entry) => entry.status === status)
+                              .map((entry) => {
+                                const shiftLabel = (manageData.event?.shifts || []).find((shift) => String(shift.shiftId) === String(entry.shiftId || ""))?.label;
+                                return (
+                                  <div key={String(entry.user)} className="events-rsvp-entry">
+                                    <div>{entry.userInfo ? `${entry.userInfo.firstName || ""} ${entry.userInfo.lastName || ""}` : entry.user}</div>
+                                    {shiftLabel ? <div className="events-empty-note">{shiftLabel}</div> : null}
+                                  </div>
+                                );
+                              })
+                          ) : (
+                            <div className="events-empty-note">No RSVPs</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : (
-                  <div className="events-attendance-table-wrap">
-                    {(() => {
-                      const byId = new Map();
-                      (manageData.rsvps || []).forEach((rsvp) => {
-                        byId.set(String(rsvp.user), { rsvp });
-                      });
-                      (manageData.attendance || []).forEach((attendance) => {
-                        const existing = byId.get(String(attendance.user)) || {};
-                        byId.set(String(attendance.user), { ...existing, attendance });
-                      });
-                      const rows = Array.from(byId.entries()).map(([uid, value]) => ({ uid, ...value }));
+                  <div className="events-stack-panel">
+                    <div className="events-inline-card">
+                      <div className="events-stack-panel-head">
+                        <div>
+                          <h3>Manage Event / Add Member</h3>
+                          <p>Retroactively add a member who missed sign-up so attendance and points stay accurate.</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="events-primary-button"
+                          onClick={() => addManagedMember({
+                            userId: memberToAdd,
+                            rsvpStatus: manualRsvpStatus,
+                            attendanceStatus: manualAttendanceStatus,
+                            shiftId: manualShiftId,
+                            pointsAwarded: manualPoints === "" ? undefined : Number(manualPoints),
+                          })}
+                          disabled={!memberToAdd || addingMember}
+                        >
+                          {addingMember ? "Adding..." : "Add Member"}
+                        </button>
+                      </div>
 
-                      return (
-                        <table className="events-attendance-table">
-                          <thead>
-                            <tr>
-                              <th>Name</th>
-                              <th>RSVP</th>
-                              <th>Attendance</th>
-                              <th>Points</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {rows.map((row) => {
-                              const edit = attendanceEdits[row.uid] || {};
-                              const rsvp = row.rsvp;
-                              const attendance = row.attendance;
-                              const name = rsvp?.userInfo
-                                ? `${rsvp.userInfo.firstName || ""} ${rsvp.userInfo.lastName || ""}`
-                                : attendance?.userInfo
-                                  ? `${attendance.userInfo.firstName || ""} ${attendance.userInfo.lastName || ""}`
-                                  : row.uid;
-                              return (
-                                <tr key={row.uid}>
-                                  <td>{name}</td>
-                                  <td>{rsvp?.status || "-"}</td>
-                                  <td>
-                                    <select value={edit.status || attendance?.status || ""} onChange={(e) => updateAttendanceRow(row.uid, "status", e.target.value)}>
-                                      <option value="">Select</option>
-                                      <option value="present">Present</option>
-                                      <option value="absent">Absent</option>
-                                      <option value="excused">Excused</option>
-                                    </select>
-                                  </td>
-                                  <td>
-                                    <input
-                                      type="number"
-                                      value={edit.pointsAwarded ?? attendance?.pointsAwarded ?? ""}
-                                      onChange={(e) => updateAttendanceRow(row.uid, "pointsAwarded", e.target.value === "" ? undefined : Number(e.target.value))}
-                                      placeholder="auto"
-                                    />
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      );
-                    })()}
-                    <div className="events-table-actions">
-                      <button type="button" className="events-primary-button" onClick={saveAttendance} disabled={savingAttendance}>
-                        {savingAttendance ? "Saving..." : "Save Attendance"}
-                      </button>
+                      <div className="events-form-grid">
+                        <label className="events-field">
+                          <span>Member</span>
+                          <select value={memberToAdd} onChange={(e) => setMemberToAdd(e.target.value)}>
+                            <option value="">Select a member</option>
+                            {(manageData.eligibleMembers || []).map((member) => (
+                              <option key={member._id} value={member._id}>
+                                {member.firstName} {member.lastName}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="events-field">
+                          <span>RSVP status</span>
+                          <select value={manualRsvpStatus} onChange={(e) => setManualRsvpStatus(e.target.value)}>
+                            <option value="going">Going</option>
+                            <option value="maybe">Maybe</option>
+                            <option value="notGoing">Pass</option>
+                          </select>
+                        </label>
+                      </div>
+
+                      <div className="events-form-grid">
+                        <label className="events-field">
+                          <span>Attendance status</span>
+                          <select value={manualAttendanceStatus} onChange={(e) => setManualAttendanceStatus(e.target.value)}>
+                            <option value="present">Present</option>
+                            <option value="absent">Absent</option>
+                            <option value="excused">Excused</option>
+                          </select>
+                        </label>
+                        <label className="events-field">
+                          <span>Points override</span>
+                          <input type="number" min="0" value={manualPoints} onChange={(e) => setManualPoints(e.target.value)} placeholder="Leave blank for auto" />
+                        </label>
+                      </div>
+
+                      {manageData.event?.shiftBasedRegistration ? (
+                        <label className="events-field">
+                          <span>Shift</span>
+                          <select value={manualShiftId} onChange={(e) => setManualShiftId(e.target.value)}>
+                            {(manageData.event?.shifts || []).map((shift) => (
+                              <option key={shift.shiftId} value={shift.shiftId}>{shift.label}</option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : null}
+                    </div>
+
+                    <div className="events-attendance-table-wrap">
+                      {(() => {
+                        const byId = new Map();
+                        (manageData.rsvps || []).forEach((rsvp) => {
+                          byId.set(String(rsvp.user), { rsvp });
+                        });
+                        (manageData.attendance || []).forEach((attendance) => {
+                          const existing = byId.get(String(attendance.user)) || {};
+                          byId.set(String(attendance.user), { ...existing, attendance });
+                        });
+                        const rows = Array.from(byId.entries()).map(([uid, value]) => ({ uid, ...value }));
+
+                        return (
+                          <table className="events-attendance-table">
+                            <thead>
+                              <tr>
+                                <th>Name</th>
+                                <th>RSVP</th>
+                                <th>Shift</th>
+                                <th>Attendance</th>
+                                <th>Points</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {rows.map((row) => {
+                                const edit = attendanceEdits[row.uid] || {};
+                                const rsvp = row.rsvp;
+                                const attendance = row.attendance;
+                                const name = rsvp?.userInfo
+                                  ? `${rsvp.userInfo.firstName || ""} ${rsvp.userInfo.lastName || ""}`
+                                  : attendance?.userInfo
+                                    ? `${attendance.userInfo.firstName || ""} ${attendance.userInfo.lastName || ""}`
+                                    : row.uid;
+                                const shiftLabel = (manageData.event?.shifts || []).find((shift) => String(shift.shiftId) === String(rsvp?.shiftId || ""))?.label;
+                                return (
+                                  <tr key={row.uid}>
+                                    <td>{name}</td>
+                                    <td>{rsvp?.status || "-"}</td>
+                                    <td>{shiftLabel || "-"}</td>
+                                    <td>
+                                      <select value={edit.status || attendance?.status || ""} onChange={(e) => updateAttendanceRow(row.uid, "status", e.target.value)}>
+                                        <option value="">Select</option>
+                                        <option value="present">Present</option>
+                                        <option value="absent">Absent</option>
+                                        <option value="excused">Excused</option>
+                                      </select>
+                                    </td>
+                                    <td>
+                                      <input
+                                        type="number"
+                                        value={edit.pointsAwarded ?? attendance?.pointsAwarded ?? ""}
+                                        onChange={(e) => updateAttendanceRow(row.uid, "pointsAwarded", e.target.value === "" ? undefined : Number(e.target.value))}
+                                        placeholder="auto"
+                                      />
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        );
+                      })()}
+                      <div className="events-table-actions">
+                        <button type="button" className="events-primary-button" onClick={saveAttendance} disabled={savingAttendance}>
+                          {savingAttendance ? "Saving..." : "Save Attendance"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -901,6 +1450,7 @@ export default function Events() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [eventFilter, setEventFilter] = useState("all");
   const [manageId, setManageId] = useState(null);
@@ -912,6 +1462,7 @@ export default function Events() {
   const [savingAttendance, setSavingAttendance] = useState(false);
   const [savingCohosts, setSavingCohosts] = useState(false);
   const [savingDetails, setSavingDetails] = useState(false);
+  const [addingMember, setAddingMember] = useState(false);
   const userId = user?._id || user?.id;
 
   const canCreate = isCreatorRole(user);
@@ -938,7 +1489,11 @@ export default function Events() {
 
   useEffect(() => {
     loadEvents();
-  }, [view, userId]);
+  }, [loadEvents]);
+
+  useEffect(() => {
+    setMobileControlsOpen(false);
+  }, [view, manageId, modalOpen]);
 
   const filteredEvents = useMemo(() => {
     const now = new Date();
@@ -965,44 +1520,54 @@ export default function Events() {
       });
   }, [events, eventFilter, myFilter, searchQuery, view]);
 
-  const handleRsvp = async (eventId, status) => {
+  const handleRsvp = async (event, status, shiftId) => {
     if (!userId) return;
 
-    setEvents((prev) => prev.map((event) => {
-      if (event._id !== eventId) return event;
-      const rsvps = Array.isArray(event.rsvps) ? [...event.rsvps] : [];
+    const currentEvent = events.find((entry) => entry._id === event._id) || event;
+    const currentRsvp = currentEvent.currentUserRsvp || currentEvent.rsvps?.find((entry) => String(entry.user) === String(userId))?.status || null;
+    const currentShiftId = currentEvent.currentUserShiftId || currentEvent.rsvps?.find((entry) => String(entry.user) === String(userId))?.shiftId || null;
+    const sameSelection = currentRsvp === status && String(currentShiftId || "") === String(shiftId || "");
+    const nextStatus = sameSelection ? "none" : status;
+
+    setEvents((prev) => prev.map((entry) => {
+      if (entry._id !== event._id) return entry;
+      let rsvps = Array.isArray(entry.rsvps) ? [...entry.rsvps] : [];
       const index = rsvps.findIndex((entry) => String(entry.user) === String(userId));
-      if (index >= 0) rsvps[index] = { ...rsvps[index], status };
-      else rsvps.push({ user: userId, status });
+      if (nextStatus === "none") {
+        rsvps = rsvps.filter((entry) => String(entry.user) !== String(userId));
+      } else if (index >= 0) rsvps[index] = { ...rsvps[index], status: nextStatus, shiftId };
+      else rsvps.push({ user: userId, status: nextStatus, shiftId });
       return {
-        ...event,
+        ...entry,
         rsvps,
         totalGoing: rsvps.filter((entry) => entry.status === "going").length,
         totalMaybe: rsvps.filter((entry) => entry.status === "maybe").length,
-        currentUserRsvp: status,
+        currentUserRsvp: nextStatus === "none" ? null : nextStatus,
+        currentUserShiftId: nextStatus === "none" ? null : shiftId || null,
       };
     }));
 
     try {
-      const response = await fetch(`/api/events/${eventId}/rsvp`, {
+      const response = await fetch(`/api/events/${event._id}/rsvp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(userId ? { Authorization: `Bearer ${userId}` } : {}),
         },
         credentials: "include",
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: nextStatus, shiftId }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "RSVP failed");
-      setEvents((prev) => prev.map((event) => (event._id === eventId ? data : event)));
+      setEvents((prev) => prev.map((entry) => (entry._id === event._id ? data : entry)));
+      if (manageId === event._id) openManage(event._id);
     } catch (err) {
       setError(err.message);
       loadEvents();
     }
   };
 
-  const openManage = async (id) => {
+  const openManage = useCallback(async (id) => {
     setManageId(id);
     setManageData(null);
     setManageTab("rsvps");
@@ -1025,7 +1590,7 @@ export default function Events() {
       setError(err.message);
       setManageId(null);
     }
-  };
+  }, [userId]);
 
   const loadCohostOptions = useCallback(async () => {
     try {
@@ -1042,7 +1607,7 @@ export default function Events() {
 
   useEffect(() => {
     if (manageId) loadCohostOptions();
-  }, [manageId]);
+  }, [manageId, loadCohostOptions]);
 
   const updateAttendanceRow = (uid, key, value) => {
     setAttendanceEdits((prev) => ({
@@ -1074,7 +1639,8 @@ export default function Events() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Failed to save attendance");
-      openManage(manageId);
+      await openManage(manageId);
+      await loadEvents();
       return data;
     } catch (err) {
       setError(err.message);
@@ -1110,7 +1676,7 @@ export default function Events() {
     }
   };
 
-  const saveDetails = async (payload, imageFile) => {
+  const saveDetails = async (payload, imageFile, attachmentFiles = []) => {
     if (!manageId) return null;
     setSavingDetails(true);
     setError("");
@@ -1123,10 +1689,16 @@ export default function Events() {
       formData.append("location", payload.location || "");
       formData.append("isMandatory", String(payload.isMandatory));
       formData.append("isPublished", String(payload.isPublished));
+      formData.append("shiftBasedRegistration", String(payload.shiftBasedRegistration));
       if (payload.capacityMax != null) formData.append("capacityMax", String(payload.capacityMax));
       formData.append("visibility", JSON.stringify(payload.visibility));
       formData.append("points", JSON.stringify(payload.points));
+      formData.append("shifts", JSON.stringify(payload.shifts || []));
+      formData.append("recurrence", JSON.stringify(payload.recurrence || { frequency: "none" }));
+      formData.append("attachments", JSON.stringify(payload.attachments || []));
+      formData.append("applyToSeries", String(!!payload.applyToSeries));
       if (imageFile) formData.append("image", imageFile);
+      attachmentFiles.forEach((file) => formData.append("attachments", file));
 
       const response = await fetch(`/api/events/${manageId}`, {
         method: "PATCH",
@@ -1150,12 +1722,94 @@ export default function Events() {
     }
   };
 
+  const massRsvpMembers = async ({ roles, memberStatuses, status, shiftId }) => {
+    if (!manageId) return null;
+    setError("");
+    try {
+      const response = await fetch(`/api/events/${manageId}/mass-rsvp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(userId ? { Authorization: `Bearer ${userId}` } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({ roles, memberStatuses, status, shiftId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to mass RSVP members");
+      await loadEvents();
+      await openManage(manageId);
+      setManageTab("rsvps");
+      return data;
+    } catch (err) {
+      setError(err.message);
+      return null;
+    }
+  };
+
+  const addManagedMember = async ({ userId: selectedUserId, rsvpStatus, attendanceStatus, shiftId, pointsAwarded }) => {
+    if (!manageId || !selectedUserId) return null;
+    setAddingMember(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/events/${manageId}/manage-members`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(userId ? { Authorization: `Bearer ${userId}` } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          userId: selectedUserId,
+          rsvpStatus,
+          attendanceStatus,
+          shiftId,
+          pointsAwarded,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to add member");
+      await loadEvents();
+      await openManage(manageId);
+      setManageTab("attendance");
+      return data;
+    } catch (err) {
+      setError(err.message);
+      return null;
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
+  const deleteEvent = async (scope) => {
+    if (!manageId) return null;
+    const confirmed = window.confirm(scope === "series" ? "Delete every event in this recurring series?" : "Delete this event?");
+    if (!confirmed) return null;
+    setError("");
+    try {
+      const response = await fetch(`/api/events/${manageId}?scope=${scope}`, {
+        method: "DELETE",
+        headers: userId ? { Authorization: `Bearer ${userId}` } : undefined,
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to delete event");
+      setManageId(null);
+      setManageData(null);
+      await loadEvents();
+      return data;
+    } catch (err) {
+      setError(err.message);
+      return null;
+    }
+  };
+
   return (
     <motion.div className="events-page-shell" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.42, ease: "easeOut" }}>
       <motion.section className="events-hero" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.46, ease: "easeOut" }}>
         <div className="events-hero-copy">
           <h1>Events</h1>
-          <p>Discover and RSVP to upcoming chapter events!</p>
+          <p>Discover, organize, and manage chapter events with a cleaner RSVP and attendance workflow.</p>
         </div>
         {canCreate && view !== "mine" ? (
           <motion.button type="button" className="events-primary-button" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} onClick={() => setModalOpen(true)}>
@@ -1164,10 +1818,21 @@ export default function Events() {
         ) : null}
       </motion.section>
 
+      <section className="events-mobile-bar">
+        <button type="button" className="events-secondary-button" onClick={() => setMobileControlsOpen(true)}>
+          <Filter size={16} /> Filters & Views
+        </button>
+        {canCreate && view !== "mine" ? (
+          <button type="button" className="events-primary-button" onClick={() => setModalOpen(true)}>
+            <Plus size={16} /> Create
+          </button>
+        ) : null}
+      </section>
+
       <motion.section className="events-toolbar" initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.48, delay: 0.06, ease: "easeOut" }}>
         <div className="events-tab-row">
           {VIEW_OPTIONS.map((option) => (
-            <button key={option.key} type="button" className={view === option.key ? "events-tab active" : "events-tab"} onClick={() => setView(option.key)}>
+            <button key={option.key} type="button" className={view === option.key ? "events-tab active" : "events-tab"} onClick={() => setView(view === "week" && option.key === "week" ? "allUpcoming" : option.key)}>
               {option.label}
             </button>
           ))}
@@ -1199,6 +1864,70 @@ export default function Events() {
           </div>
         ) : null}
       </motion.section>
+
+      <AnimatePresence>
+        {mobileControlsOpen ? (
+          <motion.div className="events-mobile-drawer-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="events-mobile-drawer" initial={{ y: 32, opacity: 0.92 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0.96 }} transition={{ duration: 0.22, ease: "easeOut" }}>
+              <div className="events-mobile-drawer-head">
+                <div>
+                  <h3>Browse Events</h3>
+                  <p>Switch views, refine results, and jump between upcoming and past events.</p>
+                </div>
+                <button type="button" className="events-icon-button" onClick={() => setMobileControlsOpen(false)} aria-label="Close event filters">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="events-mobile-drawer-body">
+                <div className="events-mobile-block">
+                  <span className="events-mobile-block-label">View</span>
+                  <div className="events-tab-row">
+                    {VIEW_OPTIONS.map((option) => (
+                      <button key={option.key} type="button" className={view === option.key ? "events-tab active" : "events-tab"} onClick={() => setView(view === "week" && option.key === "week" ? "allUpcoming" : option.key)}>
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="events-search-box">
+                  <Search size={16} />
+                  <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search events, locations, or descriptions" />
+                </label>
+
+                <label className="events-filter-select">
+                  <Filter size={16} />
+                  <select value={eventFilter} onChange={(e) => setEventFilter(e.target.value)}>
+                    {EVENT_FILTERS.map((option) => (
+                      <option key={option.key} value={option.key}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+
+                {view === "mine" ? (
+                  <div className="events-mobile-block">
+                    <span className="events-mobile-block-label">My event filter</span>
+                    <div className="events-tab-row">
+                      {MINE_FILTERS.map((option) => (
+                        <button key={option.key} type="button" className={myFilter === option.key ? "events-tab active" : "events-tab"} onClick={() => setMyFilter(option.key)}>
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="events-mobile-drawer-actions">
+                  <button type="button" className="events-secondary-button" onClick={() => setMobileControlsOpen(false)}>
+                    Done
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       {error ? <div className="events-inline-error">{error}</div> : null}
 
@@ -1236,6 +1965,10 @@ export default function Events() {
         savingAttendance={savingAttendance}
         saveDetails={saveDetails}
         savingDetails={savingDetails}
+        massRsvpMembers={massRsvpMembers}
+        addingMember={addingMember}
+        addManagedMember={addManagedMember}
+        deleteEvent={deleteEvent}
       />
     </motion.div>
   );

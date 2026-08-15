@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const ROLE_OPTIONS = [
   "pending", "pnm", "candidate", "candOfficer", "member",
@@ -7,8 +8,9 @@ const ROLE_OPTIONS = [
 
 const MEMBER_STATUS_OPTIONS = [
   "active", "inactive", "probation", "seniorStatus",
-  "scholarship", "co-op", "dropped",
+  "co-op", "dropped",
 ];
+const SCHOLARSHIP_OPTIONS = [0, 25, 50, 75, 100];
 
 const EXEC_OPTIONS = [
   "PRESIDENT", "VP_STANDARDS", "VP_COMMUNICATIONS", "VP_FINANCE",
@@ -29,40 +31,77 @@ const POSITION_OPTIONS = [
   "VP_SOCIAL", "VP_SERVICE", "VP_SCHOLARSHIP", "VP_MEMBERSHIP",
 ];
 
+function canAccessAdminUsers(user) {
+  if (!user) return false;
+  const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
+  const positions = Array.isArray(user.positions) ? user.positions : [];
+  if (roles.includes("webmaster")) return true;
+  return positions.some(position => ["PRESIDENT", "VP_STANDARDS", "VP_FINANCE", "WEBMASTER"].includes(position?.key));
+}
+
+function canManageScholarship(user) {
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  return positions.some(position => position?.key === "VP_FINANCE");
+}
+
 export default function AdminApprovals() {
+  const { user } = useAuth();
+  const allowed = canAccessAdminUsers(user);
+  const [scholarshipAccessFromApi, setScholarshipAccessFromApi] = useState(false);
+  const scholarshipAllowed = canManageScholarship(user) || scholarshipAccessFromApi;
+  const userId = user?._id || user?.id;
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState("");
 
   const [roleSel, setRoleSel] = useState({});
   const [statusSel, setStatusSel] = useState({});
+  const [scholarshipSel, setScholarshipSel] = useState({});
   const [posSel, setPosSel] = useState({});
 
-  const load = async () => {
+  const headers = useMemo(() => (
+    userId
+      ? { Authorization: `Bearer ${userId}`, "Content-Type": "application/json" }
+      : { "Content-Type": "application/json" }
+  ), [userId]);
+
+  const load = useCallback(async () => {
+    if (!allowed) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setMsg("");
     try {
-      const r = await fetch("/api/admin/pending");
+      const r = await fetch("/api/admin/pending", { headers, credentials: "include" });
       const data = await r.json();
+      if (!r.ok) throw new Error(data.message || "Failed to load pending users");
       setRows(Array.isArray(data) ? data : []);
-      const initRoles = {}, initStatus = {}, initPos = {};
+      setScholarshipAccessFromApi(
+        Array.isArray(data) && data.some(u => Object.prototype.hasOwnProperty.call(u, "scholarship"))
+      );
+      const initRoles = {}, initStatus = {}, initScholarship = {}, initPos = {};
       (Array.isArray(data) ? data : []).forEach(u => {
         initRoles[u._id] = [];
         initStatus[u._id] = [];
+        initScholarship[u._id] = Number(u.scholarship ?? 0);
         initPos[u._id] = [];
       });
       setRoleSel(initRoles);
       setStatusSel(initStatus);
+      setScholarshipSel(initScholarship);
       setPosSel(initPos);
     } catch (e) {
       console.error(e);
+      setScholarshipAccessFromApi(false);
       setMsg("Failed to load pending users.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [allowed, headers]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const approve = async (id) => {
     setMsg("");
@@ -70,11 +109,13 @@ export default function AdminApprovals() {
       const body = {};
       if (roleSel[id]?.length) body.role = roleSel[id];
       if (statusSel[id]?.length) body.memberStatus = statusSel[id];
+      if (scholarshipAllowed) body.scholarship = Number(scholarshipSel[id] ?? 0);
       if (posSel[id]?.length) body.positions = posSel[id];
 
       const r = await fetch(`/api/admin/approve/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers,
+        credentials: "include",
         body: JSON.stringify(body),
       });
       if (!r.ok) {
@@ -92,7 +133,7 @@ export default function AdminApprovals() {
   const reject = async (id) => {
     setMsg("");
     try {
-      const r = await fetch(`/api/admin/reject/${id}`, { method: "DELETE" });
+      const r = await fetch(`/api/admin/reject/${id}`, { method: "DELETE", headers, credentials: "include" });
       if (!r.ok) {
         const err = await r.json().catch(() => ({}));
         throw new Error(err.message || "Reject failed");
@@ -109,6 +150,10 @@ export default function AdminApprovals() {
     const selected = Array.from(e.target.selectedOptions).map(o => o.value);
     setter(prev => ({ ...prev, [id]: selected }));
   };
+
+  if (!allowed) {
+    return <div style={{ padding: 24, maxWidth: 720, margin: "0 auto" }}>You do not have permission to access pending approvals.</div>;
+  }
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto" }}>
@@ -158,17 +203,33 @@ export default function AdminApprovals() {
 
                 {/* Member status multi-select */}
                 <td style={{ padding: 8 }}>
-                  <select
-                    multiple
-                    size={4}
-                    value={statusSel[u._id] || []}
-                    onChange={(e) => handleMultiChange(e, setStatusSel, u._id)}
-                    style={{ width: 160, padding: 6 }}
-                  >
-                    {MEMBER_STATUS_OPTIONS.map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <select
+                      multiple
+                      size={4}
+                      value={statusSel[u._id] || []}
+                      onChange={(e) => handleMultiChange(e, setStatusSel, u._id)}
+                      style={{ width: 160, padding: 6 }}
+                    >
+                      {MEMBER_STATUS_OPTIONS.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                    {scholarshipAllowed && (
+                      <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#432534", fontWeight: 600 }}>
+                        Scholarship
+                        <select
+                          value={Number(scholarshipSel[u._id] ?? 0)}
+                          onChange={(e) => setScholarshipSel(prev => ({ ...prev, [u._id]: Number(e.target.value) }))}
+                          style={{ width: 160, padding: 6 }}
+                        >
+                          {SCHOLARSHIP_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}%</option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </div>
                 </td>
 
                 {/* Positions multi-select */}

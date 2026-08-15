@@ -4,19 +4,9 @@ import ChannelsSidebar from "../../components/ChannelsSidebar";
 
 export default function FeedsLayout() {
   return (
-    <div
-      style={{
-        maxWidth: 1200,
-        margin: "12px auto",
-        padding: "0 16px",
-        display: "grid",
-        gridTemplateColumns: "260px 1fr",
-        gap: 16,
-      }}
-    >
+    <div className="feeds-layout">
       <ChannelsSidebar />
-      <div>
-        {/* Right pane = whatever child route renders */}
+      <div className="feeds-layout-main">
         <Outlet />
       </div>
     </div>

@@ -19,10 +19,13 @@ function getCategoryMeta(category) {
   return CATEGORY_META[category] || { label: category?.toUpperCase?.() || "General", color: "#6D2C2C" };
 }
 
-function Circle({ label, value, index }) {
-  const pct = Math.max(0, Math.min(1, value / POINT_MAX));
+function Circle({ label, value, target, color, index }) {
+  const pct = Math.max(0, Math.min(1, value / Math.max(1, target || POINT_MAX)));
   const angle = pct * 360;
-  const bg = `conic-gradient(#6D2C2C ${angle}deg, #ECE9F1 ${angle}deg 360deg)`;
+  const ringStyle = {
+    "--circle-angle": `${angle}deg`,
+    "--circle-fill": color || "#6D2C2C",
+  };
   
   return (
     <motion.div 
@@ -34,11 +37,11 @@ function Circle({ label, value, index }) {
     >
       <div
         className="points-circle-ring"
-        style={{ background: bg }}
+        style={ringStyle}
       >
-        {label}
+        <span>{label}</span>
       </div>
-      <div className="points-circle-value">{Math.round(value)} / {POINT_MAX}</div>
+      <div className="points-circle-value">{Math.round(value)} / {Math.round(target || POINT_MAX)}</div>
     </motion.div>
   );
 }
@@ -88,14 +91,7 @@ export default function Points() {
         tau: byCat.tau || 0,
       };
       
-      const coreCapped = Math.min(cats.phi, POINT_MAX) + 
-                         Math.min(cats.sigma, POINT_MAX) + 
-                         Math.min(cats.rho, POINT_MAX) + 
-                         Math.min(cats.tau, POINT_MAX);
-                         
-      const any = Math.max(0, grand - coreCapped);
-      
-      setTotals({ ...cats, any, grand });
+      setTotals({ ...cats, any: 0, grand });
     } catch (e) {
       setError(e.message);
       setTotals({ phi: 0, sigma: 0, rho: 0, tau: 0, any: 0, grand: 0 });
@@ -163,23 +159,24 @@ export default function Points() {
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const minPerCategory = reqs?.requirements?.minPerCategory || POINT_MAX;
-  const totalRequired = minPerCategory * 5;
+  const totalRequired = reqs?.requirements?.totalRequired || (minPerCategory * 5);
+  const anyPoints = reqs?.any?.have ?? totals.any;
 
   const effectiveTotal = Math.min(totals.phi, minPerCategory) + 
                          Math.min(totals.sigma, minPerCategory) + 
                          Math.min(totals.rho, minPerCategory) + 
                          Math.min(totals.tau, minPerCategory) + 
-                         Math.min(totals.any, minPerCategory);
+                         Math.min(anyPoints, minPerCategory);
                          
   const percentComplete = totalRequired > 0 ? Math.round((effectiveTotal / totalRequired) * 100) : 0;
   const safePercent = Math.max(0, Math.min(100, percentComplete));
 
   const circleData = [
-    { label: "Phi", key: "phi" },
-    { label: "Sigma", key: "sigma" },
-    { label: "Rho", key: "rho" },
-    { label: "Tau", key: "tau" },
-    { label: "Extra", key: "any" },
+    { label: "Phi", key: "phi", color: CATEGORY_META.phi.color },
+    { label: "Sigma", key: "sigma", color: CATEGORY_META.sigma.color },
+    { label: "Rho", key: "rho", color: CATEGORY_META.rho.color },
+    { label: "Tau", key: "tau", color: CATEGORY_META.tau.color },
+    { label: "Extra", key: "any", color: CATEGORY_META.any.color },
   ];
 
   return (
@@ -269,7 +266,9 @@ export default function Points() {
                   <Circle
                     key={c.key}
                     label={c.label}
-                    value={totals[c.key] || 0}
+                    color={c.color}
+                    value={c.key === "any" ? anyPoints : (totals[c.key] || 0)}
+                    target={minPerCategory}
                     index={index}
                   />
                 ))}
@@ -320,15 +319,15 @@ export default function Points() {
                           transition={{ duration: 0.3, delay: index * 0.05 + 0.3, ease: "easeOut" }}
                           whileHover={{ backgroundColor: 'rgba(125, 52, 52, 0.03)' }}
                         >
-                          <td>{e.eventTitle || e.source || "Manual Entry"}</td>
-                          <td>
+                          <td data-label="Event">{e.eventTitle || e.source || "Manual Entry"}</td>
+                          <td data-label="Category">
                             <span className="points-category-pill" style={{ backgroundColor: `${meta.color}15`, color: meta.color }}>
                               {meta.label}
                             </span>
                           </td>
-                          <td className="points-score-cell">+{e.points}</td>
-                          <td>{new Date(e.createdAt).toLocaleDateString()}</td>
-                          <td>{e.note || "-"}</td>
+                          <td data-label="Points" className="points-score-cell">+{e.points}</td>
+                          <td data-label="Date">{new Date(e.createdAt).toLocaleDateString()}</td>
+                          <td data-label="Note">{e.note || "-"}</td>
                         </motion.tr>
                       );
                     })}
@@ -383,7 +382,7 @@ export default function Points() {
               </div>
               <div className="points-req-list">
                 {["phi", "sigma", "rho", "tau", "any"].map((cat, index) => {
-                  const have = cat === "any" ? (totals.any || 0) : (reqs.requirements?.buckets?.[cat]?.have ?? totals[cat] ?? 0);
+                  const have = cat === "any" ? anyPoints : (reqs.requirements?.buckets?.[cat]?.have ?? totals[cat] ?? 0);
                   const met = cat === "any" ? (have >= minPerCategory) : (reqs.requirements?.buckets?.[cat]?.met ?? (have >= minPerCategory));
                   const need = Math.max(0, minPerCategory - have);
                   const percent = Math.max(0, Math.min(100, (have / Math.max(1, minPerCategory)) * 100));

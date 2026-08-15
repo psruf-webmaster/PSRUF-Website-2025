@@ -5,6 +5,7 @@ const User = require('../models/User');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { sanitizeMemberStatuses } = require('../constants/memberOptions');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -54,7 +55,7 @@ function toSafeUser(user) {
     year: user.year,
     profilePicUrl: user.profilePicUrl || '',
     role: user.role || [],
-    memberStatus: user.memberStatus || [],
+    memberStatus: sanitizeMemberStatuses(user.memberStatus),
     positions: user.positions || [],
     permissions: user.permissions || [],
   };
@@ -85,7 +86,10 @@ router.get('/approved', async (req, res) => {
     if (!user) return res.status(401).json({ message: 'User required' });
 
     const users = await User.find({ isApproved: true }).select('_id firstName lastName role memberStatus');
-    return res.json(users);
+    return res.json(users.map(current => ({
+      ...current.toObject(),
+      memberStatus: sanitizeMemberStatuses(current.memberStatus),
+    })));
   } catch (err) {
     console.error('Users approved error:', err);
     return res.status(500).json({ message: 'Server error' });

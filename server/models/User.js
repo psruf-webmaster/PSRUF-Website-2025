@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
+const {
+  MEMBER_STATUS_ENUM,
+  SCHOLARSHIP_TIERS,
+  DEFAULT_SCHOLARSHIP,
+} = require('../constants/memberOptions');
 
 const ROLE_ENUM = [
   'pending', 'pnm', 'candidate', 'candOfficer', 'member',
   'alumni', 'officer', 'exec', 'webmaster', 'webdev'
-];
-
-const MEMBER_STATUS_ENUM = [
-  'active', 'inactive', 'probation', 'seniorStatus',
-  'scholarship', 'co-op', 'dropped'
 ];
 
 const PERMISSION_ENUM = [
@@ -20,6 +20,10 @@ const PositionSchema = new mongoose.Schema({
   title: { type: String },
   startDate: { type: Date },
   endDate: { type: Date },
+}, { _id: false });
+
+const FeedReadStateSchema = new mongoose.Schema({
+  lastReadAt: { type: Date, default: null },
 }, { _id: false });
 
 const userSchema = new mongoose.Schema({
@@ -36,11 +40,22 @@ const userSchema = new mongoose.Schema({
   major: String,
   year: String,
   profilePicUrl: String,
+  feedReadState: {
+    type: Map,
+    of: FeedReadStateSchema,
+    default: () => ({}),
+  },
 
   memberStatus: {
     type: [String],
     enum: MEMBER_STATUS_ENUM,
     default: ['active'],
+  },
+
+  scholarship: {
+    type: Number,
+    enum: SCHOLARSHIP_TIERS,
+    default: DEFAULT_SCHOLARSHIP,
   },
 
   role: {

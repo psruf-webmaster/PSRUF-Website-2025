@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, useMatch, useNavigate, useResolvedPath } from "react-router-dom";
+import { NavLink, useLocation, useMatch, useNavigate, useResolvedPath } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function isOfficerLevel(user) {
@@ -32,8 +32,10 @@ function NavMenuLink({ to, children, end, onClick }) {
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [isCompactNav, setIsCompactNav] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 980 : false));
   const profileMenuRef = useRef(null);
 
   const publicLinks = useMemo(
@@ -83,6 +85,20 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", onDocumentClick);
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => setIsCompactNav(window.innerWidth <= 980);
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setProfileMenuOpen(false);
+  }, [location.pathname]);
+
+  const compactAccountMeta = Array.isArray(user?.role) ? user.role.join(', ') : user?.role || 'Member';
+
   return (
     <header className="site-navbar">
       <nav className="site-nav">
@@ -96,7 +112,7 @@ export default function Navbar() {
         </NavLink>
 
         {/* Public links - only shown when NOT signed in */}
-        {!user && (
+        {!user && !isCompactNav && (
           <div className="site-nav-links">
             {publicLinks.map((link) => (
               <NavMenuLink key={link.to} to={link.to}>
@@ -109,23 +125,32 @@ export default function Navbar() {
         <div className="site-nav-actions">
           {!user ? (
             <>
-              <NavMenuLink to="/login">Sign In</NavMenuLink>
-              <NavMenuLink to="/signup">Sign Up</NavMenuLink>
+              {!isCompactNav && <NavMenuLink to="/login">Sign In</NavMenuLink>}
+              {!isCompactNav && <NavMenuLink to="/signup">Sign Up</NavMenuLink>}
+              {isCompactNav && (
+                <button
+                  className={`hamburger-menu-toggle ${menuOpen ? "active" : ""}`}
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  aria-label="Toggle menu"
+                >
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </button>
+              )}
             </>
           ) : (
             <>
-              {/* Member links - shown prominently when signed in */}
-              <div className="site-nav-links">
+              {!isCompactNav && <div className="site-nav-links">
                 {memberLinks.map((link) => (
                   <NavMenuLink key={link.to} to={link.to}>
                     {link.label}
                   </NavMenuLink>
                 ))}
-              </div>
+              </div>}
 
-              <NavMenuLink to="/feeds/chapter">Announcements</NavMenuLink>
+              {!isCompactNav && <NavMenuLink to="/feeds/chapter">Feeds</NavMenuLink>}
 
-              {/* Hamburger menu button - shown when signed in */}
               <button
                 className={`hamburger-menu-toggle ${menuOpen ? "active" : ""}`}
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -136,7 +161,7 @@ export default function Navbar() {
                 <span></span>
               </button>
 
-              <div className="profile-menu" ref={profileMenuRef}>
+              {!isCompactNav && <div className="profile-menu" ref={profileMenuRef}>
                 <button
                   type="button"
                   className={`profile-menu-trigger ${profileMenuOpen ? "active" : ""}`}
@@ -176,16 +201,41 @@ export default function Navbar() {
                     </button>
                   </div>
                 )}
-              </div>
+              </div>}
             </>
           )}
         </div>
       </nav>
 
-      {/* Hamburger menu dropdown - shows admin pages first, then public links */}
       {menuOpen && (
         <div className="hamburger-menu-dropdown">
-          {/* Admin pages first - only shown when logged in and is admin */}
+          {user && isCompactNav && (
+            <div className="hamburger-account-card">
+              <img
+                className="profile-avatar"
+                src={profileImage}
+                alt={`${displayName || 'User'} avatar`}
+              />
+              <div>
+                <div className="hamburger-account-name">{displayName}</div>
+                <div className="hamburger-account-meta">{compactAccountMeta}</div>
+              </div>
+            </div>
+          )}
+
+          {user && isCompactNav && (
+            <>
+              {memberLinks.map((link) => (
+                <NavMenuLink key={link.to} to={link.to} onClick={closeMenu}>
+                  {link.label}
+                </NavMenuLink>
+              ))}
+              <NavMenuLink to="/feeds/chapter" onClick={closeMenu}>Feeds</NavMenuLink>
+              <NavMenuLink to="/profile" onClick={closeMenu}>Profile Settings</NavMenuLink>
+              <div className="hamburger-divider"></div>
+            </>
+          )}
+
           {user && isAdmin && (
             <>
               <NavMenuLink 
@@ -216,12 +266,35 @@ export default function Navbar() {
             </>
           )}
 
-          {/* Public links below admin pages */}
           {publicLinks.map((link) => (
             <NavMenuLink key={link.to} to={link.to} onClick={closeMenu}>
               {link.label}
             </NavMenuLink>
           ))}
+
+          {!user && isCompactNav && (
+            <>
+              <div className="hamburger-divider"></div>
+              <NavMenuLink to="/login" onClick={closeMenu}>Sign In</NavMenuLink>
+              <NavMenuLink to="/signup" onClick={closeMenu}>Sign Up</NavMenuLink>
+            </>
+          )}
+
+          {user && isCompactNav && (
+            <>
+              <div className="hamburger-divider"></div>
+              <button
+                type="button"
+                className="hamburger-menu-item-button"
+                onClick={() => {
+                  closeMenu();
+                  onLogout();
+                }}
+              >
+                Log out
+              </button>
+            </>
+          )}
         </div>
       )}
     </header>

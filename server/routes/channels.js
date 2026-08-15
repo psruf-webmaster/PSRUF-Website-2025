@@ -5,16 +5,12 @@ const Channel = require('../models/Channel');
 const User = require('../models/User');
 const Post = require('../models/Post');
 const { POSITIONS } = require('../constants/positions');
+const { MEMBER_STATUS_ENUM } = require('../constants/memberOptions');
 
 const ROLE_ENUM = [
   'pending', 'pnm', 'candidate', 'candOfficer', 'member',
   'alumni', 'officer', 'exec', 'webmaster', 'webdev'
 ];
-const MEMBER_STATUS_ENUM = [
-  'active', 'inactive', 'probation', 'seniorStatus',
-  'scholarship', 'co-op', 'dropped'
-];
-
 function normalizeArray(val) {
   if (!val) return [];
   return Array.isArray(val) ? val : [val];
@@ -77,16 +73,89 @@ function canDelete(user, channel) {
   return false;
 }
 
+function getRoles(userLike) {
+  return Array.isArray(userLike?.role) ? userLike.role : (userLike?.role ? [userLike.role] : []);
+}
+
+function getStatuses(userLike) {
+  return Array.isArray(userLike?.memberStatus) ? userLike.memberStatus : (userLike?.memberStatus ? [userLike.memberStatus] : []);
+}
+
+function hasAnyRole(userLike, wanted) {
+  const roles = getRoles(userLike).map(role => String(role).toLowerCase());
+  return wanted.some(role => roles.includes(String(role).toLowerCase()));
+}
+
+function isApprovedUser(userLike) {
+  return userLike?.isApproved === true;
+}
+
+function isBuiltinSlug(slug) {
+  return ['chapterAnnouncements', 'penguinParties', 'officerFeed', 'alumniFeed'].includes(String(slug || ''));
+}
+
+function builtinMembershipMatch(channel, userLike) {
+  const slug = String(channel?.slug || '');
+  const roles = getRoles(userLike);
+  const statuses = getStatuses(userLike);
+
+  if (!isApprovedUser(userLike)) return false;
+
+  if (slug === 'chapterAnnouncements') {
+    return statuses.includes('active');
+  }
+  if (slug === 'alumniFeed') {
+    return roles.some(role => ['member', 'alumni', 'officer', 'exec', 'webmaster', 'webdev'].includes(role));
+  }
+  if (slug === 'penguinParties') {
+    return true;
+  }
+  if (slug === 'officerFeed') {
+    return roles.some(role => ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer'].includes(role));
+  }
+
+  return null;
+}
+
 async function ensureBuiltins() {
   const builtins = [
-    { name: 'Chapter Announcements', slug: 'chapterAnnouncements', includeRoles: ['member','officer','exec','webmaster','webdev'] },
-    { name: 'Penguin Parties', slug: 'penguinParties', includeRoles: ['member','officer','exec','webmaster','webdev','alumni'] },
-    { name: 'Officer Feed', slug: 'officerFeed', includeRoles: ['officer','exec','webmaster','webdev','candOfficer'] },
+    {
+      name: 'Chapter Announcements',
+      slug: 'chapterAnnouncements',
+      includeRoles: ['member', 'officer', 'exec', 'webmaster', 'webdev'],
+      includeMemberStatuses: ['active'],
+    },
+    {
+      name: 'Penguin Parties',
+      slug: 'penguinParties',
+      includeRoles: [],
+      includeMemberStatuses: [],
+    },
+    {
+      name: 'Officer Feed',
+      slug: 'officerFeed',
+      includeRoles: ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer'],
+      includeMemberStatuses: [],
+    },
+    {
+      name: 'Alumni Feed',
+      slug: 'alumniFeed',
+      includeRoles: ['member', 'alumni', 'officer', 'exec', 'webmaster', 'webdev'],
+      includeMemberStatuses: [],
+    },
   ];
   for (const c of builtins) {
     await Channel.findOneAndUpdate(
       { slug: c.slug },
-      { $setOnInsert: { name: c.name, slug: c.slug, includeRoles: c.includeRoles, isArchived: false } },
+      {
+        $set: {
+          name: c.name,
+          slug: c.slug,
+          includeRoles: c.includeRoles,
+          includeMemberStatuses: c.includeMemberStatuses,
+        },
+        $setOnInsert: { isArchived: false },
+      },
       { upsert: true, new: true }
     );
   }
@@ -97,8 +166,13 @@ function resolveEffectiveMembers(channel, users) {
   const excluded = new Set((channel.excludedMembers || []).map(id => String(id)));
 
   const fromRules = users.filter(u => {
-    const roles = Array.isArray(u.role) ? u.role : (u.role ? [u.role] : []);
-    const statuses = Array.isArray(u.memberStatus) ? u.memberStatus : (u.memberStatus ? [u.memberStatus] : []);
+    const builtinMatch = builtinMembershipMatch(channel, u);
+    if (builtinMatch != null) return builtinMatch;
+
+    if (!isApprovedUser(u)) return false;
+
+    const roles = getRoles(u);
+    const statuses = getStatuses(u);
     const roleHit = (channel.includeRoles || []).length === 0 || roles.some(r => (channel.includeRoles || []).includes(r));
     const statusHit = (channel.includeMemberStatuses || []).length === 0 || statuses.some(s => (channel.includeMemberStatuses || []).includes(s));
     return roleHit && statusHit;
@@ -113,21 +187,33 @@ function resolveEffectiveMembers(channel, users) {
 router.get('/', async (req, res) => {
   try {
     await ensureBuiltins();
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ message: 'User required' });
+
     const channels = await Channel.find({});
+    const users = await User.find({ isApproved: true }).select('_id role memberStatus isApproved');
     const rows = await Promise.all(channels.map(async (c) => {
       const postCount = await Post.countDocuments({ feed: c.slug });
+      const memberIds = resolveEffectiveMembers(c, users);
+      const canView = isExec(user) || isWebTeam(user) || memberIds.includes(String(user._id));
       return {
-      _id: c._id,
-      name: c.name,
-      slug: c.slug,
-      isArchived: c.isArchived,
-      createdByUserId: c.createdByUserId,
-      manualCount: (c.manualMembers || []).length,
-      postCount,
-      hasPosts: postCount > 0,
+        _id: c._id,
+        name: c.name,
+        slug: c.slug,
+        isArchived: c.isArchived,
+        createdByUserId: c.createdByUserId,
+        manualMembers: c.manualMembers || [],
+        excludedMembers: c.excludedMembers || [],
+        includeRoles: c.includeRoles || [],
+        includeMemberStatuses: c.includeMemberStatuses || [],
+        manualCount: (c.manualMembers || []).length,
+        memberCount: memberIds.length,
+        postCount,
+        hasPosts: postCount > 0,
+        canView,
       };
     }));
-    return res.json(rows);
+    return res.json(rows.filter(row => row.canView || isExec(user) || isWebTeam(user)));
   } catch (err) {
     console.error('channels list error:', err);
     return res.status(500).json({ message: 'Server error' });
@@ -156,6 +242,9 @@ router.post('/', async (req, res) => {
     return res.status(201).json(channel);
   } catch (err) {
     console.error('channel create error:', err);
+    if (err?.code === 11000) {
+      return res.status(409).json({ message: 'A channel with that slug already exists.' });
+    }
     return res.status(500).json({ message: 'Server error' });
   }
 });
@@ -260,7 +349,7 @@ router.get('/:id/members', async (req, res) => {
     const channel = await Channel.findById(req.params.id);
     if (!channel) return res.status(404).json({ message: 'Not found' });
 
-    const users = await User.find({}).select('_id firstName lastName role memberStatus');
+    const users = await User.find({ isApproved: true }).select('_id firstName lastName role memberStatus isApproved profilePicUrl');
     const ids = resolveEffectiveMembers(channel, users);
     const members = users.filter(u => ids.includes(String(u._id))).map(u => ({
       _id: u._id,
@@ -268,6 +357,7 @@ router.get('/:id/members', async (req, res) => {
       lastName: u.lastName,
       role: u.role,
       memberStatus: u.memberStatus,
+      profilePicUrl: u.profilePicUrl || '',
     }));
     return res.json(members);
   } catch (err) {
