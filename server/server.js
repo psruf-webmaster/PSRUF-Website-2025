@@ -44,18 +44,30 @@ app.use('/api/requirements', requirementsRouter);
 
 // Serve the React build when backend and frontend are deployed together.
 const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
-if (fs.existsSync(clientBuildPath)) {
+const clientIndexPath = path.join(clientBuildPath, 'index.html');
+const hasClientBuild = fs.existsSync(clientIndexPath);
+
+if (hasClientBuild) {
   app.use(express.static(clientBuildPath));
+} else {
+  console.warn('⚠️ Client build not found; SPA routes will return 404 until the client is built.');
 }
 // Basic health checks
-app.get('/', (req, res) => res.send('API is running...'));
 app.get('/api/hello', (req, res) => res.json({ message: 'Hello from the backend!' }));
 
 // SPA fallback so direct URL visits/refreshes resolve to index.html.
-if (fs.existsSync(clientBuildPath)) {
-  app.get(/^(?!\/api|\/uploads).*/, (req, res) => {
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
+if (hasClientBuild) {
+  app.get('/', (req, res) => {
+    res.sendFile(clientIndexPath);
   });
+
+  app.use((req, res, next) => {
+    if (req.method !== 'GET') return next();
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
+    res.sendFile(clientIndexPath);
+  });
+} else {
+  app.get('/', (req, res) => res.send('API is running...'));
 }
 // --- MongoDB + Start server ---
 async function startServer() {
