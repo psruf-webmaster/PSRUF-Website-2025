@@ -1,13 +1,9 @@
 const mongoose = require('mongoose');
+const { MEMBER_STATUS_ENUM } = require('../constants/memberOptions');
 
 const ROLE_ENUM = [
   'pending', 'pnm', 'candidate', 'candOfficer', 'member',
   'alumni', 'officer', 'exec', 'webmaster', 'webdev'
-];
-
-const MEMBER_STATUS_ENUM = [
-  'active', 'inactive', 'probation', 'seniorStatus',
-  'scholarship', 'co-op', 'dropped'
 ];
 
 const channelSchema = new mongoose.Schema({

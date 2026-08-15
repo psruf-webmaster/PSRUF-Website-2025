@@ -1,20 +1,86 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const User = require('../models/User');
 const { sendApprovalEmail } = require('../utils/email');
 const { POSITIONS, EXEC_POSITIONS, EXEC } = require('../constants/positions');
-
-// TODO: replace with real auth (require webmaster/webdev)
-const allowAllTemporarily = (req, res, next) => next();
+const {
+  MEMBER_STATUS_ENUM,
+  sanitizeMemberStatuses,
+  isValidScholarshipTier,
+  normalizeScholarship,
+} = require('../constants/memberOptions');
 
 const ALLOWED_ROLES = [
   'pending', 'pnm', 'candidate', 'candOfficer', 'member',
   'alumni', 'officer', 'exec', 'webmaster', 'webdev'
 ];
-const ALLOWED_MEMBER_STATUS = [
-  'active', 'inactive', 'probation', 'seniorStatus',
-  'scholarship', 'co-op', 'dropped'
-];
+const ALLOWED_MEMBER_STATUS = MEMBER_STATUS_ENUM;
+
+const ADMIN_USERS_POSITION_KEYS = new Set([
+  EXEC.PRESIDENT,
+  EXEC.VP_STANDARDS,
+  EXEC.VP_FINANCE,
+  POSITIONS.WEBMASTER.key,
+]);
+
+async function getUser(req) {
+  if (req.user) return req.user;
+  const auth = req.header('authorization') || '';
+  if (auth.toLowerCase().startsWith('bearer ')) {
+    const id = auth.slice(7).trim();
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      const user = await User.findById(id);
+      if (user) return user;
+    }
+  }
+  return null;
+}
+
+function canAccessAdminUsers(user) {
+  if (!user) return false;
+  const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
+  const positions = Array.isArray(user.positions) ? user.positions : [];
+  if (roles.includes('webmaster')) return true;
+  return positions.some(position => ADMIN_USERS_POSITION_KEYS.has(position?.key));
+}
+
+function canManageScholarship(user) {
+  if (!user) return false;
+  const positions = Array.isArray(user.positions) ? user.positions : [];
+  return positions.some(position => position?.key === EXEC.VP_FINANCE);
+}
+
+function serializeAdminUser(user, viewer) {
+  const source = typeof user.toObject === 'function' ? user.toObject() : { ...user };
+  const serialized = {
+    ...source,
+    memberStatus: sanitizeMemberStatuses(source.memberStatus),
+  };
+
+  if (canManageScholarship(viewer)) {
+    serialized.scholarship = normalizeScholarship(source.scholarship);
+  } else {
+    delete serialized.scholarship;
+  }
+
+  return serialized;
+}
+
+async function requireAdminUsersAccess(req, res, next) {
+  try {
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ message: 'User required' });
+    if (!canAccessAdminUsers(user)) {
+      return res.status(403).json({ message: 'Not allowed to manage admin users' });
+    }
+    req.user = user;
+    return next();
+  } catch (err) {
+    console.error('Admin access error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
 
 // derive permission flags based on roles/positions
 function derivePermissions({ roles = [], positions = [] }) {
@@ -37,10 +103,10 @@ function derivePermissions({ roles = [], positions = [] }) {
  * GET /api/admin/pending
  * legacy convenience (same as /users?state=pending)
  */
-router.get('/pending', allowAllTemporarily, async (req, res) => {
+router.get('/pending', requireAdminUsersAccess, async (req, res) => {
   try {
     const pendingUsers = await User.find({ approvalState: 'pending' }).select('-personalPassword');
-    res.json(pendingUsers);
+    res.json(pendingUsers.map(current => serializeAdminUser(current, req.user)));
   } catch (err) {
     console.error('Pending users error:', err);
     res.status(500).json({ message: 'Server error' });
@@ -51,12 +117,12 @@ router.get('/pending', allowAllTemporarily, async (req, res) => {
  * GET /api/admin/users?state=pending|approved|rejected
  * List users by approval state (omit to list all)
  */
-router.get('/users', allowAllTemporarily, async (req, res) => {
+router.get('/users', requireAdminUsersAccess, async (req, res) => {
   try {
     const { state } = req.query;
     const q = state ? { approvalState: state } : {};
     const users = await User.find(q).select('-personalPassword');
-    res.json(users);
+    res.json(users.map(current => serializeAdminUser(current, req.user)));
   } catch (err) {
     console.error('Users list error:', err);
     res.status(500).json({ message: 'Server error' });
@@ -67,9 +133,9 @@ router.get('/users', allowAllTemporarily, async (req, res) => {
  * PATCH /api/admin/approve/:id
  * Body: { role?: string|string[], memberStatus?: string|string[], positions?: string|string[] }
  */
-router.patch('/approve/:id', allowAllTemporarily, async (req, res) => {
+router.patch('/approve/:id', requireAdminUsersAccess, async (req, res) => {
   try {
-    let { role, memberStatus, positions } = req.body;
+    let { role, memberStatus, positions, scholarship } = req.body;
 
     const roles = role == null ? undefined : (Array.isArray(role) ? role : [role]);
     const statuses = memberStatus == null ? undefined : (Array.isArray(memberStatus) ? memberStatus : [memberStatus]);
@@ -80,6 +146,12 @@ router.patch('/approve/:id', allowAllTemporarily, async (req, res) => {
     }
     if (statuses && !statuses.every(s => ALLOWED_MEMBER_STATUS.includes(s))) {
       return res.status(400).json({ message: 'Invalid memberStatus value(s).' });
+    }
+    if (scholarship != null && !canManageScholarship(req.user)) {
+      return res.status(403).json({ message: 'Only VP Finance can manage scholarships.' });
+    }
+    if (scholarship != null && !isValidScholarshipTier(scholarship)) {
+      return res.status(400).json({ message: 'Invalid scholarship tier.' });
     }
 
     // Expand position keys into objects
@@ -99,8 +171,9 @@ router.patch('/approve/:id', allowAllTemporarily, async (req, res) => {
       approvedAt: new Date(),
     };
     if (roles) update.role = roles;
-    if (statuses) update.memberStatus = statuses;
+    if (statuses) update.memberStatus = sanitizeMemberStatuses(statuses);
     if (posObjects) update.positions = posObjects;
+    if (scholarship != null) update.scholarship = normalizeScholarship(scholarship);
 
     // compute permissions for storage
     const future = {
@@ -123,7 +196,7 @@ router.patch('/approve/:id', allowAllTemporarily, async (req, res) => {
       console.error('Approval email error:', e.message);
     }
 
-    res.json({ message: 'Approved', user });
+    res.json({ message: 'Approved', user: serializeAdminUser(user, req.user) });
   } catch (err) {
     console.error('Approve error:', err);
     res.status(400).json({ message: err.message || 'Server error' });
@@ -134,7 +207,7 @@ router.patch('/approve/:id', allowAllTemporarily, async (req, res) => {
  * DELETE /api/admin/reject/:id?reason=...
  * Archive as rejected (do NOT delete)
  */
-router.delete('/reject/:id', allowAllTemporarily, async (req, res) => {
+router.delete('/reject/:id', requireAdminUsersAccess, async (req, res) => {
   try {
     const { reason } = req.query;
     const user = await User.findByIdAndUpdate(
@@ -163,9 +236,9 @@ router.delete('/reject/:id', allowAllTemporarily, async (req, res) => {
  * Body: { role?: string[], memberStatus?: string[] }
  * (For editing approved users later)
  */
-router.patch('/users/:id/roles-status', allowAllTemporarily, async (req, res) => {
+router.patch('/users/:id/roles-status', requireAdminUsersAccess, async (req, res) => {
   try {
-    let { role, memberStatus } = req.body;
+    let { role, memberStatus, scholarship } = req.body;
     if (role && !Array.isArray(role)) role = [role];
     if (memberStatus && !Array.isArray(memberStatus)) memberStatus = [memberStatus];
 
@@ -174,6 +247,12 @@ router.patch('/users/:id/roles-status', allowAllTemporarily, async (req, res) =>
     }
     if (memberStatus && !memberStatus.every(s => ALLOWED_MEMBER_STATUS.includes(s))) {
       return res.status(400).json({ message: 'Invalid memberStatus value(s).' });
+    }
+    if (scholarship != null && !canManageScholarship(req.user)) {
+      return res.status(403).json({ message: 'Only VP Finance can manage scholarships.' });
+    }
+    if (scholarship != null && !isValidScholarshipTier(scholarship)) {
+      return res.status(400).json({ message: 'Invalid scholarship tier.' });
     }
 
     const now = new Date();
@@ -185,8 +264,13 @@ router.patch('/users/:id/roles-status', allowAllTemporarily, async (req, res) =>
     }
 
     if (memberStatus) {
-      updateOps.$set.memberStatus = memberStatus;
-      updateOps.$push.memberStatusHistory = { values: memberStatus, at: now, by: null };
+      const sanitizedStatuses = sanitizeMemberStatuses(memberStatus);
+      updateOps.$set.memberStatus = sanitizedStatuses;
+      updateOps.$push.memberStatusHistory = { values: sanitizedStatuses, at: now, by: null };
+    }
+
+    if (scholarship != null) {
+      updateOps.$set.scholarship = normalizeScholarship(scholarship);
     }
 
     // refresh permissions if roles changed
@@ -204,10 +288,39 @@ router.patch('/users/:id/roles-status', allowAllTemporarily, async (req, res) =>
       .select('-personalPassword');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    res.json({ message: 'Updated', user });
+    res.json({ message: 'Updated', user: serializeAdminUser(user, req.user) });
   } catch (err) {
     console.error('roles-status update error:', err);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.patch('/users/:id/scholarship', requireAdminUsersAccess, async (req, res) => {
+  try {
+    const { scholarship } = req.body || {};
+
+    if (!canManageScholarship(req.user)) {
+      return res.status(403).json({ message: 'Only VP Finance can manage scholarships.' });
+    }
+    if (!isValidScholarshipTier(scholarship)) {
+      return res.status(400).json({ message: 'Invalid scholarship tier.' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: { scholarship: normalizeScholarship(scholarship) } },
+      { new: true }
+    ).select('-personalPassword');
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    return res.json({
+      message: 'Scholarship updated',
+      user: serializeAdminUser(user, req.user),
+    });
+  } catch (err) {
+    console.error('Scholarship update error:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -219,7 +332,7 @@ router.patch('/users/:id/roles-status', allowAllTemporarily, async (req, res) =>
  * Moves removed positions to positionsHistory with endDate.
  * Adds new positions with startDate = now.
  */
-router.patch('/users/:id/positions', allowAllTemporarily, async (req, res) => {
+router.patch('/users/:id/positions', requireAdminUsersAccess, async (req, res) => {
   try {
     const { add = [], remove = [] } = req.body; // arrays of keys
     const user = await User.findById(req.params.id);
@@ -270,7 +383,7 @@ router.patch('/users/:id/positions', allowAllTemporarily, async (req, res) => {
  * Helper: audience search for texting later
  * GET /api/admin/people?role=member&position=WEBMASTER
  */
-router.get('/people', allowAllTemporarily, async (req, res) => {
+router.get('/people', requireAdminUsersAccess, async (req, res) => {
   try {
     const { role, position } = req.query;
     const q = { approvalState: 'approved' };

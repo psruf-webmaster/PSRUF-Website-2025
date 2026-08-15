@@ -30,6 +30,7 @@ app.use('/api', (req, res, next) => {
 const authRoutes  = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const feedsRouter = require('./routes/feeds');
+const channelsRouter = require('./routes/channels');
 const eventsRouter = require('./routes/events');
 const usersRouter = require('./routes/users');
 const ledgerRouter = require('./routes/ledger');
@@ -37,6 +38,7 @@ const requirementsRouter = require('./routes/requirements');
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/feeds', feedsRouter);
+app.use('/api/channels', channelsRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/ledger', ledgerRouter);
