@@ -110,7 +110,7 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
   - maybe allow officer to send additional notifs or announcement blasts specific to that event
  
 
-## 🔵 P3 – Nice to Have / Later
+## 🔵 P2 – Nice to Have / Later
 
 ### **Before Deployment**
 - Full regression testing after UI and notifications implemented
@@ -121,10 +121,3 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
  
 ### **Post-Deployment**
 - Start working on mobile application
-
----
-
-## 📝 Notes
-- The **ledger is the only source of truth** for points
-- Requirements are computed dynamically — no stored flags
-- SMS notifs and choosing a provider are the immediate next step
