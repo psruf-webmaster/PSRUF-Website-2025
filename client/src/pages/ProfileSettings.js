@@ -42,8 +42,11 @@ export default function ProfileSettings() {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [preview, setPreview] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoInputKey, setPhotoInputKey] = useState(0);
@@ -55,6 +58,11 @@ export default function ProfileSettings() {
     ufEmail: '',
     major: '',
     year: '',
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
 
   useEffect(() => {
@@ -79,6 +87,13 @@ export default function ProfileSettings() {
     setForm((current) => ({ ...current, [name]: value }));
     setError('');
     setMessage('');
+  };
+
+  const handlePasswordChange = (event) => {
+    const { name, value } = event.target;
+    setPasswordForm((current) => ({ ...current, [name]: value }));
+    setPasswordError('');
+    setPasswordMessage('');
   };
 
   const handleImageChange = async (event) => {
@@ -122,6 +137,36 @@ export default function ProfileSettings() {
       setError(saveError.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (event) => {
+    event.preventDefault();
+    setSavingPassword(true);
+    setPasswordError('');
+    setPasswordMessage('');
+
+    try {
+      const response = await fetch('/api/users/me/password', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user?.id || '',
+        },
+        body: JSON.stringify(passwordForm),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Unable to update password.');
+      }
+
+      setPasswordMessage(result.message || 'Password updated.');
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (saveError) {
+      setPasswordError(saveError.message);
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -188,28 +233,32 @@ export default function ProfileSettings() {
             accept="image/*"
             onChange={handleImageChange}
           />
-          <h2>{headerName}</h2>
-          <p>{form.personalEmail || 'Personal email'}</p>
-          <dl className="profile-summary-list">
-            <div>
-              <dt>Major</dt>
-              <dd>{form.major || 'Not set'}</dd>
-            </div>
-            <div>
-              <dt>Year</dt>
-              <dd>{form.year || 'Not set'}</dd>
-            </div>
-            <div>
-              <dt>UF Email</dt>
-              <dd>{form.ufEmail || 'Not set'}</dd>
-            </div>
-            <div>
-              <dt>Phone</dt>
-              <dd>{form.phoneNumber || 'Not set'}</dd>
-            </div>
-          </dl>
+          <h3>{headerName}</h3>
+          <p className="profile-email">{form.personalEmail || 'Personal email'}</p>
+          <div className="profile-summary-divider"></div>
+          <ul className="profile-summary-list">
+            <li>
+              <span className="label">Major</span>
+              <span className="value">{form.major || 'Not set'}</span>
+            </li>
+            <li>
+              <span className="label">Year</span>
+              <span className="value">
+                {yearOptions.find((opt) => opt.value === form.year)?.label || form.year || 'Not set'}
+              </span>
+            </li>
+            <li>
+              <span className="label">UF Email</span>
+              <span className="value">{form.ufEmail || 'Not set'}</span>
+            </li>
+            <li>
+              <span className="label">Phone</span>
+              <span className="value">{form.phoneNumber || 'Not set'}</span>
+            </li>
+          </ul>
         </motion.aside>
 
+        <div style={{ display: 'grid', gap: '1rem' }}>
         <motion.section
           className="profile-form-card"
           initial={{ opacity: 0, x: 14 }}
@@ -273,7 +322,6 @@ export default function ProfileSettings() {
                   ))}
                 </select>
               </label>
-
             </div>
 
             {error && <div className="profile-feedback profile-feedback-error">{error}</div>}
@@ -301,6 +349,52 @@ export default function ProfileSettings() {
             </div>
           </form>
         </motion.section>
+        <motion.section
+          className="profile-form-card"
+          initial={{ opacity: 0, x: 14 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.45, delay: 0.24, ease: 'easeOut' }}
+        >
+          <form className="profile-form" onSubmit={handlePasswordSubmit}>
+            <div className="profile-form-header">
+              <h2>Reset password</h2>
+              <p>Change your sign-in password with your current password.</p>
+            </div>
+
+            <div className="profile-form-grid">
+              <label className="profile-field profile-field-wide">
+                <span>Current password</span>
+                <input type="password" name="currentPassword" value={passwordForm.currentPassword} onChange={handlePasswordChange} />
+              </label>
+
+              <label className="profile-field">
+                <span>New password</span>
+                <input type="password" name="newPassword" value={passwordForm.newPassword} onChange={handlePasswordChange} />
+              </label>
+
+              <label className="profile-field">
+                <span>Confirm new password</span>
+                <input type="password" name="confirmPassword" value={passwordForm.confirmPassword} onChange={handlePasswordChange} />
+              </label>
+            </div>
+
+            {passwordError && <div className="profile-feedback profile-feedback-error">{passwordError}</div>}
+            {passwordMessage && <div className="profile-feedback profile-feedback-success">{passwordMessage}</div>}
+
+            <div className="profile-form-actions">
+              <motion.button
+                className="button"
+                type="submit"
+                disabled={savingPassword}
+                whileHover={{ y: -1, scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {savingPassword ? 'Updating...' : 'Update password'}
+              </motion.button>
+            </div>
+          </form>
+        </motion.section>
+        </div>
       </div>
     </motion.div>
   );

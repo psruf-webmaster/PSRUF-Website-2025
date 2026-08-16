@@ -48,15 +48,41 @@ function formatStatusShortLabel(status) {
   return shortLabels[status] || formatStatusLabel(status);
 }
 
+function getRequirementRule(requirements) {
+  return requirements?.rule || "per-category";
+}
+
+function getRequirementSummary(requirements) {
+  const rule = getRequirementRule(requirements);
+
+  if (rule === "none") {
+    return "No point requirement";
+  }
+
+  if (rule === "anywhere") {
+    return `${requirements?.totalRequired || 50} points anywhere`;
+  }
+
+  return `${requirements?.minPerCategory || 50} per bucket + any`;
+}
+
 function isOverviewAllowed(user) {
-  const roles = Array.isArray(user?.role) ? user.role : (user?.role ? [user.role] : []);
-  return roles.some(role => ["exec", "webmaster"].includes(role));
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  return positionKeys.has("PRESIDENT")
+    || positionKeys.has("VP_STANDARDS")
+    || positionKeys.has("VP_FINANCE");
 }
 
 export default function PointsOverview() {
   const { user } = useAuth();
   const userId = user?._id || user?.id;
   const allowed = isOverviewAllowed(user);
+  const userScopeKey = useMemo(() => JSON.stringify({
+    role: user?.role || [],
+    memberStatus: user?.memberStatus || [],
+    positions: user?.positions || [],
+  }), [user?.role, user?.memberStatus, user?.positions]);
   const [status, setStatus] = useState("all");
   const [q, setQ] = useState("");
   const [rows, setRows] = useState([]);
@@ -104,9 +130,15 @@ export default function PointsOverview() {
   };
 
   useEffect(() => {
+    if (!allowed) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
     load(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, q]);
+  }, [allowed, status, q, userScopeKey]);
 
   useEffect(() => {
     const handleResize = () => setViewportWidth(window.innerWidth);
@@ -252,7 +284,7 @@ export default function PointsOverview() {
                 >
                   <td style={styles.memberCell(isMobile)}>
                     <div style={styles.memberName}>{r.firstName} {r.lastName}</div>
-                    <div style={styles.memberSubtext}>{isMobile ? "Tap row for requirement detail" : "Hover for requirement bucket detail"}</div>
+                    <div style={styles.memberSubtext}>{isMobile ? "Tap row for requirement detail" : "Hover for requirement detail"}</div>
                   </td>
                   <td style={styles.statusCell(isMobile)}>
                     <div style={styles.statusWrap}>
@@ -285,33 +317,57 @@ export default function PointsOverview() {
               <div style={styles.tooltipHeader}>
                 <div>
                   <div style={styles.tooltipName}>{hoverRow.firstName} {hoverRow.lastName}</div>
-                  <div style={styles.tooltipSubtitle}>Requirement bucket preview</div>
+                  <div style={styles.tooltipSubtitle}>{getRequirementSummary(hoverRow.requirements)}</div>
                 </div>
                 <span style={hoverRow.requirements?.metAll ? styles.meetsBadge : styles.needsBadge}>
                   {hoverRow.requirements?.metAll ? "On Track" : "Not Yet Met"}
                 </span>
               </div>
-              <div style={styles.tooltipList}>
-              {["phi","sigma","rho","tau","any"].map(cat => {
-                const have = hoverRow.requirements?.buckets?.[cat]?.have;
-                const anyHave = hoverRow.any?.have;
-                const totalVal = hoverRow.totals?.[cat];
-                const value = have ?? anyHave ?? totalVal ?? 0;
-                const need = hoverRow.requirements?.buckets?.[cat]?.need;
-                return (
-                  <div key={cat} style={styles.tooltipRow}>
-                    <span style={styles.tooltipCategory(cat)}>
-                      <span style={styles.headerIcon}>{CATEGORY_META[cat].icon}</span>
-                      {CATEGORY_META[cat].label}
+              {getRequirementRule(hoverRow.requirements) === "per-category" ? (
+                <div style={styles.tooltipList}>
+                {["phi","sigma","rho","tau","any"].map(cat => {
+                  const have = hoverRow.requirements?.buckets?.[cat]?.have;
+                  const anyHave = hoverRow.any?.have;
+                  const totalVal = hoverRow.totals?.[cat];
+                  const value = have ?? anyHave ?? totalVal ?? 0;
+                  const need = cat === "any"
+                    ? hoverRow.any?.need
+                    : hoverRow.requirements?.buckets?.[cat]?.need;
+                  return (
+                    <div key={cat} style={styles.tooltipRow}>
+                      <span style={styles.tooltipCategory(cat)}>
+                        <span style={styles.headerIcon}>{CATEGORY_META[cat].icon}</span>
+                        {CATEGORY_META[cat].label}
+                      </span>
+                      <span style={styles.tooltipValue}>
+                        {value}
+                        {need != null && <span style={styles.tooltipNeed}> / need {need}</span>}
+                      </span>
+                    </div>
+                  );
+                })}
+                </div>
+              ) : (
+                <div style={styles.tooltipList}>
+                  <div style={styles.tooltipRow}>
+                    <span style={styles.tooltipCategory("total")}>
+                      <span style={styles.headerIcon}>{CATEGORY_META.total.icon}</span>
+                      Total points
                     </span>
                     <span style={styles.tooltipValue}>
-                      {value}
-                      {need != null && <span style={styles.tooltipNeed}> / need {need}</span>}
+                      {hoverRow.totals?.total || 0}
+                      {getRequirementRule(hoverRow.requirements) === "anywhere" ? (
+                        <span style={styles.tooltipNeed}> / need {hoverRow.requirements?.totalRequired || 50}</span>
+                      ) : null}
                     </span>
                   </div>
-                );
-              })}
-              </div>
+                  <div style={styles.tooltipRuleNote}>
+                    {getRequirementRule(hoverRow.requirements) === "anywhere"
+                      ? "Any category counts toward this requirement."
+                      : "This member does not have a semester point requirement for the current status."}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -806,5 +862,10 @@ const styles = {
     fontSize: 12,
     fontWeight: 500,
     color: "rgba(67, 37, 52, 0.66)",
+  },
+  tooltipRuleNote: {
+    fontSize: 13,
+    lineHeight: 1.5,
+    color: "rgba(67, 37, 52, 0.78)",
   },
 };

@@ -35,8 +35,8 @@ function canAccessAdminUsers(user) {
   if (!user) return false;
   const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
   const positions = Array.isArray(user.positions) ? user.positions : [];
-  if (roles.includes("webmaster")) return true;
-  return positions.some(position => ["PRESIDENT", "VP_STANDARDS", "VP_FINANCE", "WEBMASTER"].includes(position?.key));
+  if (roles.some((role) => ["webmaster", "webdev"].includes(String(role).toLowerCase()))) return true;
+  return positions.some(position => ["WEBMASTER", "WEBDEV"].includes(position?.key));
 }
 
 function canManageScholarship(user) {

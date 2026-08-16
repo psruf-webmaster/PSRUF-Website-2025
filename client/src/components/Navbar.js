@@ -2,10 +2,40 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useMatch, useNavigate, useResolvedPath } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+function getRoles(user) {
+  return Array.isArray(user?.role) ? user.role : (user?.role ? [user.role] : []);
+}
+
+function isAlumniUser(user) {
+  return getRoles(user).some(role => String(role).toLowerCase() === "alumni");
+}
+
+function canAccessPointsOverview(user) {
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  return positionKeys.has("PRESIDENT")
+    || positionKeys.has("VP_STANDARDS")
+    || positionKeys.has("VP_FINANCE");
+}
+
+function canAccessLedger(user) {
+  return getRoles(user).some(role => String(role).toLowerCase() === "exec");
+}
+
+function canAccessApprovals(user) {
+  const roles = getRoles(user).map((role) => String(role).toLowerCase());
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  return roles.includes("webmaster")
+    || roles.includes("webdev")
+    || positionKeys.has("WEBMASTER")
+    || positionKeys.has("WEBDEV");
+}
+
 function isOfficerLevel(user) {
   if (!user) return false;
   if (user.isOfficer || user.isExec || user.isWebmaster) return true;
-  const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
+  const roles = getRoles(user);
   return roles.some(r =>
     r === "officer" ||
     r === "exec" ||
@@ -37,6 +67,10 @@ export default function Navbar() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isCompactNav, setIsCompactNav] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 980 : false));
   const profileMenuRef = useRef(null);
+  const isAlumni = isAlumniUser(user);
+  const canSeePointsOverview = canAccessPointsOverview(user);
+  const canSeeLedger = canAccessLedger(user);
+  const canSeeApprovals = canAccessApprovals(user);
 
   const publicLinks = useMemo(
     () => [
@@ -51,13 +85,20 @@ export default function Navbar() {
   );
 
   const memberLinks = useMemo(
-    () => [
-      { to: "/dashboard", label: "Dashboard" },
-      { to: "/events", label: "Events" },
-      { to: "/calendar", label: "Calendar" },
-      { to: "/points", label: "Points" },
-    ],
-    []
+    () => {
+      const links = [
+        { to: "/dashboard", label: "Dashboard" },
+        { to: "/events", label: "Events" },
+        { to: "/calendar", label: "Calendar" },
+      ];
+
+      if (!isAlumni) {
+        links.push({ to: "/points", label: "Points" });
+      }
+
+      return links;
+    },
+    [isAlumni]
   );
 
   const isAdmin = isOfficerLevel(user);
@@ -236,32 +277,40 @@ export default function Navbar() {
             </>
           )}
 
-          {user && isAdmin && (
+          {user && (canSeeApprovals || canSeeLedger || canSeePointsOverview) && (
             <>
-              <NavMenuLink 
-                to="/admin/approvals" 
-                onClick={closeMenu}
-              >
-                Approvals
-              </NavMenuLink>
-              <NavMenuLink 
-                to="/admin/users" 
-                onClick={closeMenu}
-              >
-                Users
-              </NavMenuLink>
-              <NavMenuLink 
-                to="/ledger" 
-                onClick={closeMenu}
-              >
-                Ledger
-              </NavMenuLink>
-              <NavMenuLink 
-                to="/points-overview" 
-                onClick={closeMenu}
-              >
-                Points Overview
-              </NavMenuLink>
+              {canSeeApprovals && (
+                <NavMenuLink 
+                  to="/admin/approvals" 
+                  onClick={closeMenu}
+                >
+                  Approvals
+                </NavMenuLink>
+              )}
+              {isAdmin && (
+                <NavMenuLink 
+                  to="/admin/users" 
+                  onClick={closeMenu}
+                >
+                  Users
+                </NavMenuLink>
+              )}
+              {canSeeLedger && (
+                <NavMenuLink 
+                  to="/ledger" 
+                  onClick={closeMenu}
+                >
+                  Ledger
+                </NavMenuLink>
+              )}
+              {canSeePointsOverview && (
+                <NavMenuLink 
+                  to="/points-overview" 
+                  onClick={closeMenu}
+                >
+                  Points Overview
+                </NavMenuLink>
+              )}
               <div className="hamburger-divider"></div>
             </>
           )}

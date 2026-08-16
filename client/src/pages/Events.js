@@ -97,22 +97,14 @@ function isCreatorRole(user) {
   return ["officer", "exec", "webmaster", "webdev", "candofficer"].some((role) => hasRole(user, role));
 }
 
-function isOfficerManager(user) {
-  return ["officer", "exec", "webmaster", "webdev"].some((role) => hasRole(user, role));
-}
-
 function canRsvp(user) {
   return !!user;
 }
 
 function isManager(user, event) {
   if (!user || !event) return false;
-  if (isOfficerManager(user)) return true;
   const userId = user._id || user.id;
   if (userId && (event.createdBy === userId || String(event.createdBy) === String(userId))) return true;
-  if (Array.isArray(event.coHosts) && userId) {
-    return event.coHosts.some((host) => String(host) === String(userId) || String(host?._id) === String(userId));
-  }
   return false;
 }
 

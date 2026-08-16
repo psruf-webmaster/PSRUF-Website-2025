@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 const User = require('../models/User');
+const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -179,6 +180,44 @@ router.patch('/me', upload.single('profilePhoto'), async (req, res) => {
     return res.json({ message: 'Profile updated successfully.', user: toSafeUser(user) });
   } catch (err) {
     console.error('Users me update error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.patch('/me/password', async (req, res) => {
+  try {
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ message: 'User required' });
+
+    const {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    } = req.body || {};
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: 'All password fields are required.' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: 'New passwords do not match.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters long.' });
+    }
+
+    const matches = await bcrypt.compare(currentPassword, user.personalPassword || '');
+    if (!matches) {
+      return res.status(400).json({ message: 'Current password is incorrect.' });
+    }
+
+    user.personalPassword = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    return res.json({ message: 'Password updated successfully.' });
+  } catch (err) {
+    console.error('Users me password update error:', err);
     return res.status(500).json({ message: 'Server error' });
   }
 });

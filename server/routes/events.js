@@ -294,6 +294,15 @@ function canManageEvent(event, user) {
   return false;
 }
 
+function isEventCreator(event, user) {
+  if (!user || !event) return false;
+  return String(event.createdBy || '') === String(user._id || user.id || '');
+}
+
+function canManageEventDetails(event, user) {
+  return isEventCreator(event, user);
+}
+
 function computePoints(eventDoc) {
   const override = eventDoc?.points?.overrideTotalPoints;
   if (override != null) return override;
@@ -509,14 +518,6 @@ function canCreate(user) {
   return roles.some(r => ROLE_CREATE.includes(r));
 }
 
-function requireCreatorOrOfficer(eventDoc, user) {
-  if (isOfficerLevel(user)) return true;
-  if (isCandOfficer(user)) {
-    return String(eventDoc.createdBy || '') === String(user?._id || '');
-  }
-  return false;
-}
-
 function validateEventPayload(body, isCandOfficerCreator) {
   const errors = [];
   if (!body?.title) errors.push('title required');
@@ -638,7 +639,7 @@ router.patch('/:id', eventUpload, async (req, res) => {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    if (!requireCreatorOrOfficer(event, user)) {
+    if (!isEventCreator(event, user)) {
       return res.status(403).json({ message: 'Not allowed to edit this event' });
     }
 
@@ -720,6 +721,33 @@ router.patch('/:id', eventUpload, async (req, res) => {
   }
 });
 
+// GET /api/events/public/pnm
+// Public homepage feed for upcoming PNM/recruitment events
+router.get('/public/pnm', async (req, res) => {
+  try {
+    const now = new Date();
+
+    const events = await Event.find({
+      isPublished: true,
+      endAt: { $gte: now },
+      'visibility.rolesAllowed': 'pnm',
+    })
+      .sort({ startAt: 1 })
+      .limit(6)
+      .select(
+        'title description startAt endAt location imageUrl visibility'
+      )
+      .lean();
+
+    return res.json(events);
+  } catch (err) {
+    console.error('Public PNM events error:', err);
+    return res.status(500).json({
+      message: 'Unable to load PNM events',
+    });
+  }
+});
+
 // GET /api/events/:id
 router.get('/:id', async (req, res) => {
   try {
@@ -746,7 +774,7 @@ router.get('/:id/manage', async (req, res) => {
 
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (!canManageEvent(event, user)) return res.status(403).json({ message: 'Not allowed' });
+    if (!canManageEventDetails(event, user)) return res.status(403).json({ message: 'Not allowed' });
 
     const ids = new Set();
     (event.rsvps || []).forEach(r => ids.add(String(r.user)));
@@ -885,7 +913,7 @@ router.patch('/:id/cohosts', async (req, res) => {
 
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (!canManageEvent(event, user)) return res.status(403).json({ message: 'Not allowed' });
+    if (!canManageEventDetails(event, user)) return res.status(403).json({ message: 'Not allowed' });
 
     const coHostIds = Array.isArray(req.body?.coHostIds) ? req.body.coHostIds : [];
     if (coHostIds.length > 7) return res.status(400).json({ message: 'Max 7 co-hosts' });
@@ -918,7 +946,7 @@ router.put('/:id/attendance', async (req, res) => {
 
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (!canManageEvent(event, user)) return res.status(403).json({ message: 'Not allowed' });
+    if (!canManageEventDetails(event, user)) return res.status(403).json({ message: 'Not allowed' });
 
     const entries = Array.isArray(req.body?.entries) ? req.body.entries : [];
     const pointsDefault = computePoints(event);
@@ -1002,7 +1030,7 @@ router.post('/:id/mass-rsvp', async (req, res) => {
 
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (!canManageEvent(event, user)) return res.status(403).json({ message: 'Not allowed' });
+    if (!canManageEventDetails(event, user)) return res.status(403).json({ message: 'Not allowed' });
 
     const { status = 'going', roles = [], memberStatuses = [], shiftId } = req.body || {};
     if (!['going', 'maybe', 'notGoing'].includes(status)) {
@@ -1037,7 +1065,7 @@ router.post('/:id/manage-members', async (req, res) => {
 
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (!canManageEvent(event, user)) return res.status(403).json({ message: 'Not allowed' });
+    if (!canManageEventDetails(event, user)) return res.status(403).json({ message: 'Not allowed' });
 
     const { userId, rsvpStatus = 'going', attendanceStatus = 'present', shiftId, pointsAwarded } = req.body || {};
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
@@ -1115,7 +1143,7 @@ router.delete('/:id', async (req, res) => {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    if (!requireCreatorOrOfficer(event, user)) {
+    if (!isEventCreator(event, user)) {
       return res.status(403).json({ message: 'Not allowed to delete this event' });
     }
 

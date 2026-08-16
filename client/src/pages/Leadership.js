@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 
+const headshotContext = require.context('../headshots', false, /\.(png|jpe?g|svg|webp)$/i);
+
+function getHeadshotUrl(imgPath) {
+  return headshotContext(`.${imgPath.replace('/headshots', '')}`);
+}
+
 const leaderData = {
   '2024-2025': {
     'Leaders': [
@@ -90,7 +96,7 @@ export default function Leadership() {
         <div className="leader-grid">
           {executiveBoard.map((leader, index) => (
             <div className="leader-card" key={`${leader.name}-${index}`}>
-              <img src={leader.img} alt={leader.name} className="leader-image" />
+              <img src={getHeadshotUrl(leader.img)} alt={leader.name} className="leader-image" />
               <div className="leader-name">{leader.name}</div>
               <div className="leader-title">{leader.title}</div>
               <div className="leader-links">
