@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Award,
@@ -16,6 +16,19 @@ import { useAuth } from '../context/AuthContext';
 import './Dashboard.css';
 
 const POINT_MAX = 50;
+
+const progressColorByKey = {
+  phi: '#D4608A',
+  sigma: '#6D2C2C',
+  rho: '#6B5558',
+  tau: '#A04E74',
+  any: '#CE90A8',
+};
+
+function isAlumniUser(user) {
+  const roles = Array.isArray(user?.role) ? user.role : (user?.role ? [user.role] : []);
+  return roles.some((role) => String(role).toLowerCase() === 'alumni');
+}
 
 function IconCalendar() {
   return (
@@ -120,8 +133,14 @@ function formatRelativeTime(dateInput) {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const userId = user?._id || user?.id;
+  const isAlumni = isAlumniUser(user);
+  const userScopeKey = useMemo(() => JSON.stringify({
+    role: user?.role || [],
+    memberStatus: user?.memberStatus || [],
+    scholarship: user?.scholarship ?? 0,
+    positions: user?.positions || [],
+  }), [user?.role, user?.memberStatus, user?.scholarship, user?.positions]);
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [recentActivity, setRecentActivity] = useState([]);
@@ -131,6 +150,7 @@ export default function Dashboard() {
   const [activeRingKey, setActiveRingKey] = useState(null);
   const [ringHoverPos, setRingHoverPos] = useState({ x: 130, y: 24 });
   const [requirements, setRequirements] = useState({
+    rule: 'per-category',
     minPerCategory: POINT_MAX,
     buckets: {
       phi: { have: 0, need: POINT_MAX, met: false },
@@ -165,6 +185,26 @@ export default function Dashboard() {
       }
     };
     const loadPoints = async () => {
+      if (isAlumni) {
+        setPoints({ phi: 0, sigma: 0, rho: 0, tau: 0, any: 0 });
+        setRequirements({
+          rule: 'none',
+          minPerCategory: 0,
+          buckets: {
+            phi: { have: 0, need: 0, met: true },
+            sigma: { have: 0, need: 0, met: true },
+            rho: { have: 0, need: 0, met: true },
+            tau: { have: 0, need: 0, met: true },
+          },
+          any: { have: 0, need: 0, met: true },
+          metAll: true,
+          totalRequired: 0,
+          totalEarned: 0,
+        });
+        setLoadingPoints(false);
+        return;
+      }
+
       setLoadingPoints(true);
       try {
         const res = await fetch('/api/requirements/active/self', { headers, credentials: 'include' });
@@ -190,11 +230,12 @@ export default function Dashboard() {
 
         setPoints({ ...catTotals, any: anyBucket.have || 0 });
         setRequirements({
+          rule: data.requirements?.rule || 'per-category',
           minPerCategory,
           buckets,
           any: anyBucket,
           metAll: Boolean(data.requirements?.metAll),
-          totalRequired: minPerCategory * 5,
+          totalRequired: Number(data.requirements?.totalRequired ?? (minPerCategory * 5)),
           totalEarned: Number(totals.total || 0),
         });
       } catch (e) {
@@ -323,7 +364,7 @@ export default function Dashboard() {
       loadPoints();
       loadRecentActivity();
     }
-  }, [headers, userId]);
+  }, [headers, isAlumni, userId, userScopeKey]);
 
   const circles = [
     { label: 'Phi', key: 'phi' },
@@ -333,50 +374,78 @@ export default function Dashboard() {
     { label: 'Extra', key: 'any' },
   ];
 
+  const requirementRule = requirements.rule || 'per-category';
+  const totalPoints = requirements.totalEarned || circles.reduce((sum, c) => sum + (points[c.key] || 0), 0);
+  const totalRequired = requirements.totalRequired || null;
+
   const progressRows = circles.map((c) => {
-  if (c.key === 'any') {
-    const have = requirements.any?.have || 0;
-    const required = requirements.minPerCategory || POINT_MAX; 
-    const need = Math.max(0, required - have);
-    const ratio = required > 0 ? Math.max(0, Math.min(100, (have / required) * 100)) : 0;
-    
+    if (requirementRule === 'per-category') {
+      if (c.key === 'any') {
+        const have = requirements.any?.have || 0;
+        const required = requirements.minPerCategory || POINT_MAX;
+        const need = Math.max(0, required - have);
+        const ratio = required > 0 ? Math.max(0, Math.min(100, (have / required) * 100)) : 0;
+
+        return {
+          ...c,
+          value: have,
+          need,
+          required,
+          ratio,
+        };
+      }
+
+      const bucket = requirements.buckets?.[c.key] || { have: points[c.key] || 0, need: POINT_MAX, met: false };
+      const required = requirements.minPerCategory || POINT_MAX;
+      const rawHave = bucket.have || 0;
+      const have = Math.min(rawHave, required);
+      const need = Math.max(0, required - have);
+      const ratio = required > 0 ? Math.max(0, Math.min(100, (have / required) * 100)) : 0;
+
+      return {
+        ...c,
+        value: have,
+        rawValue: rawHave,
+        need,
+        required,
+        ratio,
+      };
+    }
+
+    if (requirementRule === 'anywhere') {
+      const required = totalRequired || POINT_MAX;
+      const have = c.key === 'any'
+        ? (requirements.any?.have || totalPoints)
+        : (requirements.buckets?.[c.key]?.have ?? points[c.key] ?? 0);
+      const need = c.key === 'any' ? Math.max(0, required - have) : 0;
+      const ratio = required > 0 ? Math.max(0, Math.min(100, (have / required) * 100)) : 0;
+
+      return {
+        ...c,
+        value: have,
+        rawValue: have,
+        need,
+        required,
+        ratio,
+      };
+    }
+
+    const have = c.key === 'any'
+      ? (requirements.any?.have || 0)
+      : (requirements.buckets?.[c.key]?.have ?? points[c.key] ?? 0);
+
     return {
       ...c,
       value: have,
-      need,
-      required,
-      ratio,
-    };
-  }
-
-
-    const bucket = requirements.buckets?.[c.key] || { have: points[c.key] || 0, need: POINT_MAX, met: false };
-    const required = requirements.minPerCategory || POINT_MAX;
-    const rawHave = bucket.have || 0;
-    const have = Math.min(rawHave, required);
-    const need = Math.max(0, required - have);
-    const ratio = required > 0 ? Math.max(0, Math.min(100, (have / required) * 100)) : 0;
-
-    return {
-      ...c,
-      value: have,
-      rawValue: rawHave,
-      need,
-      required,
-      ratio,
+      rawValue: have,
+      need: 0,
+      required: 0,
+      ratio: 0,
     };
   });
 
   const coreProgressRows = progressRows.filter((row) => row.key !== 'any');
   const anyProgressRow = progressRows.find((row) => row.key === 'any');
-
-  const progressColorByKey = {
-    phi: '#D4608A',
-    sigma: '#6D2C2C',
-    rho: '#6B5558',
-    tau: '#A04E74',
-    any: '#CE90A8',
-  };
 
   const diagramRings = useMemo(() => {
     const displayOrder = ['phi', 'sigma', 'rho', 'tau', 'any'];
@@ -407,20 +476,29 @@ export default function Dashboard() {
   }, [diagramRings]);
 
   const firstName = user?.firstName || 'Member';
-  const totalPoints = requirements.totalEarned || circles.reduce((sum, c) => sum + (points[c.key] || 0), 0);
-  const totalRequired = requirements.totalRequired || null;
+  const effectiveTotal = requirementRule === 'per-category'
+    ? progressRows.reduce((sum, row) => sum + Math.min(row.value, row.required || 0), 0)
+    : requirementRule === 'anywhere'
+      ? Math.min(totalPoints, totalRequired || 0)
+      : 0;
 
-  // Calculate progress by capping each category at its requirement
-  const effectiveTotal = progressRows.reduce((sum, row) => sum + Math.min(row.value, row.required || 0), 0);
-
-  const totalRatio = totalRequired ? Math.max(0, Math.min(100, (effectiveTotal / totalRequired) * 100)) : 0;
+  const totalRatio = totalRequired ? Math.max(0, Math.min(100, (effectiveTotal / totalRequired) * 100)) : 100;
   const remainingPoints = totalRequired ? Math.max(0, Math.round(totalRequired - effectiveTotal)) : null;
 
   const progressCard = useMemo(() => {
+    if (requirementRule === 'none') {
+      return {
+        title: 'No point requirement this semester',
+        body: 'Your current status does not require semester points right now.',
+        icon: Sparkles,
+        tone: 'excellent',
+      };
+    }
+
     if (requirements.metAll) {
       return {
         title: 'Semester goals completed!',
-        body: 'Amazing work. You met every requirement.',
+        body: requirementRule === 'anywhere' ? 'Amazing work. You met the total points requirement.' : 'Amazing work. You met every requirement.',
         icon: Sparkles,
         tone: 'excellent',
       };
@@ -430,7 +508,7 @@ export default function Dashboard() {
       return {
         title: 'You are making great progress this semester!',
         body: remainingPoints !== null
-          ? `${remainingPoints} points left to reach full requirements.`
+          ? `${remainingPoints} points left to reach ${requirementRule === 'anywhere' ? 'the total requirement' : 'full requirements'}.`
           : 'You are close to completing your requirements.',
         icon: TrendingUp,
         tone: 'great',
@@ -441,7 +519,7 @@ export default function Dashboard() {
       return {
         title: 'Nice momentum this semester!',
         body: remainingPoints !== null
-          ? `Keep going. You need ${remainingPoints} more points.`
+          ? `Keep going. You need ${remainingPoints} more points${requirementRule === 'anywhere' ? ' in any category' : ''}.`
           : 'Keep going, you are building strong momentum.',
         icon: Award,
         tone: 'steady',
@@ -451,12 +529,12 @@ export default function Dashboard() {
     return {
       title: 'Let us build momentum this semester!',
       body: remainingPoints !== null
-        ? `Start with one event this week. You need ${remainingPoints} more points.`
+        ? `Start with one event this week. You need ${remainingPoints} more points${requirementRule === 'anywhere' ? ' in any category' : ''}.`
         : 'Start with one event this week to build your points.',
       icon: Calendar,
       tone: 'focus',
     };
-  }, [requirements.metAll, totalRatio, remainingPoints]);
+  }, [requirementRule, requirements.metAll, totalRatio, remainingPoints]);
 
   const ProgressCardIcon = progressCard.icon;
 
@@ -474,14 +552,14 @@ export default function Dashboard() {
       <header className="dashboard-hero">
         <p className="dashboard-overline">Chapter Snapshot</p>
         <h1>Welcome back, {firstName}!</h1>
-        <p>Here is your weekly outlook and points progress.</p>
+        <p>{isAlumni ? 'Here are your upcoming events and recent chapter touchpoints.' : 'Here is your weekly outlook and points progress.'}</p>
       </header>
 
       {error && <div className="dashboard-error">{error}</div>}
 
       <div className="dashboard-main-grid">
         <div className="dashboard-primary-column">
-          <section className="dashboard-stats-grid" aria-label="Points summary">
+          {!isAlumni && <section className="dashboard-stats-grid" aria-label="Points summary">
             <motion.article
               className="dashboard-stat-card"
               initial={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -519,7 +597,7 @@ export default function Dashboard() {
                 </div>
               ) : null}
             </motion.article>
-          </section>
+          </section>}
 
           <motion.section
             className="dashboard-section dashboard-section-events"
@@ -619,7 +697,7 @@ export default function Dashboard() {
         </div>
 
         <aside className="dashboard-sidebar-column">
-          <motion.section
+          {!isAlumni ? <motion.section
             className="dashboard-section dashboard-points-panel"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -631,13 +709,39 @@ export default function Dashboard() {
               </span>
               <div>
                 <h2>Points Progress</h2>
-                <p>Track each point requirement at a glance.</p>
+                <p>{requirementRule === 'per-category' ? 'Track each point requirement at a glance.' : requirementRule === 'anywhere' ? 'Track your total points toward the anywhere requirement.' : 'No semester point requirement for your current status.'}</p>
               </div>
               <Link to="/points" className="dashboard-details-button">Details</Link>
             </div>
 
             {loadingPoints ? (
               <LoadingState text="Loading points..." />
+            ) : requirementRule !== 'per-category' ? (
+              <div className="dashboard-progress-list" aria-label="Points progress summary">
+                <div className="dashboard-progress-row">
+                  <div className="dashboard-progress-labels">
+                    <span>{requirementRule === 'anywhere' ? 'Total points' : 'Requirement'}</span>
+                    <span>{requirementRule === 'anywhere' ? `${Math.round(totalPoints)} / ${Math.round(totalRequired || 0)}` : 'No minimum'}</span>
+                  </div>
+                  {requirementRule === 'anywhere' ? (
+                    <div className="dashboard-progress-track">
+                      <motion.div
+                        className="dashboard-progress-fill"
+                        style={{ background: progressColorByKey.any || '#6d2c2c' }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${totalRatio}%` }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+                <div className="dashboard-progress-row">
+                  <div className="dashboard-progress-labels">
+                    <span>Phi / Sigma / Rho / Tau</span>
+                    <span>{[points.phi, points.sigma, points.rho, points.tau].map((value) => Math.round(value)).join(' / ')}</span>
+                  </div>
+                </div>
+              </div>
             ) : (
               <>
                 <div className="dashboard-progress-list" aria-label="Points progress by category">
@@ -763,7 +867,36 @@ export default function Dashboard() {
                 </div>
               </>
             )}
-          </motion.section>
+          </motion.section> : <motion.section
+            className="dashboard-section dashboard-points-panel"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <div className="dashboard-section-heading">
+              <span className="dashboard-section-icon" aria-hidden="true">
+                <IconStar />
+              </span>
+              <div>
+                <h2>Alumni Snapshot</h2>
+                <p>Alumni do not have semester point requirements.</p>
+              </div>
+            </div>
+            <div className="dashboard-progress-list" aria-label="Alumni overview">
+              <div className="dashboard-progress-row">
+                <div className="dashboard-progress-labels">
+                  <span>Points requirement</span>
+                  <span>None</span>
+                </div>
+              </div>
+              <div className="dashboard-progress-row">
+                <div className="dashboard-progress-labels">
+                  <span>Focus</span>
+                  <span>Events and chapter activity</span>
+                </div>
+              </div>
+            </div>
+          </motion.section>}
 
           <motion.section
             className={`dashboard-encouragement-card dashboard-encouragement-${progressCard.tone}`}
@@ -793,7 +926,7 @@ export default function Dashboard() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.65 }}
             >
-              {progressCard.body}
+              {isAlumni ? 'Stay connected through upcoming events and recent activity across the chapter.' : progressCard.body}
             </motion.p>
           </motion.section>
         </aside>

@@ -37,21 +37,17 @@ function isOfficer(user) {
   return roles.some(r => OFFICER_ROLES.includes(r));
 }
 
+function isExecUser(user) {
+  if (!user) return false;
+  const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
+  return roles.some(role => String(role).toLowerCase() === 'exec');
+}
+
 function getAllowedManualCategories(user) {
   if (!user) return [];
 
-  const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
   const positions = Array.isArray(user.positions) ? user.positions : [];
   const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
-
-  if (
-    roles.includes('webmaster') ||
-    positionKeys.has(POSITIONS.WEBMASTER.key) ||
-    positionKeys.has(EXEC.PRESIDENT) ||
-    positionKeys.has(EXEC.VP_STANDARDS)
-  ) {
-    return [...POINT_CATEGORIES];
-  }
 
   const allowed = new Set();
   Object.entries(MANUAL_CATEGORY_BY_EXEC).forEach(([positionKey, category]) => {
@@ -61,6 +57,14 @@ function getAllowedManualCategories(user) {
   });
 
   return [...allowed];
+}
+
+function isPointsOverviewAllowed(user) {
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  return positionKeys.has(EXEC.PRESIDENT)
+    || positionKeys.has(EXEC.VP_STANDARDS)
+    || positionKeys.has(EXEC.VP_FINANCE);
 }
 
 function buildDateFilter(from, to) {
@@ -172,7 +176,7 @@ router.get('/summary/self', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const user = await getUser(req);
-    if (!isOfficer(user)) return res.status(403).json({ message: 'Not allowed' });
+    if (!isExecUser(user)) return res.status(403).json({ message: 'Not allowed' });
 
     const match = {};
     if (req.query.userId && mongoose.Types.ObjectId.isValid(req.query.userId)) {
@@ -272,9 +276,7 @@ router.get('/overview', async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
-    const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
-    const isAllowed = roles.some(role => ['exec', 'webmaster'].includes(role));
-    if (!isAllowed) return res.status(403).json({ message: 'Not allowed' });
+    if (!isPointsOverviewAllowed(user)) return res.status(403).json({ message: 'Not allowed' });
 
     const matchUsers = { isApproved: req.query.approved === 'false' ? undefined : true };
     if (req.query.memberStatus) {
@@ -312,7 +314,7 @@ router.get('/overview', async (req, res) => {
     const rows = users.map(u => {
       const l = ledgerMap.get(String(u._id)) || {};
       const cat = l.totalsByCategory || {};
-      const reqs = buildRequirements(cat, u.scholarship);
+      const reqs = buildRequirements(cat, u.scholarship, u.memberStatus);
       return {
         userId: u._id,
         firstName: u.firstName || '',
@@ -332,6 +334,7 @@ router.get('/overview', async (req, res) => {
           metAll: reqs.metAll,
           minPerCategory: reqs.minPerCategory,
           totalRequired: reqs.totalRequired,
+          rule: reqs.rule,
         },
       };
     });
@@ -349,8 +352,6 @@ router.get('/overview', async (req, res) => {
 router.post('/manual', async (req, res) => {
   try {
     const user = await getUser(req);
-    if (!isOfficer(user)) return res.status(403).json({ message: 'Not allowed' });
-
     const allowedCategories = getAllowedManualCategories(user);
     if (allowedCategories.length === 0) {
       return res.status(403).json({ message: 'You are not allowed to add manual point adjustments' });

@@ -4,22 +4,35 @@ import { Link } from 'react-router-dom';
 
 function SignInUp() {
   return (
-    <div className="signinup-container">
-      <div className="login-box">
-        <h1>LOGIN</h1>
-        <form>
-          <label>Email</label>
-          <input type="email" placeholder="Enter email" />
-          <label>Password</label>
-          <input type="password" placeholder="Enter password" />
-          <button type="submit">Log In</button>
-        </form>
-      </div>
+    <div className="signinup-form-container">
+      <h1>Login</h1>
+      <form className="signinup-form">
+        <div className="form-row">
+          <label>Email<span>*</span></label>
+          <input 
+            type="email" 
+            placeholder="example@gmail.com" 
+            required 
+          />
+        </div>
 
-      <div className="signup-box">
-        <h1>SIGN-UP</h1>
+        <div className="form-row">
+          <label>Password<span>*</span></label>
+          <input 
+            type="password" 
+            placeholder="Enter your password" 
+            required 
+          />
+        </div>
+
+        <button type="submit">
+          Log In
+        </button>
+      </form>
+
+      <div className="signinup-footer">
         <p>
-          New to our website? <Link to="/signup"><u>Sign up here</u></Link>
+          New to our website? <Link to="/signup">Sign up here</Link>
         </p>
       </div>
     </div>

@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const CATEGORIES = ["all", "phi", "sigma", "rho", "tau"];
-const CATEGORY_ORDER = ["phi", "sigma", "rho", "tau"];
 const PALETTE = {
   burgundy: "#6f2232",
   orchidPink: "#e8a1b3",
@@ -27,18 +26,8 @@ function normalizeRoleList(user) {
 function getAllowedManualCategories(user) {
   if (!user) return [];
 
-  const roles = normalizeRoleList(user);
   const positions = Array.isArray(user?.positions) ? user.positions : [];
   const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
-
-  if (
-    roles.includes("webmaster") ||
-    positionKeys.has("WEBMASTER") ||
-    positionKeys.has("PRESIDENT") ||
-    positionKeys.has("VP_STANDARDS")
-  ) {
-    return [...CATEGORY_ORDER];
-  }
 
   const allowed = [];
   if (positionKeys.has("VP_SOCIAL")) allowed.push("phi");
@@ -49,8 +38,8 @@ function getAllowedManualCategories(user) {
 }
 
 function useOfficer(user) {
-  const roles = normalizeRoleList(user);
-  return roles.some(r => ["officer", "exec", "webmaster", "webdev"].includes(r));
+  const roles = normalizeRoleList(user).map((role) => String(role).toLowerCase());
+  return roles.includes("exec");
 }
 
 export default function Ledger() {
@@ -186,12 +175,12 @@ export default function Ledger() {
               style={canManageManualAdjustments ? styles.primaryBtn : styles.disabledBtn}
               onClick={() => canManageManualAdjustments && setManualOpen(true)}
               disabled={!canManageManualAdjustments}
-              title={canManageManualAdjustments ? "Add Manual Adjustment" : "Only the Webmaster and designated VPs can add manual adjustments"}
+              title={canManageManualAdjustments ? "Add Manual Adjustment" : "Only the designated category VPs can add manual adjustments"}
             >
               Add Manual Adjustment
             </button>
             {!canManageManualAdjustments && (
-              <div style={styles.permissionBadge}>Manual adjustments are limited to the Webmaster and category VPs.</div>
+              <div style={styles.permissionBadge}>Manual adjustments are limited to VP Social, VP Scholarship, VP Service, and VP Finance for their own categories.</div>
             )}
           </div>
         </div>

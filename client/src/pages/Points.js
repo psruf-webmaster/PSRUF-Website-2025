@@ -19,7 +19,17 @@ function getCategoryMeta(category) {
   return CATEGORY_META[category] || { label: category?.toUpperCase?.() || "General", color: "#6D2C2C" };
 }
 
-function Circle({ label, value, target, color, index }) {
+function getRequirementRule(requirements) {
+  return requirements?.rule || "per-category";
+}
+
+function getRequirementHeadline(rule, totalRequired, minPerCategory) {
+  if (rule === "none") return "No points required for your current status";
+  if (rule === "anywhere") return `${totalRequired || 50} points required anywhere`;
+  return `${minPerCategory || POINT_MAX} required in each bucket plus extra`;
+}
+
+function Circle({ label, value, target, color, index, showTarget = true }) {
   const pct = Math.max(0, Math.min(1, value / Math.max(1, target || POINT_MAX)));
   const angle = pct * 360;
   const ringStyle = {
@@ -41,7 +51,9 @@ function Circle({ label, value, target, color, index }) {
       >
         <span>{label}</span>
       </div>
-      <div className="points-circle-value">{Math.round(value)} / {Math.round(target || POINT_MAX)}</div>
+      <div className="points-circle-value">
+        {showTarget ? `${Math.round(value)} / ${Math.round(target || POINT_MAX)}` : `${Math.round(value)} pts`}
+      </div>
     </motion.div>
   );
 }
@@ -49,6 +61,12 @@ function Circle({ label, value, target, color, index }) {
 export default function Points() {
   const { user } = useAuth();
   const userId = user?._id || user?.id;
+  const userScopeKey = useMemo(() => JSON.stringify({
+    role: user?.role || [],
+    memberStatus: user?.memberStatus || [],
+    scholarship: user?.scholarship ?? 0,
+    positions: user?.positions || [],
+  }), [user?.role, user?.memberStatus, user?.scholarship, user?.positions]);
   const location = useLocation();
   const navigate = useNavigate();
   const qs = new URLSearchParams(location.search);
@@ -145,7 +163,7 @@ export default function Points() {
       loadEntries(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, from, to, q, userId]);
+  }, [category, from, to, q, userId, userScopeKey]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -158,17 +176,25 @@ export default function Points() {
   }, [category, navigate, location.search]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
+  const requirementRule = getRequirementRule(reqs?.requirements);
   const minPerCategory = reqs?.requirements?.minPerCategory || POINT_MAX;
-  const totalRequired = reqs?.requirements?.totalRequired || (minPerCategory * 5);
+  const totalRequired = reqs?.requirements?.totalRequired ?? (minPerCategory * 5);
   const anyPoints = reqs?.any?.have ?? totals.any;
+  const categoryReferenceTarget = requirementRule === "per-category"
+    ? minPerCategory
+    : Math.max(totalRequired || 0, totals.grand || 0, 1);
 
-  const effectiveTotal = Math.min(totals.phi, minPerCategory) + 
-                         Math.min(totals.sigma, minPerCategory) + 
-                         Math.min(totals.rho, minPerCategory) + 
-                         Math.min(totals.tau, minPerCategory) + 
-                         Math.min(anyPoints, minPerCategory);
+  const effectiveTotal = requirementRule === "per-category"
+    ? Math.min(totals.phi, minPerCategory) + 
+      Math.min(totals.sigma, minPerCategory) + 
+      Math.min(totals.rho, minPerCategory) + 
+      Math.min(totals.tau, minPerCategory) + 
+      Math.min(anyPoints, minPerCategory)
+    : requirementRule === "anywhere"
+      ? Math.min(totals.grand, totalRequired)
+      : 0;
                          
-  const percentComplete = totalRequired > 0 ? Math.round((effectiveTotal / totalRequired) * 100) : 0;
+  const percentComplete = totalRequired > 0 ? Math.round((effectiveTotal / totalRequired) * 100) : 100;
   const safePercent = Math.max(0, Math.min(100, percentComplete));
 
   const circleData = [
@@ -240,7 +266,7 @@ export default function Points() {
                 </span>
                 <div>
                   <h2>{totals.grand} Points</h2>
-                  <p>{totalRequired} required this semester</p>
+                  <p>{getRequirementHeadline(requirementRule, totalRequired, minPerCategory)}</p>
                 </div>
               </div>
               <span className="points-semester-pill">Current Semester</span>
@@ -268,8 +294,9 @@ export default function Points() {
                     label={c.label}
                     color={c.color}
                     value={c.key === "any" ? anyPoints : (totals[c.key] || 0)}
-                    target={minPerCategory}
+                    target={categoryReferenceTarget}
                     index={index}
+                    showTarget={requirementRule === "per-category"}
                   />
                 ))}
               </div>
@@ -380,43 +407,59 @@ export default function Points() {
                   Requirements
                 </h3>
               </div>
-              <div className="points-req-list">
-                {["phi", "sigma", "rho", "tau", "any"].map((cat, index) => {
-                  const have = cat === "any" ? anyPoints : (reqs.requirements?.buckets?.[cat]?.have ?? totals[cat] ?? 0);
-                  const met = cat === "any" ? (have >= minPerCategory) : (reqs.requirements?.buckets?.[cat]?.met ?? (have >= minPerCategory));
-                  const need = Math.max(0, minPerCategory - have);
-                  const percent = Math.max(0, Math.min(100, (have / Math.max(1, minPerCategory)) * 100));
-                  const meta = getCategoryMeta(cat);
-                  
-                  return (
-                    <motion.div 
-                      key={cat} 
-                      className="points-req-item"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.3 + index * 0.1, ease: "easeOut" }}
-                      whileHover={{ x: 2 }}
-                    >
-                      <div className="points-req-line">
-                        <span>{meta.label}</span>
-                        <span>{have} / {minPerCategory}</span>
-                      </div>
-                      <div className="points-req-track">
-                        <motion.div 
-                          className="points-req-fill" 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${percent}%` }}
-                          transition={{ duration: 1, delay: 0.4 + index * 0.1, ease: "easeOut" }}
-                          style={{ backgroundColor: meta.color }} 
-                        />
-                      </div>
-                      <div className="points-req-copy" style={{ color: met ? "#127a4b" : "#7d3434" }}>
-                        {met ? "Requirement met" : `${need} points to go!`}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+              {requirementRule === "per-category" ? (
+                <div className="points-req-list">
+                  {["phi", "sigma", "rho", "tau", "any"].map((cat, index) => {
+                    const have = cat === "any" ? anyPoints : (reqs.requirements?.buckets?.[cat]?.have ?? totals[cat] ?? 0);
+                    const met = cat === "any" ? (reqs?.any?.met ?? (have >= minPerCategory)) : (reqs.requirements?.buckets?.[cat]?.met ?? (have >= minPerCategory));
+                    const need = cat === "any" ? (reqs?.any?.need ?? Math.max(0, minPerCategory - have)) : (reqs.requirements?.buckets?.[cat]?.need ?? Math.max(0, minPerCategory - have));
+                    const percent = Math.max(0, Math.min(100, (have / Math.max(1, minPerCategory)) * 100));
+                    const meta = getCategoryMeta(cat);
+                    
+                    return (
+                      <motion.div 
+                        key={cat} 
+                        className="points-req-item"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.3 + index * 0.1, ease: "easeOut" }}
+                        whileHover={{ x: 2 }}
+                      >
+                        <div className="points-req-line">
+                          <span>{meta.label}</span>
+                          <span>{have} / {minPerCategory}</span>
+                        </div>
+                        <div className="points-req-track">
+                          <motion.div 
+                            className="points-req-fill" 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${percent}%` }}
+                            transition={{ duration: 1, delay: 0.4 + index * 0.1, ease: "easeOut" }}
+                            style={{ backgroundColor: meta.color }} 
+                          />
+                        </div>
+                        <div className="points-req-copy" style={{ color: met ? "#127a4b" : "#7d3434" }}>
+                          {met ? "Requirement met" : `${need} points to go!`}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="points-req-list">
+                  <div className="points-req-item">
+                    <div className="points-req-line">
+                      <span>{requirementRule === "anywhere" ? "Total points" : "Current rule"}</span>
+                      <span>{requirementRule === "anywhere" ? `${totals.grand} / ${totalRequired}` : "No minimum"}</span>
+                    </div>
+                    <div className="points-req-copy" style={{ color: reqs?.requirements?.metAll ? "#127a4b" : "#7d3434" }}>
+                      {requirementRule === "anywhere"
+                        ? (reqs?.requirements?.metAll ? "Requirement met with points from any category." : `${Math.max(0, totalRequired - totals.grand)} points to go in any category.`)
+                        : "Your current status does not require semester points."}
+                    </div>
+                  </div>
+                </div>
+              )}
             </motion.article>
           )}
 
@@ -432,9 +475,13 @@ export default function Points() {
             </span>
             <h4>{reqs?.requirements?.metAll ? "Great Progress!" : "Keep Going!"}</h4>
             <p>
-              {reqs?.requirements?.metAll
-                ? "You are on track to meet all requirements this semester."
-                : "You are building momentum. Stay consistent and knock out each bucket."}
+              {requirementRule === "none"
+                ? "Your current status has no semester point requirement."
+                : reqs?.requirements?.metAll
+                  ? "You are on track to meet all requirements this semester."
+                  : requirementRule === "anywhere"
+                    ? "Any category counts. Keep building your total points."
+                    : "You are building momentum. Stay consistent and knock out each bucket."}
             </p>
           </motion.article>
         </aside>

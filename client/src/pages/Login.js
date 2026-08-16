@@ -1,43 +1,62 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import './SignInUp.css';
 
-export default function Login() {
+function Login() {
   const { login, loading, error } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const nav = useNavigate();
 
   const submit = async (e) => {
     e.preventDefault();
     try {
       await login(email, password);
-      nav("/dashboard", { replace: true });
+      nav('/dashboard', { replace: true });
     } catch {}
   };
 
   return (
-    <div style={{ maxWidth: 420, margin: "80px auto", padding: 24 }}>
-      <h1 style={{ marginBottom: 16 }}>Sign in</h1>
-      <form onSubmit={submit} style={{ display: "grid", gap: 12 }}>
-        <input
-          type="email" placeholder="Personal email"
-          value={email} onChange={e=>setEmail(e.target.value)}
-          required style={{ padding: 10 }}
-        />
-        <input
-          type="password" placeholder="Password"
-          value={password} onChange={e=>setPassword(e.target.value)}
-          required style={{ padding: 10 }}
-        />
-        <button disabled={loading} style={{ padding: 10 }}>
-          {loading ? "Signing in..." : "Sign in"}
+    <div className="signinup-form-container">
+      <h1>Login</h1>
+      <form className="signinup-form" onSubmit={submit}>
+        <div className="form-row">
+          <label>Email<span>*</span></label>
+          <input 
+            type="email" 
+            placeholder="example@gmail.com" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)}
+            required 
+          />
+        </div>
+
+        <div className="form-row">
+          <label>Password<span>*</span></label>
+          <input 
+            type="password" 
+            placeholder="Enter your password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)}
+            required 
+          />
+        </div>
+
+        <button type="submit" disabled={loading}>
+          {loading ? 'Logging in...' : 'Log In'}
         </button>
-        {error && <div style={{ color: "crimson" }}>{error}</div>}
+
+        {error && <p className="error-message" style={{ textAlign: 'center', marginTop: '12px' }}>{error}</p>}
       </form>
-      <div style={{ marginTop: 12 }}>
-        Don’t have an account? <Link to="/signup">Sign up</Link>
+
+      <div className="signinup-footer">
+        <p>
+          New to our website? <Link to="/signup">Sign up here</Link>
+        </p>
       </div>
     </div>
   );
 }
+
+export default Login;

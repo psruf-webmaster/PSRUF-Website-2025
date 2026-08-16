@@ -45,6 +45,14 @@ function canAccessAdminUsers(user) {
   return positions.some(position => ADMIN_USERS_POSITION_KEYS.has(position?.key));
 }
 
+function canAccessApprovals(user) {
+  if (!user) return false;
+  const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
+  const positions = Array.isArray(user.positions) ? user.positions : [];
+  if (roles.some((role) => ['webmaster', 'webdev'].includes(String(role).toLowerCase()))) return true;
+  return positions.some((position) => ['WEBMASTER', 'WEBDEV'].includes(position?.key));
+}
+
 function canManageScholarship(user) {
   if (!user) return false;
   const positions = Array.isArray(user.positions) ? user.positions : [];
@@ -105,6 +113,9 @@ function derivePermissions({ roles = [], positions = [] }) {
  */
 router.get('/pending', requireAdminUsersAccess, async (req, res) => {
   try {
+    if (!canAccessApprovals(req.user)) {
+      return res.status(403).json({ message: 'Not allowed to access approvals' });
+    }
     const pendingUsers = await User.find({ approvalState: 'pending' }).select('-personalPassword');
     res.json(pendingUsers.map(current => serializeAdminUser(current, req.user)));
   } catch (err) {
@@ -135,6 +146,9 @@ router.get('/users', requireAdminUsersAccess, async (req, res) => {
  */
 router.patch('/approve/:id', requireAdminUsersAccess, async (req, res) => {
   try {
+    if (!canAccessApprovals(req.user)) {
+      return res.status(403).json({ message: 'Not allowed to access approvals' });
+    }
     let { role, memberStatus, positions, scholarship } = req.body;
 
     const roles = role == null ? undefined : (Array.isArray(role) ? role : [role]);
@@ -209,6 +223,9 @@ router.patch('/approve/:id', requireAdminUsersAccess, async (req, res) => {
  */
 router.delete('/reject/:id', requireAdminUsersAccess, async (req, res) => {
   try {
+    if (!canAccessApprovals(req.user)) {
+      return res.status(403).json({ message: 'Not allowed to access approvals' });
+    }
     const { reason } = req.query;
     const user = await User.findByIdAndUpdate(
       req.params.id,

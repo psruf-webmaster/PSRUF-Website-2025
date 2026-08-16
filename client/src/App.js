@@ -43,13 +43,22 @@ import AdminUsers from './pages/AdminUsers';
 import FeedsLayout from './pages/feeds/FeedsLayout';
 import FeedPage from './pages/feeds/FeedPage';
 
+function getRoles(user) {
+  if (!user) return [];
+  return Array.isArray(user.role)
+    ? user.role.map(role => String(role).toLowerCase())
+    : [String(user.role || '').toLowerCase()];
+}
+
+function isAlumniUser(user) {
+  return getRoles(user).includes('alumni');
+}
+
 // ---- Officer-only guard ----
 function isOfficerLevel(user) {
   if (!user) return false;
   if (user.isOfficer || user.isExec || user.isWebmaster) return true;
-  const roles = Array.isArray(user.role)
-    ? user.role.map(r => String(r).toLowerCase())
-    : [String(user.role || '').toLowerCase()];
+  const roles = getRoles(user);
   return roles.some(r =>
     r.includes('officer') ||
     r.includes('exec') ||
@@ -59,18 +68,63 @@ function isOfficerLevel(user) {
   );
 }
 
+
+function canAccessPointsOverview(user) {
+  if (!user) return false;
+  const positions = Array.isArray(user.positions) ? user.positions : [];
+  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  return positionKeys.has('PRESIDENT')
+    || positionKeys.has('VP_STANDARDS')
+    || positionKeys.has('VP_FINANCE');
+}
+
+function canAccessLedger(user) {
+  return getRoles(user).includes('exec');
+}
+
+function canAccessApprovals(user) {
+  if (!user) return false;
+  const roles = getRoles(user);
+  const positions = Array.isArray(user.positions) ? user.positions : [];
+  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  return roles.includes('webmaster')
+    || roles.includes('webdev')
+    || positionKeys.has('WEBMASTER')
+    || positionKeys.has('WEBDEV');
+}
+
 function OfficerRoute() {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
+  if (isAlumniUser(user)) return <Navigate to="/dashboard" replace />;
   if (!isOfficerLevel(user)) return <Navigate to="/feeds/chapter" replace />;
+  return <Outlet />;
+}
+
+function PointsOverviewRoute() {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (!canAccessPointsOverview(user)) return <Navigate to="/dashboard" replace />;
+  return <Outlet />;
+}
+
+function LedgerRoute() {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (!canAccessLedger(user)) return <Navigate to="/dashboard" replace />;
+  return <Outlet />;
+}
+
+function PointsAccessRoute() {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (isAlumniUser(user)) return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }
 
 function canAccessAdminUsers(user) {
   if (!user) return false;
-  const roles = Array.isArray(user.role)
-    ? user.role.map(role => String(role).toLowerCase())
-    : [String(user.role || '').toLowerCase()];
+  const roles = getRoles(user);
   const positions = Array.isArray(user.positions) ? user.positions : [];
   if (roles.includes('webmaster')) return true;
   return positions.some(position => ['PRESIDENT', 'VP_STANDARDS', 'VP_FINANCE', 'WEBMASTER'].includes(position?.key));
@@ -83,6 +137,19 @@ function AdminUsersRoute() {
     return (
       <div style={{ padding: 24, maxWidth: 720, margin: '0 auto' }}>
         You do not have permission to access Admin Users.
+      </div>
+    );
+  }
+  return <Outlet />;
+}
+
+function ApprovalsRoute() {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (!canAccessApprovals(user)) {
+    return (
+      <div style={{ padding: 24, maxWidth: 720, margin: '0 auto' }}>
+        You do not have permission to access pending approvals.
       </div>
     );
   }
@@ -102,7 +169,6 @@ function isPublicRoute(pathname) {
     '/recruitment',
     '/alumni',
     '/partners',
-    '/calendar',
     '/contact',
     '/members',
     '/signinup',
@@ -174,11 +240,13 @@ function AppContent() {
             <Route path="/events" element={<Events />} />
             <Route path="/events/:eventId" element={<EventDetail />} />
             <Route path="/announcements" element={<Announcements />} />
-            <Route path="/points" element={<Points />} />
-            <Route element={<OfficerRoute />}>
+            <Route element={<PointsAccessRoute />}>
+              <Route path="/points" element={<Points />} />
+            </Route>
+            <Route element={<PointsOverviewRoute />}>
               <Route path="/points-overview" element={<PointsOverview />} />
             </Route>
-            <Route element={<OfficerRoute />}>
+            <Route element={<LedgerRoute />}>
               <Route path="/ledger" element={<Ledger />} />
             </Route>
 
@@ -193,7 +261,7 @@ function AppContent() {
             </Route>
 
             {/* Admin tools */}
-            <Route element={<AdminUsersRoute />}>
+            <Route element={<ApprovalsRoute />}>
               <Route path="/admin/approvals" element={<AdminApprovals />} />
             </Route>
             <Route element={<AdminUsersRoute />}>
@@ -209,41 +277,39 @@ function AppContent() {
       {showFooter && (
         <footer ref={footerRef} className={`site-footer${isFeedsRoute ? ' site-footer-feeds' : ''}`}>
           <div className="site-footer-inner">
-            <div className="site-footer-brand">
-              <div className="site-footer-brand-header">
-                <span className="site-footer-mark">ΦΣΡ</span>
-                <div>
-                  <div className="site-footer-title">Phi Sigma Rho</div>
-                  <p className="site-footer-subtitle">Tau Chapter - UF</p>
-                </div>
+            <div className="site-footer-brand-group">
+              <img 
+                src={`${process.env.PUBLIC_URL}/favicon.ico`} 
+                alt="Phi Sigma Rho Logo" 
+                className="site-footer-logo-img" 
+              />
+              <div className="site-footer-meta">
+                <span className="site-footer-title">Phi Sigma Rho</span>
+                <span className="site-footer-subtitle">TAU CHAPTER • UF</span>
               </div>
-              <p className="site-footer-copy">
-                Connecting hearts and minds in engineering. Inspiring academic excellence and everlasting sisterhood through friendship, scholarship, and encouragement since 1984.
-              </p>
-              <p className="site-footer-love">
-                Made with <span aria-hidden="true">❤</span> by Phi Sigma Rho sisters
-              </p>
             </div>
 
-            <div className="site-footer-columns">
-              <div className="site-footer-column">
-                <p className="site-footer-love">Quick Links</p>
-                <a href="/">Home</a>
-                <a href="/leadership">Leadership</a>
-                <a href="/recruitment">Recruitment</a>
-                <a href="/alumni">Alumni</a>
-                <a href="/contact">Contact</a>
-              </div>
+            <div className="site-footer-bottom-row">
+              <span className="site-footer-copy">© 2026 Phi Sigma Rho Tau Chapter</span>
+              <span className="site-footer-love">Made with <span aria-hidden="true">❤</span> by sisters</span>
+            </div>
 
-              <div className="site-footer-column">
-                <p className="site-footer-love">Connect</p>
-                <a href="https://www.instagram.com/phisigmarhouf/" target="_blank" rel="noopener noreferrer">Instagram</a>
-                <a href="https://www.facebook.com/ufphisigmarho/" target="_blank" rel="noopener noreferrer">Facebook</a>
-                <a href="mailto:psruf.vpmembership@gmail.com">Email Us</a>
-              </div>
+            <div className="site-footer-links">
+              <a href="/#/home">Home</a>
+              <span className="site-footer-dot">·</span>
+              <a href="/#/leadership">Leadership</a>
+              <span className="site-footer-dot">·</span>
+              <a href="/#/recruitment">Recruitment</a>
+              <span className="site-footer-dot">·</span>
+              <a href="/#/alumni">Alumni</a>
+              <span className="site-footer-dot">·</span>
+              <a href="/#/contact">Contact</a>
+              <span className="site-footer-dot">·</span>
+              <a href="https://www.instagram.com/phisigmarhouf/" target="_blank" rel="noopener noreferrer">Instagram</a>
+              <span className="site-footer-dot">·</span>
+              <a href="mailto:psruf.vpmembership@gmail.com">Email</a>
             </div>
           </div>
-          <div className="site-footer-bottom">© 2026 Phi Sigma Rho Tau Chapter. All rights reserved.</div>
         </footer>
       )}
     </>

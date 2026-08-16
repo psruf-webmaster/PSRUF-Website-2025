@@ -10,9 +10,28 @@ const MEMBER_STATUS_ENUM = [
 const SCHOLARSHIP_TIERS = [0, 25, 50, 75, 100];
 const DEFAULT_SCHOLARSHIP = 0;
 
+const MEMBER_STATUS_ALIASES = {
+  active: 'active',
+  inactive: 'inactive',
+  probation: 'probation',
+  senior: 'seniorStatus',
+  seniorstatus: 'seniorStatus',
+  coop: 'co-op',
+  'co-op': 'co-op',
+  dropped: 'dropped',
+};
+
+function normalizeMemberStatus(status) {
+  const normalized = String(status || '').trim().toLowerCase();
+  const compact = normalized.replace(/[^a-z0-9]+/g, '');
+  return MEMBER_STATUS_ALIASES[compact] || MEMBER_STATUS_ALIASES[normalized] || null;
+}
+
 function sanitizeMemberStatuses(statuses) {
   const values = Array.isArray(statuses) ? statuses : (statuses ? [statuses] : []);
-  return values.filter(status => MEMBER_STATUS_ENUM.includes(status));
+  return [...new Set(values
+    .map(normalizeMemberStatus)
+    .filter(status => MEMBER_STATUS_ENUM.includes(status)))];
 }
 
 function isValidScholarshipTier(value) {
@@ -27,6 +46,7 @@ module.exports = {
   MEMBER_STATUS_ENUM,
   SCHOLARSHIP_TIERS,
   DEFAULT_SCHOLARSHIP,
+  normalizeMemberStatus,
   sanitizeMemberStatuses,
   isValidScholarshipTier,
   normalizeScholarship,
