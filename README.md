@@ -92,14 +92,9 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
 - Announcement notifications:
   - Email on publish
   - Optional SMS blast
-  - Audience selection by:
-    - Role
-    - Member status
-    - Position
   - Optional scheduled send time
 - **Events and reminder notifications**:
   - Need to get list of mandatory events
-  - Add mandatory event designation option for event creators
   - Event creators can opt-in to automated reminders
   - Reminder types:
     - Email reminder **1 week before** event
@@ -108,7 +103,6 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
   - Per-event on/off toggles
   - Server-side scheduling for the automated reminder
   - maybe allow officer to send additional notifs or announcement blasts specific to that event
- 
 
 ## 🔵 P2 – Nice to Have / Later
 
