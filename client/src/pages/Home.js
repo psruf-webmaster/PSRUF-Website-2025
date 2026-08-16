@@ -100,7 +100,10 @@ export default function Home() {
       try {
         setIsLoadingPosts(true);
         setPostsError(null);
-        const response = await fetch('https://feeds.behold.so/XMOkchRH38VeLujNjDxO');
+        
+        const feedId = process.env.REACT_APP_BEHOLD_FEED_ID;
+        const response = await fetch(`https://feeds.behold.so/nEj0Q8QsOwXl8z2yctYp`);
+        
         if (!response.ok) throw new Error(`Instagram feed returned ${response.status}`);
         const data = await response.json();
         
