@@ -71,26 +71,6 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
 
 ---
 
-## 🟡 In Progress / Needs Validation
-
-### **Testing & Validation**
-- Cross-role and cross-status testing:
-  - pnm
-  - candidate
-  - candOfficer
-  - member
-  - alumni
-  - officer
-  - exec
-  - webmaster
-  - webdev
-- Verify correct access based on role for:
-  - Event management
-  - Ledger
-  - Points pages (Master points vs regular member points page)
-  - Requirements eligibility
-
----
 ## TO DO 
 ## 🔴 P0 – Highest Priority (Decision Needed ASAP)
 
@@ -129,35 +109,8 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
   - Server-side scheduling for the automated reminder
   - maybe allow officer to send additional notifs or announcement blasts specific to that event
  
-### **UI **
-  - LIterally every page
-  - Member Points page
-  - Admin Points Overview page
-
----
-
-## 🟢 P2 – Medium Priority
-
-### **User Account Enhancements**
-- Password reset flow
-
-### **Public Website**
-- Finish and polish all public-facing pages:
-  - Home
-  - Leadership
-  - Recruitment
-  - Alumni
-  - Partners
-  - Contact
-
----
 
 ## 🔵 P3 – Nice to Have / Later
-
-### **Expanded Feeds & Channels**
-- Allow exec/officer-level users to:
-  - Create new announcement channels
-  - Add/remove members from channels
 
 ### **Before Deployment**
 - Full regression testing after UI and notifications implemented
