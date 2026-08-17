@@ -6,7 +6,8 @@
   width: 100%;
   min-height: 100vh;
   padding: 64px 24px 90px;
-  background: var(--home-blush, #fff6f8);
+  background: transparent;
+  overflow-x: hidden;
 }
 
 .calendar-section {
@@ -15,7 +16,7 @@
 }
 
 /* =========================================
-   HERO
+   HERO (Solid White Box with Scroll Animation)
 ========================================= */
 
 .calendar-hero {
@@ -23,6 +24,19 @@
   align-items: flex-start;
   gap: 18px;
   margin-bottom: 34px;
+  padding: 32px;
+  
+  border: 1px solid rgba(111, 74, 87, 0.12);
+  border-radius: 24px;
+  background: #ffffff;
+
+  box-shadow:
+    0 20px 60px rgba(67, 35, 45, 0.08),
+    0 4px 14px rgba(67, 35, 45, 0.035);
+
+  /* Scroll Animation */
+  animation: heroEntry 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
 .calendar-hero-icon {
@@ -37,11 +51,14 @@
   border: 1px solid rgba(137, 86, 101, 0.14);
   border-radius: 14px;
 
-  background: rgba(255, 255, 255, 0.72);
+  background: #fff3f6;
   color: #8d5367;
 
   box-shadow:
     0 6px 18px rgba(80, 40, 50, 0.05);
+
+  /* Gentle icon bounce/pulse entry */
+  animation: iconPop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
 }
 
 .calendar-hero-copy {
@@ -87,7 +104,7 @@
 }
 
 /* =========================================
-   MAIN CARD
+   MAIN CARD (Solid White with Scroll Animation)
 ========================================= */
 
 .calendar-card {
@@ -96,14 +113,16 @@
   border: 1px solid rgba(111, 74, 87, 0.12);
   border-radius: 24px;
 
-  background: rgba(255, 255, 255, 0.82);
+  background: #ffffff;
 
   box-shadow:
     0 20px 60px rgba(67, 35, 45, 0.08),
     0 4px 14px rgba(67, 35, 45, 0.035);
 
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* Scroll Animation - Slight delay after hero */
+  animation: cardEntry 1s cubic-bezier(0.16, 1, 0.3, 1) 0.25s forwards;
+  opacity: 0;
+  will-change: transform, opacity;
 }
 
 /* =========================================
@@ -156,6 +175,11 @@
 
   background: #fff3f6;
   color: #975d71;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.calendar-card-icon:hover {
+  transform: scale(1.1) rotate(6deg);
 }
 
 /* =========================================
@@ -176,6 +200,43 @@
   height: 100%;
 
   background: #fff;
+}
+
+/* =========================================
+   KEYFRAME ANIMATIONS
+========================================= */
+
+@keyframes heroEntry {
+  0% {
+    opacity: 0;
+    transform: translateY(35px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cardEntry {
+  0% {
+    opacity: 0;
+    transform: translateY(45px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes iconPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* =========================================
@@ -204,6 +265,7 @@
   .calendar-hero {
     gap: 13px;
     margin-bottom: 24px;
+    padding: 24px 20px;
   }
 
   .calendar-hero-icon {
@@ -247,10 +309,4 @@
   .calendar-frame-wrap {
     height: 620px;
   }
-}
-
-/* Hides the global website footer when the events view is active */
-body:has(.events-page-shell) footer,
-body:has(.events-page-shell) .site-footer {
-  display: none !important;
 }

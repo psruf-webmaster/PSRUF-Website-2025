@@ -281,9 +281,9 @@ function HoverActionButton({ label, icon, onClick, active = false, danger = fals
               ? 'linear-gradient(135deg, rgba(255, 247, 250, 0.98), rgba(249, 232, 238, 0.96))'
               : 'rgba(255,255,255,0.86)',
           color: danger ? '#7f1d1d' : '#6d2c2c',
-          borderRadius: 11,
-          padding: '0 11px',
-          height: 32,
+          borderRadius: 9,
+          padding: '0 8px',
+          height: 28,
           fontSize: 11,
           cursor: 'pointer',
           lineHeight: 1.1,
@@ -291,15 +291,15 @@ function HoverActionButton({ label, icon, onClick, active = false, danger = fals
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 5,
-          minWidth: 82,
+          gap: 4,
+          minWidth: 64,
           letterSpacing: '0',
           border: `1px solid ${danger ? 'rgba(178,34,34,0.12)' : active ? 'rgba(236,144,184,0.24)' : 'rgba(109,44,44,0.08)'}`,
-          boxShadow: active ? '0 8px 16px rgba(236,144,184,0.12)' : '0 3px 8px rgba(109,44,44,0.04)',
+          boxShadow: active ? '0 6px 12px rgba(236,144,184,0.12)' : '0 2px 6px rgba(109,44,44,0.03)',
           backdropFilter: 'blur(12px)',
         }}
       >
-        {icon ? <ActionIcon name={icon} size={13} /> : null}
+        {icon ? <ActionIcon name={icon} size={12} /> : null}
         <span>{label}</span>
         {children}
       </motion.button>
@@ -308,7 +308,7 @@ function HoverActionButton({ label, icon, onClick, active = false, danger = fals
         <div
           style={{
             position: 'absolute',
-            top: 'calc(100% + 10px)',
+            top: 'calc(100% + 6px)',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 24,
@@ -321,7 +321,7 @@ function HoverActionButton({ label, icon, onClick, active = false, danger = fals
   );
 }
 
-function HoverActionBar({ children, top = -12, right = 8 }) {
+function HoverActionBar({ children, top = -10, right = 6 }) {
   return (
     <div
       style={{
@@ -329,20 +329,22 @@ function HoverActionBar({ children, top = -12, right = 8 }) {
         top,
         right,
         display: 'inline-flex',
-        gap: 5,
+        gap: 3,
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 42,
-        padding: '5px',
-        borderRadius: 16,
+        minHeight: 34,
+        padding: '3px',
+        borderRadius: 12,
         background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(253,246,249,0.94))',
         backdropFilter: 'blur(18px) saturate(140%)',
         border: '1px solid rgba(109,44,44,0.1)',
-        boxShadow: '0 12px 24px rgba(109,44,44,0.09)',
+        boxShadow: '0 8px 18px rgba(109,44,44,0.07)',
         boxSizing: 'border-box',
         whiteSpace: 'nowrap',
         overflow: 'visible',
         zIndex: 4,
+        maxWidth: '100%',
+        flexWrap: 'wrap',
       }}
     >
       {children}
@@ -374,15 +376,15 @@ function ConfirmDialog({ open, title, message, confirmLabel = 'Confirm', cancelL
   if (!open) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(26, 12, 15, 0.52)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18, zIndex: 1200 }}>
-      <div style={{ width: 'min(100%, 540px)', borderRadius: 28, background: 'linear-gradient(180deg, #2f1d20, #24171a)', color: '#fff7fa', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 24px 60px rgba(24,10,13,0.34)', padding: '26px 28px 24px' }}>
-        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 16, color: '#f8d9df' }}>{title}</div>
-        <div style={{ fontSize: 17, lineHeight: 1.45, color: '#fff3f6' }}>{message}</div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 28 }}>
-          <button type="button" onClick={onCancel} style={{ border: 'none', borderRadius: 999, background: 'rgba(148,55,60,0.9)', color: '#fff6f8', fontWeight: 700, padding: '14px 26px', cursor: 'pointer' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(26, 12, 15, 0.52)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 1200 }}>
+      <div style={{ width: 'min(100%, 480px)', borderRadius: 22, background: 'linear-gradient(180deg, #2f1d20, #24171a)', color: '#fff7fa', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 20px 50px rgba(24,10,13,0.34)', padding: '20px 22px 18px' }}>
+        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12, color: '#f8d9df' }}>{title}</div>
+        <div style={{ fontSize: 15, lineHeight: 1.4, color: '#fff3f6' }}>{message}</div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
+          <button type="button" onClick={onCancel} style={{ border: 'none', borderRadius: 999, background: 'rgba(148,55,60,0.9)', color: '#fff6f8', fontWeight: 700, padding: '10px 20px', cursor: 'pointer', fontSize: 13 }}>
             {cancelLabel}
           </button>
-          <button type="button" onClick={onConfirm} style={{ border: '3px solid rgba(68,36,42,0.9)', borderRadius: 999, background: '#f2aab5', color: '#4a2328', fontWeight: 800, padding: '11px 28px', cursor: 'pointer', boxShadow: 'inset 0 0 0 2px rgba(255,236,240,0.78)' }}>
+          <button type="button" onClick={onConfirm} style={{ border: '2px solid rgba(68,36,42,0.9)', borderRadius: 999, background: '#f2aab5', color: '#4a2328', fontWeight: 800, padding: '9px 22px', cursor: 'pointer', fontSize: 13, boxShadow: 'inset 0 0 0 1px rgba(255,236,240,0.78)' }}>
             {confirmLabel}
           </button>
         </div>
@@ -435,24 +437,24 @@ function CommentThreadItem({
   };
 
   return (
-    <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (!isCompact) setActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 6 : 8, alignItems: 'flex-start', marginTop: isReply ? 8 : 0, marginLeft: isReply ? (isCompact ? 12 : 28) : 0 }}>
-      <ChatAvatar src={entryAvatar} name={entryName} size={isReply ? 24 : 28} fontSize={isReply ? 9 : 10} />
-      <div onClick={() => { if (isCompact) setActionsOpen(prev => !prev); }} style={{ flex: 1, minWidth: 0, background: isReply ? 'rgba(255,255,255,0.76)' : '#faf8f9', border: '1px solid rgba(109,44,44,0.08)', borderRadius: 14, padding: isCompact ? '8px 9px' : '8px 10px', boxShadow: '0 8px 18px rgba(109,44,44,0.05)', position: 'relative', cursor: isCompact ? 'pointer' : 'default' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', paddingRight: actionRowVisible && !isCompact ? 120 : 0 }}>
-          <strong style={{ color: '#6d2c2c', fontSize: isReply ? 12 : 13 }}>{entryName}</strong>
-          <span style={{ color: '#8a6a71', fontSize: 11 }}>{entryTime}</span>
+    <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (!isCompact) setActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 5 : 7, alignItems: 'flex-start', marginTop: isReply ? 6 : 0, marginLeft: isReply ? (isCompact ? 6 : 18) : 0, width: '100%', boxSizing: 'border-box' }}>
+      <ChatAvatar src={entryAvatar} name={entryName} size={isReply ? 22 : 26} fontSize={isReply ? 8 : 9} />
+      <div onClick={() => { if (isCompact) setActionsOpen(prev => !prev); }} style={{ flex: 1, minWidth: 0, background: isReply ? 'rgba(255,255,255,0.76)' : '#faf8f9', border: '1px solid rgba(109,44,44,0.08)', borderRadius: 11, padding: isCompact ? '6px 8px' : '7px 9px', boxShadow: '0 4px 12px rgba(109,44,44,0.04)', position: 'relative', cursor: isCompact ? 'pointer' : 'default' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap', paddingRight: actionRowVisible && !isCompact ? 100 : 0 }}>
+          <strong style={{ color: '#6d2c2c', fontSize: isReply ? 11 : 12 }}>{entryName}</strong>
+          <span style={{ color: '#8a6a71', fontSize: 10 }}>{entryTime}</span>
         </div>
         {actionRowVisible && (
-          <HoverActionBar top={isCompact ? -10 : 8} right={isCompact ? 0 : 10}>
+          <HoverActionBar top={isCompact ? -8 : 6} right={isCompact ? 0 : 8}>
             <HoverActionButton
               label="React"
               icon="react"
               onClick={() => setShowReactions(prev => !prev)}
               active={showReactions}
               popover={showReactions ? (
-                <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(109,44,44,0.12)', borderRadius: 14, padding: 8, boxShadow: '0 16px 28px rgba(109,44,44,0.12)', backdropFilter: 'blur(18px)' }}>
+                <div style={{ display: 'flex', gap: 5, background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(109,44,44,0.12)', borderRadius: 12, padding: 6, boxShadow: '0 12px 24px rgba(109,44,44,0.12)', backdropFilter: 'blur(18px)' }}>
                   {reactionOptions.map(emoji => (
-                    <button key={emoji} type="button" onClick={() => triggerReaction(emoji)} style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(236,144,184,0.08)', color: '#6d2c2c', borderRadius: 10, width: 32, height: 32, cursor: 'pointer' }}>
+                    <button key={emoji} type="button" onClick={() => triggerReaction(emoji)} style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(236,144,184,0.08)', color: '#6d2c2c', borderRadius: 8, width: 28, height: 28, cursor: 'pointer', fontSize: 13 }}>
                       {emoji}
                     </button>
                   ))}
@@ -468,14 +470,14 @@ function CommentThreadItem({
             )}
           </HoverActionBar>
         )}
-        <div style={{ color: '#3b2327', marginTop: 4, whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.5 }}>
+        <div style={{ color: '#3b2327', marginTop: 3, whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.4, fontSize: isCompact ? 12 : 13 }}>
           {item?.replyToName ? <span style={{ color: '#8f5864', fontWeight: 700 }}>{`@${item.replyToName} `}</span> : null}
           {item?.text}
         </div>
         {reactionSummary.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
             {reactionSummary.map(emoji => (
-              <button key={emoji} type="button" onClick={() => triggerReaction(emoji)} style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(255,255,255,0.7)', color: userReactions[emoji] ? '#6d2c2c' : '#5a3034', borderRadius: 999, padding: '2px 8px', fontSize: 11, cursor: 'pointer', fontWeight: userReactions[emoji] ? 700 : 600 }}>
+              <button key={emoji} type="button" onClick={() => triggerReaction(emoji)} style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(255,255,255,0.7)', color: userReactions[emoji] ? '#6d2c2c' : '#5a3034', borderRadius: 999, padding: '1px 6px', fontSize: 10, cursor: 'pointer', fontWeight: userReactions[emoji] ? 700 : 600 }}>
                 {emoji} {reactions[emoji] || 0}
               </button>
             ))}
@@ -511,7 +513,6 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
         if (item.preview && item.preview.startsWith('blob:')) URL.revokeObjectURL(item.preview);
       });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftAttachments]);
 
   useEffect(() => {
@@ -536,7 +537,7 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = '0px';
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 140)}px`;
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
   }, [content]);
 
   useEffect(() => {
@@ -763,35 +764,43 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
   if (!canPost) return null;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }} style={{ background: '#fbf2f6', border: '1px solid rgba(109,44,44,0.1)', borderRadius: isPhone ? 20 : 24, padding: isPhone ? 10 : 12, margin: '0 auto', maxWidth: 760, boxShadow: '0 14px 30px rgba(109,44,44,0.08)' }}>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: 'easeOut' }} style={{ background: '#fbf2f6', border: '1px solid rgba(109,44,44,0.1)', borderRadius: isPhone ? 14 : 20, padding: isPhone ? '8px 10px' : 10, margin: '0 auto', maxWidth: 760, boxShadow: '0 10px 24px rgba(109,44,44,0.06)', boxSizing: 'border-box' }}>
       {composerState && (
-        <div style={{ display: 'flex', flexDirection: isCompact ? 'column' : 'row', alignItems: isCompact ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10, padding: '10px 12px', borderRadius: 16, background: 'rgba(251,242,246,0.96)', border: '1px solid rgba(109,44,44,0.1)', color: '#6d2c2c' }}>
+        <div style={{ display: 'flex', flexDirection: isCompact ? 'column' : 'row', alignItems: isCompact ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8, padding: '8px 10px', borderRadius: 12, background: 'rgba(251,242,246,0.96)', border: '1px solid rgba(109,44,44,0.1)', color: '#6d2c2c' }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{composerState.type === 'edit' ? 'Editing message' : 'Replying to message'}</div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{composerState.authorName ? `${composerState.authorName}${composerState.timeLabel ? ` • ${composerState.timeLabel}` : ''}` : 'Message context'}</div>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{composerState.type === 'edit' ? 'Editing message' : 'Replying to message'}</div>
+            style={{
+                    height: 'auto',
+                    minHeight: 0,
+                    maxHeight: 'none',
+                    overflow: 'visible',
+                    padding: isPhone ? '0 8px 8px' : '0 0 12px',
+                    boxSizing: 'border-box',
+                    width: '100%'
+                  }}
           </div>
-          <button type="button" onClick={resetComposer} style={{ border: 'none', background: 'transparent', color: '#6d2c2c', cursor: 'pointer', fontWeight: 700, fontSize: 18, lineHeight: 1 }}>
+          <button type="button" onClick={resetComposer} style={{ border: 'none', background: 'transparent', color: '#6d2c2c', cursor: 'pointer', fontWeight: 700, fontSize: 16, lineHeight: 1 }}>
             ×
           </button>
         </div>
       )}
 
       {draftAttachments.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
           {draftAttachments.map(item => (
-            <div key={item.id} style={{ position: 'relative', minWidth: isPhone ? '100%' : 92, maxWidth: isPhone ? '100%' : 160, height: 58, borderRadius: 14, overflow: 'hidden', background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(109,44,44,0.12)', display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px' }}>
-              {item.kind === 'image' && item.preview ? <img src={item.preview} alt={item.name} style={{ width: 38, height: 38, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} /> : null}
-              {item.kind === 'video' && item.preview ? <video src={item.preview} style={{ width: 38, height: 38, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} muted playsInline /> : null}
+            <div key={item.id} style={{ position: 'relative', minWidth: isPhone ? '100%' : 84, maxWidth: isPhone ? '100%' : 140, height: 50, borderRadius: 12, overflow: 'hidden', background: 'rgba(255,255,255,0.84)', border: '1px solid rgba(109,44,44,0.12)', display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px', boxSizing: 'border-box' }}>
+              {item.kind === 'image' && item.preview ? <img src={item.preview} alt={item.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} /> : null}
+              {item.kind === 'video' && item.preview ? <video src={item.preview} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} muted playsInline /> : null}
               {item.kind === 'file' ? (
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(236,144,184,0.14)', color: '#6d2c2c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(236,144,184,0.14)', color: '#6d2c2c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
                   FILE
                 </div>
               ) : null}
-              <div style={{ minWidth: 0, paddingRight: 14 }}>
-                <div style={{ color: '#4f2f32', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
-                <div style={{ color: '#8a6a71', fontSize: 11 }}>{item.kind === 'file' ? 'Attachment ready' : item.kind}</div>
+              <div style={{ minWidth: 0, paddingRight: 12, flex: 1 }}>
+                <div style={{ color: '#4f2f32', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                <div style={{ color: '#8a6a71', fontSize: 10 }}>{item.kind === 'file' ? 'Ready' : item.kind}</div>
               </div>
-              <button type="button" onClick={() => removeAttachment(item.id)} style={{ position: 'absolute', top: 5, right: 5, width: 20, height: 20, borderRadius: '50%', border: 'none', background: 'rgba(109,44,44,0.82)', color: '#fff', cursor: 'pointer', lineHeight: 1 }}>
+              <button type="button" onClick={() => removeAttachment(item.id)} style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', border: 'none', background: 'rgba(109,44,44,0.82)', color: '#fff', cursor: 'pointer', lineHeight: 1, fontSize: 11 }}>
                 ×
               </button>
             </div>
@@ -799,93 +808,118 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: isCompact ? 'column' : 'row', alignItems: isCompact ? 'stretch' : 'flex-end', gap: 10, border: '1px solid rgba(109,44,44,0.12)', borderRadius: 24, padding: '10px 12px', background: 'rgba(255,255,255,0.82)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, width: '100%' }}>
-        <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#faf8f9', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6d2c2c', fontSize: 13, fontWeight: 700, boxShadow: '0 8px 18px rgba(109,44,44,0.08)', flexShrink: 0, border: '1px solid rgba(109,44,44,0.1)' }}>
-          {currentUserAvatar ? (
-            <img src={currentUserAvatar} alt="Your profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.innerText = getInitials(user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || 'You'); }} />
-          ) : (
-            getInitials(user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || 'You')
-          )}
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, border: '1px solid rgba(109,44,44,0.12)', borderRadius: 16, padding: '8px 10px', background: 'rgba(255,255,255,0.82)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, width: '100%', boxSizing: 'border-box' }}>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#faf8f9', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6d2c2c', fontSize: 12, fontWeight: 700, boxShadow: '0 6px 14px rgba(109,44,44,0.06)', flexShrink: 0, border: '1px solid rgba(109,44,44,0.1)', marginTop: 3 }}>
+            {currentUserAvatar ? (
+              <img src={currentUserAvatar} alt="Your profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.innerText = getInitials(user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || 'You'); }} />
+            ) : (
+              getInitials(user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || 'You')
+            )}
+          </div>
 
-        <textarea
-          ref={textareaRef}
-          placeholder="Message the channel"
-          value={content}
-          onChange={e => setContent(e.target.value)}
-          rows={1}
-          disabled={postingLocked}
-          style={{
-            flex: 1,
-            resize: 'none',
-            border: 'none',
-            padding: '7px 0 5px',
-            background: 'transparent',
-            color: '#2f1f22',
-            fontSize: 15,
-            lineHeight: 1.45,
-            outline: 'none',
-            boxSizing: 'border-box',
-            minHeight: 34,
-            maxHeight: 140,
-            overflowY: 'auto',
-          }}
-        />
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isPhone ? 'space-between' : 'flex-start', gap: 6, flexShrink: 0, width: isCompact ? '100%' : 'auto' }}>
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.08, y: -1 }}
-            whileTap={{ scale: 0.95 }}
-            transition={SPRING_TRANSITION}
-            onClick={() => fileInputRef.current?.click()}
+          <textarea
+            ref={textareaRef}
+            placeholder="Message the channel..."
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            rows={1}
             disabled={postingLocked}
             style={{
+              flex: 1,
+              resize: 'none',
               border: 'none',
-              background: 'rgba(250,248,249,0.9)',
-              color: '#6d2c2c',
-              borderRadius: 999,
-              width: 34,
-              height: 34,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 6px 16px rgba(109,44,44,0.08)',
+              padding: '4px 0',
+              background: 'transparent',
+              color: '#2f1f22',
+              fontSize: 14,
+              lineHeight: 1.4,
+              outline: 'none',
+              boxSizing: 'border-box',
+              minHeight: 30,
+              maxHeight: 120,
+              overflowY: 'auto',
             }}
-            aria-label="Upload attachment"
-          >
-            <ActionIcon name="plus" size={14} />
-          </motion.button>
-          <input ref={fileInputRef} type="file" multiple accept="image/*,video/*,audio/*,.pdf,.txt,.doc,.docx,.csv" onChange={handleFileChange} style={{ display: 'none' }} />
+          />
+        </div>
 
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.08, y: -1 }}
-            whileTap={{ scale: 0.95 }}
-            transition={SPRING_TRANSITION}
-            onClick={() => setShowEmojiPicker(prev => !prev)}
-            style={{
-              border: 'none',
-              background: showEmojiPicker ? 'rgba(236,144,184,0.14)' : 'rgba(250,248,249,0.9)',
-              color: '#6d2c2c',
-              borderRadius: 999,
-              width: 34,
-              height: 34,
-              cursor: 'pointer',
-              fontWeight: 700,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: showEmojiPicker ? '0 6px 18px rgba(236,144,184,0.18)' : '0 6px 16px rgba(109,44,44,0.08)',
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 5, flexWrap: 'wrap', width: '100%', borderTop: '1px solid rgba(109,44,44,0.06)', paddingTop: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.08, y: -1 }}
+              whileTap={{ scale: 0.95 }}
+              transition={SPRING_TRANSITION}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={postingLocked}
+              style={{
+                border: 'none',
+                background: 'rgba(250,248,249,0.9)',
+                color: '#6d2c2c',
+                borderRadius: 999,
+                width: 30,
+                height: 30,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(109,44,44,0.06)',
+              }}
+              aria-label="Upload attachment"
+            >
+              <ActionIcon name="plus" size={13} />
+            </motion.button>
+            <input ref={fileInputRef} type="file" multiple accept="image/*,video/*,audio/*,.pdf,.txt,.doc,.docx,.csv" onChange={handleFileChange} style={{ display: 'none' }} />
+
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.08, y: -1 }}
+              whileTap={{ scale: 0.95 }}
+              transition={SPRING_TRANSITION}
+              onClick={() => setShowEmojiPicker(prev => !prev)}
+              style={{
+                border: 'none',
+                background: showEmojiPicker ? 'rgba(236,144,184,0.14)' : 'rgba(250,248,249,0.9)',
+                color: '#6d2c2c',
+                borderRadius: 999,
+                width: 30,
+                height: 30,
+                cursor: 'pointer',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: showEmojiPicker ? '0 4px 14px rgba(236,144,184,0.16)' : '0 4px 12px rgba(109,44,44,0.06)',
+                fontSize: 13,
+              }}
+              aria-label="Add emoji"
+            >
+              😊
+            </motion.button>
+          </div>
+
+          <motion.button 
+            type="button" 
+            whileHover={{ scale: 1.04, y: -1 }} 
+            whileTap={{ scale: 0.97 }} 
+            transition={SPRING_TRANSITION} 
+            onClick={submit} 
+            disabled={postingLocked || submitting || (!content.trim() && draftAttachments.length === 0)} 
+            style={{ 
+              border: 'none', 
+              background: 'linear-gradient(135deg,#6d2c2c,#ec90b8)', 
+              color: '#fff', 
+              fontWeight: 700, 
+              borderRadius: 999, 
+              padding: '0 14px', 
+              height: 30, 
+              minWidth: 70, 
+              cursor: 'pointer', 
+              opacity: postingLocked || submitting || (!content.trim() && draftAttachments.length === 0) ? 0.5 : 1, 
+              boxShadow: '0 8px 18px rgba(109,44,44,0.18)',
+              fontSize: 12,
             }}
-            aria-label="Add emoji"
           >
-            😊
-          </motion.button>
-          <motion.button type="button" whileHover={{ scale: 1.04, y: -1 }} whileTap={{ scale: 0.97 }} transition={SPRING_TRANSITION} onClick={submit} disabled={postingLocked || submitting || (!content.trim() && draftAttachments.length === 0)} style={{ border: 'none', background: 'linear-gradient(135deg,#6d2c2c,#ec90b8)', color: '#fff', fontWeight: 700, borderRadius: 999, padding: isPhone ? '0 18px' : '0 14px', height: 34, minWidth: isPhone ? 88 : 'auto', cursor: 'pointer', opacity: postingLocked || submitting || (!content.trim() && draftAttachments.length === 0) ? 0.5 : 1, boxShadow: '0 10px 22px rgba(109,44,44,0.2)' }}>
             {submitting ? '...' : ['edit', 'editComment', 'editReply'].includes(composerState?.type) ? 'Save' : ['reply', 'replyComment'].includes(composerState?.type) ? 'Reply' : 'Send'}
           </motion.button>
         </div>
@@ -894,16 +928,16 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
       <AnimatePresence>
         {showEmojiPicker && (
           <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.98 }}
+            initial={{ opacity: 0, y: 4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.98 }}
-            transition={{ duration: 0.16, ease: 'easeOut' }}
+            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 3,
               flexWrap: 'wrap',
-              padding: '8px 10px 0',
+              padding: '6px 2px 0',
               justifyContent: 'flex-end',
             }}
           >
@@ -920,15 +954,15 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
                   background: 'rgba(255,255,255,0.82)',
                   color: '#4f2f32',
                   borderRadius: 999,
-                  width: 30,
-                  height: 30,
+                  width: 26,
+                  height: 26,
                   cursor: 'pointer',
-                  fontSize: 15,
+                  fontSize: 13,
                   lineHeight: 1,
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 8px 16px rgba(109,44,44,0.08)',
+                  boxShadow: '0 6px 12px rgba(109,44,44,0.06)',
                 }}
               >
                 {emoji}
@@ -939,12 +973,12 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
       </AnimatePresence>
 
       {!composerState && canSendSms && (
-        <div style={{ marginTop: 8, display: 'flex', flexDirection: isPhone ? 'column' : 'row', gap: 10, alignItems: isPhone ? 'stretch' : 'center', flexWrap: 'wrap', color: '#7b5d63', padding: '0 6px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, color: '#6d2c2c', fontWeight: 600 }}>
+        <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 5, color: '#7b5d63', padding: '0 2px', boxSizing: 'border-box' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#6d2c2c', fontWeight: 600 }}>
             <input type="checkbox" checked={sendAsText} onChange={e => setSendAsText(e.target.checked)} /> Also send as text blast
           </label>
           {sendAsText && (
-            <select value={audienceType} onChange={e => setAudienceType(e.target.value)} style={{ borderRadius: 999, border: '1px solid rgba(109,44,44,0.14)', background: 'rgba(255,255,255,0.8)', color: '#4f2f32', padding: '5px 10px', minHeight: 34, fontSize: 12, maxWidth: isPhone ? '100%' : 220, width: isPhone ? '100%' : 'auto' }}>
+            <select value={audienceType} onChange={e => setAudienceType(e.target.value)} style={{ borderRadius: 999, border: '1px solid rgba(109,44,44,0.14)', background: 'rgba(255,255,255,0.8)', color: '#4f2f32', padding: '4px 8px', minHeight: 30, fontSize: 11, width: '100%', boxSizing: 'border-box' }}>
               <option value="channel">All Sisters (Channel Members)</option>
               <option value="roleStatus">By Role/Status</option>
               <option value="specific">Specific Users</option>
@@ -954,19 +988,19 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
       )}
 
       {sendAsText && audienceType === 'roleStatus' && (
-        <div style={{ marginTop: 8, border: '1px solid rgba(109,44,44,0.1)', borderRadius: 14, padding: '10px 12px', background: 'rgba(255,255,255,0.68)', maxWidth: 760, maxHeight: 180, overflowY: 'auto' }}>
-          <div style={{ fontSize: 12, marginBottom: 6, color: '#4f2f32', fontWeight: 700 }}>Roles</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 6 }}>
+        <div style={{ marginTop: 6, border: '1px solid rgba(109,44,44,0.1)', borderRadius: 12, padding: '8px 10px', background: 'rgba(255,255,255,0.68)', maxHeight: 150, overflowY: 'auto', boxSizing: 'border-box' }}>
+          <div style={{ fontSize: 11, marginBottom: 5, color: '#4f2f32', fontWeight: 700 }}>Roles</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 5 }}>
             {ROLE_OPTIONS.map(r => (
-              <label key={r} style={{ fontSize: 11, color: '#6d2c2c', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+              <label key={r} style={{ fontSize: 10, color: '#6d2c2c', display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
                 <input type="checkbox" checked={includeRoles.includes(r)} onChange={e => { if (e.target.checked) setIncludeRoles(prev => [...prev, r]); else setIncludeRoles(prev => prev.filter(x => x !== r)); }} />{' '}{r}
               </label>
             ))}
           </div>
-          <div style={{ fontSize: 12, marginTop: 10, marginBottom: 6, color: '#4f2f32', fontWeight: 700 }}>Member Statuses</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 6 }}>
+          <div style={{ fontSize: 11, marginTop: 8, marginBottom: 5, color: '#4f2f32', fontWeight: 700 }}>Member Statuses</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 5 }}>
             {MEMBER_STATUS_OPTIONS.map(s => (
-              <label key={s} style={{ fontSize: 11, color: '#6d2c2c', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+              <label key={s} style={{ fontSize: 10, color: '#6d2c2c', display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
                 <input type="checkbox" checked={includeMemberStatuses.includes(s)} onChange={e => { if (e.target.checked) setIncludeMemberStatuses(prev => [...prev, s]); else setIncludeMemberStatuses(prev => prev.filter(x => x !== s)); }} />{' '}{s}
               </label>
             ))}
@@ -975,10 +1009,10 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
       )}
 
       {sendAsText && audienceType === 'specific' && (
-        <div style={{ marginTop: 8, border: '1px solid rgba(109,44,44,0.1)', borderRadius: 14, padding: '10px 12px', background: 'rgba(255,255,255,0.68)', maxHeight: 180, overflowY: 'auto', maxWidth: 760 }}>
-          {userOptions.length === 0 && <div style={{ fontSize: 12, color: '#7b5d63' }}>No users available.</div>}
+        <div style={{ marginTop: 6, border: '1px solid rgba(109,44,44,0.1)', borderRadius: 12, padding: '8px 10px', background: 'rgba(255,255,255,0.68)', maxHeight: 150, overflowY: 'auto', boxSizing: 'border-box' }}>
+          {userOptions.length === 0 && <div style={{ fontSize: 11, color: '#7b5d63' }}>No users available.</div>}
           {userOptions.map(u => (
-            <label key={u._id} style={{ display: 'block', fontSize: 12, color: '#4f2f32', padding: '4px 0' }}>
+            <label key={u._id} style={{ display: 'block', fontSize: 11, color: '#4f2f32', padding: '3px 0' }}>
               <input type="checkbox" checked={selectedUserIds.includes(u._id)} onChange={e => { if (e.target.checked) setSelectedUserIds(prev => [...prev, u._id]); else setSelectedUserIds(prev => prev.filter(id => id !== u._id)); }} />{' '}
               {u.firstName} {u.lastName}{u.role ? ` (${Array.isArray(u.role) ? u.role.join(', ') : u.role})` : ''}
             </label>
@@ -1034,40 +1068,41 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
   const bubbleStyle = {
     background: '#faf8f9',
     border: '1px solid rgba(109,44,44,0.08)',
-    borderRadius: compactGroupedMessage ? 16 : 20,
-    padding: compactGroupedMessage ? '10px 14px' : '14px 16px',
+    borderRadius: compactGroupedMessage ? 12 : 16,
+    padding: compactGroupedMessage ? '8px 10px' : '10px 12px',
     color: '#3b2327',
     boxShadow: 'none',
     width: '100%',
+    boxSizing: 'border-box',
     marginBottom: 0,
   };
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, ease: 'easeOut' }} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (isCompact) setMessageActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 8 : 12, alignItems: 'flex-start', padding: isGrouped ? (isCompact ? '0 6px 8px' : '0 12px 8px') : (isCompact ? '0 6px 12px' : '0 12px 14px'), borderBottom: 'none', marginBottom: 0, justifyContent: 'center', width: '100%' }}>
-      <div style={{ width: 'min(100%, 780px)', minWidth: 0, display: 'flex', gap: isCompact ? 8 : 12, alignItems: 'flex-start', position: 'relative' }}>
+    <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (isCompact) setMessageActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 6 : 10, alignItems: 'flex-start', padding: isGrouped ? (isCompact ? '0 2px 4px' : '0 8px 6px') : (isCompact ? '0 2px 8px' : '0 8px 10px'), borderBottom: 'none', marginBottom: 0, justifyContent: 'center', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ width: '100%', minWidth: 0, display: 'flex', gap: isCompact ? 6 : 10, alignItems: 'flex-start', position: 'relative', boxSizing: 'border-box' }}>
         {!isGrouped ? (
-          <ChatAvatar src={avatarUrl} name={authorName} size={isCompact ? 38 : 46} fontSize={isCompact ? 12 : 14} style={{ boxShadow: '0 8px 16px rgba(109,44,44,0.06)' }} />
-        ) : <div style={{ width: isCompact ? 38 : 46, flexShrink: 0 }} />}
+          <ChatAvatar src={avatarUrl} name={authorName} size={isCompact ? 30 : 36} fontSize={isCompact ? 10 : 12} style={{ boxShadow: '0 6px 12px rgba(109,44,44,0.05)' }} />
+        ) : <div style={{ width: isCompact ? 30 : 36, flexShrink: 0 }} />}
 
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0, position: 'relative' }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0, position: 'relative', boxSizing: 'border-box' }}>
           {!isGrouped && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap', justifyContent: 'flex-start', width: '100%' }}>
-              <strong style={{ color: authorDisplayColor, fontSize: 15, fontWeight: 700 }}>{authorName}</strong>
-              {post.authorRole?.length > 0 && <span style={{ color: '#8a6a71', fontSize: 12 }}>{post.authorRole.join(', ')}</span>}
-              <span style={{ color: '#7b5d63', fontSize: 12 }}>{when}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3, flexWrap: 'wrap', justifyContent: 'flex-start', width: '100%' }}>
+              <strong style={{ color: authorDisplayColor, fontSize: 13, fontWeight: 700 }}>{authorName}</strong>
+              {post.authorRole?.length > 0 && <span style={{ color: '#8a6a71', fontSize: 10 }}>{post.authorRole.join(', ')}</span>}
+              <span style={{ color: '#7b5d63', fontSize: 10 }}>{when}</span>
             </div>
           )}
 
         {actionRowVisible && (
           <div onClick={e => e.stopPropagation()}>
-          <HoverActionBar top={isGrouped ? 4 : 20}>
+          <HoverActionBar top={isGrouped ? 2 : 16}>
             <HoverActionButton
               label="React"
               icon="react"
               onClick={() => setShowReactions(prev => !prev)}
               active={showReactions}
               popover={showReactions ? (
-                <div style={{ background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(109,44,44,0.12)', borderRadius: 14, boxShadow: '0 16px 28px rgba(109,44,44,0.12)', padding: 8, display: 'flex', gap: 6, backdropFilter: 'blur(18px)' }}>
+                <div style={{ background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(109,44,44,0.12)', borderRadius: 12, boxShadow: '0 12px 24px rgba(109,44,44,0.12)', padding: 6, display: 'flex', gap: 5, backdropFilter: 'blur(18px)' }}>
                   {reactionOptions.map(emoji => (
                     <motion.button
                       key={emoji}
@@ -1076,7 +1111,7 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
                       whileTap={{ scale: 0.95 }}
                       transition={SPRING_TRANSITION}
                       onClick={() => triggerReaction(emoji)}
-                      style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(236,144,184,0.08)', borderRadius: 10, width: 34, height: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 18, color: '#6d2c2c' }}
+                      style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(236,144,184,0.08)', borderRadius: 8, width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 15, color: '#6d2c2c' }}
                       aria-label={`React with ${emoji}`}
                     >
                       {emoji}
@@ -1112,24 +1147,24 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
           </div>
         )}
 
-        <div onClick={() => setMessageActionsOpen(prev => !prev)} style={{ ...bubbleStyle, cursor: 'pointer', padding: compactGroupedMessage ? (isCompact ? '10px 12px' : bubbleStyle.padding) : (isCompact ? '13px 14px' : bubbleStyle.padding) }}>
-          <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: compactGroupedMessage ? 1.35 : 1.55 }}>{post.content}</div>
+        <div onClick={() => setMessageActionsOpen(prev => !prev)} style={{ ...bubbleStyle, cursor: 'pointer', padding: compactGroupedMessage ? (isCompact ? '6px 8px' : bubbleStyle.padding) : (isCompact ? '8px 10px' : bubbleStyle.padding) }}>
+          <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: compactGroupedMessage ? 1.3 : 1.45, fontSize: isCompact ? 13 : 14 }}>{post.content}</div>
 
           {media.length > 0 && (
-            <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+            <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
               {media.map(item => {
                 if (!item.url) return null;
                 if (item.type === 'video' || /\.(mp4|webm|ogg|mov)$/i.test(item.url) || item.url.includes('video')) {
-                  return <video key={item.id} src={item.url} controls style={{ width: '100%', maxHeight: isCompact ? 220 : 280, borderRadius: 12, background: '#0f172a' }} />;
+                  return <video key={item.id} src={item.url} controls style={{ width: '100%', maxHeight: isCompact ? 180 : 240, borderRadius: 8, background: '#0f172a' }} />;
                 }
-                return <img key={item.id} src={item.url} alt={item.name || 'Attached content'} style={{ width: '100%', maxHeight: isCompact ? 240 : 320, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(148,163,184,0.18)' }} />;
+                return <img key={item.id} src={item.url} alt={item.name || 'Attached content'} style={{ width: '100%', maxHeight: isCompact ? 200 : 260, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(148,163,184,0.18)' }} />;
               })}
             </div>
           )}
 
-          {post.sendTextBlast && <div style={{ fontSize: 12, color: '#a5b4fc', marginTop: 10 }}>📢 Sent as text</div>}
+          {post.sendTextBlast && <div style={{ fontSize: 10, color: '#a5b4fc', marginTop: 6 }}>📢 Sent as text</div>}
           {post.smsResult && (
-            <div style={{ fontSize: 12, color: post.smsResult.failed > 0 ? '#fca5a5' : '#bdc7ff', marginTop: 8 }}>
+            <div style={{ fontSize: 10, color: post.smsResult.failed > 0 ? '#fca5a5' : '#bdc7ff', marginTop: 5 }}>
               {post.smsResult.error
                 ? 'SMS skipped: Not authorized'
                 : (post.smsResult.sent != null
@@ -1140,7 +1175,7 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
         </div>
 
         {reactionSummary.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8, marginLeft: 2, alignItems: 'center', justifyContent: 'flex-start', width: '100%' }}>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 5, marginLeft: 2, alignItems: 'center', justifyContent: 'flex-start', width: '100%' }}>
             {reactionSummary.map(emoji => (
               <motion.button
                 key={emoji}
@@ -1149,7 +1184,7 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
                 whileTap={{ scale: 0.95 }}
                 transition={SPRING_TRANSITION}
                 onClick={() => triggerReaction(emoji)}
-                style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(255,255,255,0.7)', color: emoji === '❤️' ? '#6d2c2c' : userReactions[emoji] ? '#6d2c2c' : '#5a3034', borderRadius: 999, padding: '3px 8px', fontSize: 11, cursor: 'pointer', lineHeight: 1.1, fontWeight: userReactions[emoji] ? 700 : 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(255,255,255,0.7)', color: emoji === '❤️' ? '#6d2c2c' : userReactions[emoji] ? '#6d2c2c' : '#5a3034', borderRadius: 999, padding: '1px 6px', fontSize: 10, cursor: 'pointer', lineHeight: 1.1, fontWeight: userReactions[emoji] ? 700 : 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}
               >
                 {emoji} {reactions[emoji] || 0}
               </motion.button>
@@ -1158,9 +1193,9 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
         )}
 
         {post.comments?.length > 0 && (
-          <div style={{ marginTop: 12, display: 'grid', gap: 10, paddingLeft: isCompact ? 0 : 4 }}>
+          <div style={{ marginTop: 8, display: 'grid', gap: 6, paddingLeft: isCompact ? 0 : 3, width: '100%', boxSizing: 'border-box' }}>
             {post.comments.map(comment => (
-              <div key={comment._id || `${comment.name}-${comment.createdAt}-${comment.text}`}>
+              <div key={comment._id || `${comment.name}-${comment.createdAt}-${comment.text}`} style={{ width: '100%', boxSizing: 'border-box' }}>
                 <CommentThreadItem
                   item={comment}
                   post={post}
@@ -1172,7 +1207,7 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
                   isCompact={isCompact}
                 />
                 {Array.isArray(comment.replies) && comment.replies.length > 0 && (
-                  <div style={{ marginTop: 6, display: 'grid', gap: 0 }}>
+                  <div style={{ marginTop: 5, display: 'grid', gap: 5, width: '100%', boxSizing: 'border-box' }}>
                     {comment.replies.map(reply => (
                       <CommentThreadItem
                         key={reply._id || `${reply.name}-${reply.createdAt}-${reply.text}`}
@@ -1216,7 +1251,7 @@ export default function FeedPage({ feed }) {
   const [showMembersPanel, setShowMembersPanel] = useState(() => {
     try {
       const saved = localStorage.getItem(`psr-feed-show-members:${feed}`);
-      return saved == null ? true : saved === 'true';
+      return saved == null ? !window.matchMedia('(max-width: 980px)').matches : saved === 'true';
     } catch {
       return true;
     }
@@ -1286,11 +1321,11 @@ export default function FeedPage({ feed }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(`psr-feed-show-members:${feed}`);
-      setShowMembersPanel(saved == null ? true : saved === 'true');
+      setShowMembersPanel(saved == null ? !isNarrow : saved === 'true');
     } catch {
-      setShowMembersPanel(true);
+      setShowMembersPanel(!isNarrow);
     }
-  }, [feed]);
+  }, [feed, isNarrow]);
 
   useEffect(() => {
     try {
@@ -1316,7 +1351,7 @@ export default function FeedPage({ feed }) {
   };
 
   const load = async () => {
-    if (!user) return; // wait for auth to load
+    if (!user) return;
     setLoading(true);
     const userId = user?._id || user?.id;
     const headers = { 'x-user-id': userId || '' };
@@ -1486,21 +1521,18 @@ export default function FeedPage({ feed }) {
   useEffect(() => {
     load();
     loadChannels();
-    // eslint-disable-next-line
   }, [feed, user?._id, user?.id]);
 
   useEffect(() => {
     if (userId) {
       loadApprovedUsers();
     }
-    // eslint-disable-next-line
   }, [userId]);
 
   useEffect(() => {
     if (currentChannel?._id && userId) {
       loadMembers();
     }
-    // eslint-disable-next-line
   }, [currentChannel?._id, userId, feed]);
 
   useEffect(() => {
@@ -1528,7 +1560,6 @@ export default function FeedPage({ feed }) {
     }
 
     initialScrollDoneRef.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayPosts, feed, feedReadAt, loading, userId]);
 
   useEffect(() => {
@@ -1539,7 +1570,6 @@ export default function FeedPage({ feed }) {
     if (manageOpen) {
       loadChannels();
     }
-    // eslint-disable-next-line
   }, [manageOpen]);
 
   useEffect(() => {
@@ -1548,41 +1578,46 @@ export default function FeedPage({ feed }) {
 
   const selectedChannel = channels.find(c => c._id === selectedChannelId);
   const manageSectionStyle = {
-    marginTop: 14,
+    marginTop: 10,
     border: '1px solid rgba(109,44,44,0.1)',
-    borderRadius: 24,
-    padding: 16,
+    borderRadius: 18,
+    padding: 12,
     background: 'linear-gradient(180deg, rgba(255,255,255,0.92), rgba(251,242,246,0.92))',
-    boxShadow: '0 14px 28px rgba(109,44,44,0.06)',
+    boxShadow: '0 8px 20px rgba(109,44,44,0.05)',
+    boxSizing: 'border-box',
   };
   const manageInputStyle = {
     width: '100%',
-    borderRadius: 16,
+    borderRadius: 12,
     border: '1px solid rgba(109,44,44,0.14)',
     background: 'rgba(255,255,255,0.92)',
-    padding: '12px 14px',
+    padding: '9px 12px',
     color: '#402126',
     outline: 'none',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
+    boxSizing: 'border-box',
+    fontSize: 13,
   };
   const managePillButtonStyle = {
     border: '1px solid rgba(109,44,44,0.14)',
     background: 'rgba(255,255,255,0.84)',
     color: '#6d2c2c',
     borderRadius: 999,
-    padding: '10px 14px',
+    padding: '8px 12px',
     cursor: 'pointer',
     fontWeight: 700,
+    fontSize: 12,
   };
   const managePrimaryButtonStyle = {
     border: 'none',
     background: 'linear-gradient(135deg,#6d2c2c,#e7a0ba)',
     color: '#fff',
     borderRadius: 999,
-    padding: '11px 18px',
+    padding: '9px 16px',
     cursor: 'pointer',
     fontWeight: 800,
-    boxShadow: '0 10px 22px rgba(109,44,44,0.18)',
+    boxShadow: '0 6px 16px rgba(109,44,44,0.15)',
+    fontSize: 12,
   };
 
   useEffect(() => {
@@ -1592,7 +1627,6 @@ export default function FeedPage({ feed }) {
     setSelectedManualUserId('');
     setSelectedExcludedUserId('');
     loadSelectedChannelMembers(selectedChannel._id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedChannel?._id]);
 
   const createChannel = async () => {
@@ -1704,14 +1738,14 @@ export default function FeedPage({ feed }) {
     && /^[a-z][a-zA-Z0-9]*$/.test(rawSlug);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut' }} style={{ height: isNarrow ? 'auto' : 'calc(100vh - 104px)', minHeight: 0, maxHeight: isNarrow ? 'none' : 'calc(100vh - 104px)', overflow: isNarrow ? 'visible' : 'hidden', paddingBottom: isNarrow ? 12 : 18, boxSizing: 'border-box' }}>
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }} style={{ height: isNarrow ? 'auto' : 'calc(100vh - 84px)', minHeight: 0, maxHeight: isNarrow ? 'none' : 'calc(100vh - 84px)', overflow: isNarrow ? 'visible' : 'hidden', paddingBottom: isNarrow ? 8 : 12, boxSizing: 'border-box', width: '100%' }}>
       <style>{`
         .psr-chat-scrollbar {
           scrollbar-width: thin;
           scrollbar-color: rgba(212, 96, 138, 0.38) rgba(250, 248, 249, 0.7);
         }
         .psr-chat-scrollbar::-webkit-scrollbar {
-          width: 10px;
+          width: 6px;
         }
         .psr-chat-scrollbar::-webkit-scrollbar-track {
           background: rgba(250, 248, 249, 0.72);
@@ -1726,41 +1760,42 @@ export default function FeedPage({ feed }) {
           background: linear-gradient(180deg, rgba(236, 144, 184, 0.9), rgba(212, 96, 138, 0.72));
         }
       `}</style>
-      <motion.div layout style={{ background: 'linear-gradient(180deg, rgba(255,250,252,0.985), rgba(248,232,238,0.98))', border: '1px solid rgba(109,44,44,0.12)', borderRadius: isPhone ? 22 : 32, overflow: 'hidden', boxShadow: 'none', height: isNarrow ? 'auto' : '100%', display: 'grid', gridTemplateRows: 'auto minmax(0,1fr) auto' }}>
-        <motion.div layout style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', justifyContent: 'space-between', alignItems: isPhone ? 'stretch' : 'center', gap: 8, padding: isPhone ? '16px 16px 14px' : '20px 22px 16px', borderBottom: '1px solid rgba(109,44,44,0.09)', background: 'linear-gradient(180deg, rgba(255,255,255,0.84), rgba(243,222,232,0.58))', position: 'sticky', top: 0, zIndex: 2 }}>
+      <motion.div layout style={{ background: 'linear-gradient(180deg, rgba(255,250,252,0.985), rgba(248,232,238,0.98))', border: '1px solid rgba(109,44,44,0.12)', borderRadius: isPhone ? 12 : 22, overflow: 'hidden', boxShadow: 'none', height: isNarrow ? 'auto' : '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', width: '100%' }}>
+        
+        <motion.div layout style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', justifyContent: 'space-between', alignItems: isPhone ? 'stretch' : 'center', gap: 8, padding: isPhone ? '10px 12px' : '12px 18px 10px', borderBottom: '1px solid rgba(109,44,44,0.09)', background: 'linear-gradient(180deg, rgba(255,255,255,0.84), rgba(243,222,232,0.58))', position: 'sticky', top: 0, zIndex: 2, boxSizing: 'border-box', width: '100%' }}>
           <div>
-            <div style={{ color: '#6d2c2c', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4, fontWeight: 700 }}>📌 Pinned channel</div>
-            <h1 style={{ margin: 0, fontSize: isPhone ? 22 : 24, color: '#3b2327' }}>{FEED_TITLES[feed] || currentChannel?.name || 'Feed'}</h1>
+            <div style={{ color: '#6d2c2c', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 1, fontWeight: 700 }}>📌 Pinned channel</div>
+            <h1 style={{ margin: 0, fontSize: isPhone ? 18 : 22, color: '#3b2327' }}>{FEED_TITLES[feed] || currentChannel?.name || 'Feed'}</h1>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', width: isPhone ? '100%' : 'auto' }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', width: isPhone ? '100%' : 'auto' }}>
             {currentChannel?._id && (
-              <motion.button whileHover={{ y: -1, scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={SPRING_TRANSITION} onClick={() => setShowMembersPanel(prev => !prev)} style={{ border: '1px solid rgba(109,44,44,0.12)', background: 'rgba(255,255,255,0.74)', color: '#5a3034', borderRadius: 14, padding: '9px 13px', cursor: 'pointer', fontWeight: 700, boxShadow: '0 8px 18px rgba(109,44,44,0.06)', width: isPhone ? '100%' : 'auto' }}>
+              <motion.button whileHover={{ y: -1, scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={SPRING_TRANSITION} onClick={() => setShowMembersPanel(prev => !prev)} style={{ border: '1px solid rgba(109,44,44,0.12)', background: 'rgba(255,255,255,0.74)', color: '#5a3034', borderRadius: 10, padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: 11, boxShadow: '0 6px 14px rgba(109,44,44,0.05)', flex: isPhone ? 1 : 'initial' }}>
                 {showMembersPanel ? 'Hide members' : 'Show members'}
               </motion.button>
             )}
-            {canOpenManage && <motion.button whileHover={{ y: -1, scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={SPRING_TRANSITION} onClick={() => setManageOpen(true)} style={{ border: '1px solid rgba(109,44,44,0.12)', background: 'rgba(255,255,255,0.74)', color: '#5a3034', borderRadius: 14, padding: '9px 13px', cursor: 'pointer', fontWeight: 700, boxShadow: '0 8px 18px rgba(109,44,44,0.06)', width: isPhone ? '100%' : 'auto' }}>Manage Channels</motion.button>}
+            {canOpenManage && <motion.button whileHover={{ y: -1, scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={SPRING_TRANSITION} onClick={() => setManageOpen(true)} style={{ border: '1px solid rgba(109,44,44,0.12)', background: 'rgba(255,255,255,0.74)', color: '#5a3034', borderRadius: 10, padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: 11, boxShadow: '0 6px 14px rgba(109,44,44,0.05)', flex: isPhone ? 1 : 'initial' }}>Manage Channels</motion.button>}
           </div>
         </motion.div>
 
         {isArchived && (
-          <div style={{ margin: '12px 16px 0', border: '1px solid #f2c9c9', background: '#fff7f7', borderRadius: 8, padding: 8, color: '#7f1d1d' }}>
+          <div style={{ margin: '8px 12px 0', border: '1px solid #f2c9c9', background: '#fff7f7', borderRadius: 6, padding: 6, color: '#7f1d1d', fontSize: 12 }}>
             This channel is archived. Posting is locked.
           </div>
         )}
 
         {uiMessage && (
-          <div style={{ margin: '12px 16px 0', border: `1px solid ${uiMessage.type === 'error' ? 'rgba(178,34,34,0.18)' : 'rgba(109,44,44,0.12)'}`, background: uiMessage.type === 'error' ? 'rgba(255,244,246,0.95)' : 'rgba(255,255,255,0.86)', borderRadius: 12, padding: '10px 12px', color: '#6d2c2c', display: 'flex', flexDirection: isPhone ? 'column' : 'row', justifyContent: 'space-between', gap: 12, alignItems: isPhone ? 'flex-start' : 'center' }}>
+          <div style={{ margin: '8px 12px 0', border: `1px solid ${uiMessage.type === 'error' ? 'rgba(178,34,34,0.18)' : 'rgba(109,44,44,0.12)'}`, background: uiMessage.type === 'error' ? 'rgba(255,244,246,0.95)' : 'rgba(255,255,255,0.86)', borderRadius: 8, padding: '8px 10px', color: '#6d2c2c', display: 'flex', flexDirection: isPhone ? 'column' : 'row', justifyContent: 'space-between', gap: 8, alignItems: isPhone ? 'flex-start' : 'center', fontSize: 12 }}>
             <span>{uiMessage.text}</span>
-            <button type="button" onClick={() => setUiMessage(null)} style={{ border: 'none', background: 'transparent', color: '#6d2c2c', cursor: 'pointer', fontWeight: 700 }}>Dismiss</button>
+            <button type="button" onClick={() => setUiMessage(null)} style={{ border: 'none', background: 'transparent', color: '#6d2c2c', cursor: 'pointer', fontWeight: 700, fontSize: 11 }}>Dismiss</button>
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: showMembersPanel && !isNarrow ? 'minmax(0,1fr) 240px' : 'minmax(0,1fr)', minHeight: 0, background: '#fbf2f6', overflow: 'hidden' }}>
-          <div ref={messageListRef} className="psr-chat-scrollbar" style={{ padding: isPhone ? '12px 0 0' : '18px 0 0', borderRight: showMembersPanel && !isNarrow ? '1px solid rgba(109,44,44,0.09)' : 'none', overflowY: isNarrow ? 'visible' : 'auto', minHeight: 0, background: 'linear-gradient(180deg, rgba(251,242,246,0.94), rgba(249,238,243,0.96))' }}>
-            {loading && <div style={{ color: '#5a3034', padding: '18px 20px' }}>Loading…</div>}
-            {!loading && displayPosts.length === 0 && <div style={{ color: '#5a3034', padding: '18px 20px' }}>No posts yet.</div>}
+        <div style={{ display: 'grid', gridTemplateColumns: showMembersPanel && !isNarrow ? 'minmax(0,1fr) 220px' : 'minmax(0,1fr)', flex: 1, minHeight: 0, background: '#fbf2f6', overflow: 'hidden', boxSizing: 'border-box', width: '100%' }}>
+          <div ref={messageListRef} className="psr-chat-scrollbar" style={{ padding: isPhone ? '6px 2px 0' : '10px 0 0', borderRight: showMembersPanel && !isNarrow ? '1px solid rgba(109,44,44,0.09)' : 'none', overflowY: isNarrow ? 'visible' : 'auto', minHeight: 0, background: 'linear-gradient(180deg, rgba(251,242,246,0.94), rgba(249,238,243,0.96))', boxSizing: 'border-box' }}>
+            {loading && <div style={{ color: '#5a3034', padding: '14px 16px', fontSize: 13 }}>Loading…</div>}
+            {!loading && displayPosts.length === 0 && <div style={{ color: '#5a3034', padding: '14px 16px', fontSize: 13 }}>No posts yet.</div>}
             {!loading && displayPosts.map((p, index) => (
-              <div key={p._id} ref={node => { if (node) postRefs.current[p._id] = node; else delete postRefs.current[p._id]; }} style={{ padding: '0 10px' }}>
+              <div key={p._id} ref={node => { if (node) postRefs.current[p._id] = node; else delete postRefs.current[p._id]; }} style={{ padding: '0 4px', boxSizing: 'border-box', width: '100%' }}>
                 <PostCard
                   post={p}
                   onDeleteRequest={requestDeletePost}
@@ -1778,22 +1813,22 @@ export default function FeedPage({ feed }) {
           </div>
 
           {showMembersPanel && (
-              <motion.aside initial={{ opacity: 0, x: isNarrow ? 0 : 12, y: isNarrow ? 8 : 0 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.28, ease: 'easeOut' }} style={{ background: 'linear-gradient(180deg, rgba(250,240,244,0.98), rgba(247,233,239,0.98))', padding: '16px 12px', minHeight: 0, display: 'grid', gridTemplateRows: isNarrow ? 'auto auto' : 'auto minmax(0,1fr)', borderTop: isNarrow ? '1px solid rgba(109,44,44,0.09)' : 'none' }}>
-              <div style={{ color: '#3b2327', fontWeight: 800, marginBottom: 12, fontSize: 13 }}>Members</div>
-              <div className="psr-chat-scrollbar" style={{ overflowY: isNarrow ? 'visible' : 'auto', minHeight: 0, paddingRight: 4, maxHeight: isNarrow ? 'none' : '100%' }}>
+              <motion.aside initial={{ opacity: 0, x: isNarrow ? 0 : 10, y: isNarrow ? 6 : 0 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }} style={{ background: 'linear-gradient(180deg, rgba(250,240,244,0.98), rgba(247,233,239,0.98))', padding: '10px 10px', minHeight: 0, display: 'flex', flexDirection: 'column', borderTop: isNarrow ? '1px solid rgba(109,44,44,0.09)' : 'none', boxSizing: 'border-box' }}>
+              <div style={{ color: '#3b2327', fontWeight: 800, marginBottom: 6, fontSize: 12 }}>Members</div>
+              <div className="psr-chat-scrollbar" style={{ overflowY: isNarrow ? 'visible' : 'auto', minHeight: 0, paddingRight: 2, maxHeight: isNarrow ? 'none' : '100%', boxSizing: 'border-box' }}>
               {members.length === 0 ? (
-                <div style={{ color: '#7b5d63', fontSize: 12 }}>No members yet.</div>
+                <div style={{ color: '#7b5d63', fontSize: 11 }}>No members yet.</div>
               ) : (
-                <div style={{ display: 'grid', gap: 10 }}>
+                <div style={{ display: 'grid', gap: 6 }}>
                   {members.map(member => {
                     const memberName = `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Member';
                     const memberAvatar = member.profilePicUrl || member.avatar || '';
                     return (
-                      <div key={member._id || memberName} style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#e2e8f0', padding: '4px 0' }}>
-                        <div style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', background: '#fbf2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#6d2c2c', border: '1px solid rgba(109,44,44,0.1)' }}>
+                      <div key={member._id || memberName} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#e2e8f0', padding: '1px 0' }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', overflow: 'hidden', background: '#fbf2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#6d2c2c', border: '1px solid rgba(109,44,44,0.1)', flexShrink: 0 }}>
                           {memberAvatar ? <img src={memberAvatar} alt={memberName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} /> : getInitials(memberName)}
                         </div>
-                        <div style={{ fontSize: 12, color: '#3b2327' }}>{memberName}</div>
+                        <div style={{ fontSize: 11, color: '#3b2327', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{memberName}</div>
                       </div>
                     );
                   })}
@@ -1804,7 +1839,7 @@ export default function FeedPage({ feed }) {
           )}
         </div>
 
-        <div style={{ position: isNarrow ? 'static' : 'sticky', bottom: 0, borderTop: '1px solid rgba(109,44,44,0.09)', background: 'rgba(250,240,244,0.96)', padding: isPhone ? '12px 12px 14px' : '14px 18px 26px', zIndex: 2 }}>
+        <div style={{ position: isNarrow ? 'static' : 'sticky', bottom: 0, borderTop: '1px solid rgba(109,44,44,0.09)', background: 'rgba(250,240,244,0.96)', padding: isPhone ? '8px 8px 10px' : '10px 14px 14px', zIndex: 2, boxSizing: 'border-box', width: '100%' }}>
           <CreatePost feed={feed} canPost={canPost} canBlast={canBlast} onPosted={load} postingLocked={isArchived} composerState={composerState} onClearComposerState={() => setComposerState(null)} onError={(text) => setUiMessage({ type: 'error', text })} isCompact={isNarrow} isPhone={isPhone} />
         </div>
       </motion.div>
@@ -1820,23 +1855,23 @@ export default function FeedPage({ feed }) {
       />
 
       {manageOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(34,16,19,0.35)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: isPhone ? 'flex-end' : 'center', justifyContent: 'center', zIndex: 1000, padding: isPhone ? 0 : 16 }}>
-          <div className="psr-chat-scrollbar" style={{ background: 'linear-gradient(180deg, rgba(255,251,252,0.98), rgba(248,232,238,0.98))', borderRadius: isPhone ? '24px 24px 0 0' : 28, padding: isPhone ? 16 : 18, width: isPhone ? '100%' : '95%', maxWidth: 960, maxHeight: isPhone ? '94dvh' : '90vh', overflowY: 'auto', border: '1px solid rgba(109,44,44,0.12)', boxShadow: '0 30px 60px rgba(109,44,44,0.18)' }}>
-            <div style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', justifyContent: 'space-between', alignItems: isPhone ? 'stretch' : 'center', gap: 12 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(34,16,19,0.35)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: isPhone ? 'flex-end' : 'center', justifyContent: 'center', zIndex: 1000, padding: isPhone ? 0 : 12 }}>
+          <div className="psr-chat-scrollbar" style={{ background: 'linear-gradient(180deg, rgba(255,251,252,0.98), rgba(248,232,238,0.98))', borderRadius: isPhone ? '16px 16px 0 0' : 20, padding: isPhone ? 12 : 16, width: isPhone ? '100%' : '90%', maxWidth: 900, maxHeight: isPhone ? '90dvh' : '88vh', overflowY: 'auto', border: '1px solid rgba(109,44,44,0.12)', boxShadow: '0 25px 50px rgba(109,44,44,0.16)', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', justifyContent: 'space-between', alignItems: isPhone ? 'stretch' : 'center', gap: 8 }}>
               <div>
-                <h3 style={{ margin: 0, color: '#4a2328', fontSize: 24 }}>Manage Channels</h3>
-                <div style={{ color: '#8a6a71', fontSize: 13, marginTop: 4 }}>Create channels, tune membership rules, and manage access.</div>
+                <h3 style={{ margin: 0, color: '#4a2328', fontSize: isPhone ? 18 : 22 }}>Manage Channels</h3>
+                <div style={{ color: '#8a6a71', fontSize: 11, marginTop: 1 }}>Create channels, tune membership rules, and manage access.</div>
               </div>
               <button onClick={() => setManageOpen(false)} style={{ ...managePillButtonStyle, width: isPhone ? '100%' : 'auto' }}>Close</button>
             </div>
-            {manageMsg && <div style={{ marginTop: 12, fontSize: 13, color: '#6d2c2c', background: 'rgba(255,255,255,0.78)', border: '1px solid rgba(109,44,44,0.08)', padding: '10px 12px', borderRadius: 14 }}>{manageMsg}</div>}
+            {manageMsg && <div style={{ marginTop: 8, fontSize: 11, color: '#6d2c2c', background: 'rgba(255,255,255,0.78)', border: '1px solid rgba(109,44,44,0.08)', padding: '6px 8px', borderRadius: 10, boxSizing: 'border-box' }}>{manageMsg}</div>}
 
             {canCreateChannels && (
               <div style={manageSectionStyle}>
-                <div style={{ fontWeight: 800, marginBottom: 10, color: '#5a3034', fontSize: 20 }}>Create Channel</div>
-                <div style={{ display: 'grid', gap: 10 }}>
+                <div style={{ fontWeight: 800, marginBottom: 6, color: '#5a3034', fontSize: 15 }}>Create Channel</div>
+                <div style={{ display: 'grid', gap: 6, boxSizing: 'border-box' }}>
                   <input placeholder="Name" value={createName} onChange={e => setCreateName(e.target.value)} style={manageInputStyle} />
-                  <div style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', gap: 8, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', gap: 6, alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
                     <input
                       placeholder="slug"
                       value={createSlug}
@@ -1859,15 +1894,15 @@ export default function FeedPage({ feed }) {
                             return next;
                           });
                         }}
-                        style={{ ...managePillButtonStyle, width: isPhone ? '100%' : 'auto' }}
+                        style={{ ...managePillButtonStyle, width: isPhone ? '100%' : 'auto', fontSize: 11, whiteSpace: 'nowrap' }}
                       >
                         {slugManualEdit ? 'Lock slug' : 'Edit slug'}
                       </button>
                     )}
                   </div>
-                  {!rawSlug && <div style={{ fontSize: 12, color: '#b91c1c' }}>Slug is required.</div>}
+                  {!rawSlug && <div style={{ fontSize: 10, color: '#b91c1c' }}>Slug is required.</div>}
                   {!!rawSlug && !slugValid && (
-                    <div style={{ fontSize: 12, color: '#b91c1c' }}>
+                    <div style={{ fontSize: 10, color: '#b91c1c' }}>
                       Use letters/numbers only, no spaces or special characters.
                     </div>
                   )}
@@ -1879,20 +1914,20 @@ export default function FeedPage({ feed }) {
             )}
 
             <div style={manageSectionStyle}>
-              <div style={{ fontWeight: 800, marginBottom: 8, color: '#5a3034', fontSize: 20 }}>Channels</div>
+              <div style={{ fontWeight: 800, marginBottom: 6, color: '#5a3034', fontSize: 15 }}>Channels</div>
               {channels.map(c => (
-                <div key={c._id} style={{ padding: '12px 0', borderBottom: '1px solid rgba(109,44,44,0.08)', display: 'flex', flexDirection: isPhone ? 'column' : 'row', justifyContent: 'space-between', alignItems: isPhone ? 'stretch' : 'center', gap: 12 }}>
+                <div key={c._id} style={{ padding: '8px 0', borderBottom: '1px solid rgba(109,44,44,0.08)', display: 'flex', flexDirection: isPhone ? 'column' : 'row', justifyContent: 'space-between', alignItems: isPhone ? 'stretch' : 'center', gap: 8, boxSizing: 'border-box' }}>
                   <div>
-                    <div style={{ color: '#4a2328', fontWeight: 700 }}>{c.name} <span style={{ color: '#7a6670', fontWeight: 500 }}>({c.slug})</span></div>
-                    <div style={{ fontSize: 12, color: c.isArchived ? '#b91c1c' : '#166534' }}>{c.isArchived ? 'Archived' : 'Active'}</div>
+                    <div style={{ color: '#4a2328', fontWeight: 700, fontSize: 13 }}>{c.name} <span style={{ color: '#7a6670', fontWeight: 500, fontSize: 11 }}>({c.slug})</span></div>
+                    <div style={{ fontSize: 10, color: c.isArchived ? '#b91c1c' : '#166534' }}>{c.isArchived ? 'Archived' : 'Active'}</div>
                     {isExecCreator(c) && channelHasPosts(c) && !isWebTeamUser && (
-                      <div style={{ fontSize: 12, color: '#666' }}>Channels with posts must be archived.</div>
+                      <div style={{ fontSize: 10, color: '#666' }}>Channels with posts must be archived.</div>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                    {canArchiveChannel(c) && <button onClick={() => archiveToggle(c)} style={managePillButtonStyle}>{c.isArchived ? 'Unarchive' : 'Archive'}</button>}
-                    {canDeleteChannel(c) && <button onClick={() => deleteChannel(c)} style={managePillButtonStyle}>Delete</button>}
-                    {canManageMembersChannel(c) && <button onClick={() => setSelectedChannelId(c._id)} style={managePillButtonStyle}>Edit Members</button>}
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    {canArchiveChannel(c) && <button onClick={() => archiveToggle(c)} style={{ ...managePillButtonStyle, fontSize: 10, padding: '5px 8px' }}>{c.isArchived ? 'Unarchive' : 'Archive'}</button>}
+                    {canDeleteChannel(c) && <button onClick={() => deleteChannel(c)} style={{ ...managePillButtonStyle, fontSize: 10, padding: '5px 8px' }}>Delete</button>}
+                    {canManageMembersChannel(c) && <button onClick={() => setSelectedChannelId(c._id)} style={{ ...managePillButtonStyle, fontSize: 10, padding: '5px 8px' }}>Edit Members</button>}
                   </div>
                 </div>
               ))}
@@ -1900,15 +1935,15 @@ export default function FeedPage({ feed }) {
 
             {selectedChannel && canManageMembersChannel(selectedChannel) && (
               <div style={manageSectionStyle}>
-                <div style={{ fontWeight: 800, marginBottom: 8, color: '#5a3034', fontSize: 20 }}>Edit Members: {selectedChannel.name}</div>
-                <div style={{ fontSize: 12, color: '#76616a', marginBottom: 8 }}>
+                <div style={{ fontWeight: 800, marginBottom: 5, color: '#5a3034', fontSize: 15 }}>Edit Members: {selectedChannel.name}</div>
+                <div style={{ fontSize: 10, color: '#76616a', marginBottom: 6 }}>
                   Excluded members are always removed even if included by role/status.
                 </div>
-                <div style={{ marginBottom: 8 }}>
-                  <div style={{ fontSize: 13, marginBottom: 6, color: '#4f2f32', fontWeight: 700 }}>Include Roles</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <div style={{ marginBottom: 6 }}>
+                  <div style={{ fontSize: 11, marginBottom: 3, color: '#4f2f32', fontWeight: 700 }}>Include Roles</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                     {ROLE_OPTIONS.map(r => (
-                      <label key={r} style={{ fontSize: 12, color: '#5a3034', background: 'rgba(255,255,255,0.72)', padding: '6px 10px', borderRadius: 999, border: '1px solid rgba(109,44,44,0.08)' }}>
+                      <label key={r} style={{ fontSize: 10, color: '#5a3034', background: 'rgba(255,255,255,0.72)', padding: '3px 6px', borderRadius: 999, border: '1px solid rgba(109,44,44,0.08)' }}>
                         <input
                           type="checkbox"
                           checked={ruleRoles.includes(r)}
@@ -1922,11 +1957,11 @@ export default function FeedPage({ feed }) {
                     ))}
                   </div>
                 </div>
-                <div style={{ marginBottom: 8 }}>
-                  <div style={{ fontSize: 13, marginBottom: 6, color: '#4f2f32', fontWeight: 700 }}>Include Member Statuses</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <div style={{ marginBottom: 6 }}>
+                  <div style={{ fontSize: 11, marginBottom: 3, color: '#4f2f32', fontWeight: 700 }}>Include Member Statuses</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                     {MEMBER_STATUS_OPTIONS.map(s => (
-                      <label key={s} style={{ fontSize: 12, color: '#5a3034', background: 'rgba(255,255,255,0.72)', padding: '6px 10px', borderRadius: 999, border: '1px solid rgba(109,44,44,0.08)' }}>
+                      <label key={s} style={{ fontSize: 10, color: '#5a3034', background: 'rgba(255,255,255,0.72)', padding: '3px 6px', borderRadius: 999, border: '1px solid rgba(109,44,44,0.08)' }}>
                         <input
                           type="checkbox"
                           checked={ruleStatuses.includes(s)}
@@ -1939,57 +1974,57 @@ export default function FeedPage({ feed }) {
                       </label>
                     ))}
                   </div>
-                  <div style={{ marginTop: 8 }}>
-                    <button onClick={saveRules} style={{ ...managePrimaryButtonStyle, width: isPhone ? '100%' : 'auto' }}>Save Rules</button>
+                  <div style={{ marginTop: 6 }}>
+                    <button onClick={saveRules} style={{ ...managePrimaryButtonStyle, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>Save Rules</button>
                   </div>
                 </div>
 
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ fontSize: 13, marginBottom: 6, color: '#4f2f32', fontWeight: 700 }}>Add Specific Member</div>
+                <div style={{ marginTop: 6 }}>
+                  <div style={{ fontSize: 11, marginBottom: 3, color: '#4f2f32', fontWeight: 700 }}>Add Specific Member</div>
                   <select value={selectedManualUserId} onChange={e => setSelectedManualUserId(e.target.value)} style={manageInputStyle}>
                     <option value="">Select user</option>
                     {approvedUsers.map(u => (
                       <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>
                     ))}
                   </select>
-                  <div style={{ marginTop: 6, display: 'flex', flexDirection: isPhone ? 'column' : 'row', gap: 8 }}>
-                    <button disabled={!selectedManualUserId} onClick={addSpecificMember} style={{ ...managePrimaryButtonStyle, opacity: !selectedManualUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto' }}>Add Member</button>
-                    <button disabled={!selectedManualUserId} onClick={() => mutateMembers('manual-members', [], [selectedManualUserId])} style={{ ...managePillButtonStyle, opacity: !selectedManualUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto' }}>Remove Manual Override</button>
+                  <div style={{ marginTop: 5, display: 'flex', flexDirection: isPhone ? 'column' : 'row', gap: 5 }}>
+                    <button disabled={!selectedManualUserId} onClick={addSpecificMember} style={{ ...managePrimaryButtonStyle, opacity: !selectedManualUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>Add Member</button>
+                    <button disabled={!selectedManualUserId} onClick={() => mutateMembers('manual-members', [], [selectedManualUserId])} style={{ ...managePillButtonStyle, opacity: !selectedManualUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>Remove Manual Override</button>
                   </div>
                 </div>
 
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 13, marginBottom: 6, color: '#4f2f32', fontWeight: 700 }}>Remove or Restore Member</div>
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 11, marginBottom: 3, color: '#4f2f32', fontWeight: 700 }}>Remove or Restore Member</div>
                   <select value={selectedExcludedUserId} onChange={e => setSelectedExcludedUserId(e.target.value)} style={manageInputStyle}>
                     <option value="">Select user</option>
                     {approvedUsers.map(u => (
                       <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>
                     ))}
                   </select>
-                  <div style={{ marginTop: 6, display: 'flex', flexDirection: isPhone ? 'column' : 'row', gap: 8 }}>
-                    <button disabled={!selectedExcludedUserId} onClick={() => removeSpecificMember()} style={{ ...managePrimaryButtonStyle, opacity: !selectedExcludedUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto' }}>Remove Member</button>
-                    <button disabled={!selectedExcludedUserId} onClick={restoreExcludedMember} style={{ ...managePillButtonStyle, opacity: !selectedExcludedUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto' }}>Restore Member</button>
+                  <div style={{ marginTop: 5, display: 'flex', flexDirection: isPhone ? 'column' : 'row', gap: 5 }}>
+                    <button disabled={!selectedExcludedUserId} onClick={() => removeSpecificMember()} style={{ ...managePrimaryButtonStyle, opacity: !selectedExcludedUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>Remove Member</button>
+                    <button disabled={!selectedExcludedUserId} onClick={restoreExcludedMember} style={{ ...managePillButtonStyle, opacity: !selectedExcludedUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>Restore Member</button>
                   </div>
                 </div>
 
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ fontSize: 13, marginBottom: 6, fontWeight: 700, color: '#4f2f32' }}>Current Channel Members</div>
-                  <div className="psr-chat-scrollbar" style={{ display: 'grid', gap: 8, maxHeight: 220, overflowY: 'auto', paddingRight: 4 }}>
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 11, marginBottom: 5, fontWeight: 700, color: '#4f2f32' }}>Current Channel Members</div>
+                  <div className="psr-chat-scrollbar" style={{ display: 'grid', gap: 5, maxHeight: 150, overflowY: 'auto', paddingRight: 3, boxSizing: 'border-box' }}>
                     {selectedChannelMembers.map(member => {
                       const memberName = `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Member';
                       return (
-                        <div key={member._id} style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', alignItems: isPhone ? 'stretch' : 'center', justifyContent: 'space-between', gap: 10, border: '1px solid #f1e5e8', borderRadius: 16, padding: '10px 12px', background: 'rgba(255,255,255,0.78)' }}>
+                        <div key={member._id} style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', alignItems: isPhone ? 'stretch' : 'center', justifyContent: 'space-between', gap: 6, border: '1px solid #f1e5e8', borderRadius: 10, padding: '6px 8px', background: 'rgba(255,255,255,0.78)', boxSizing: 'border-box' }}>
                           <div>
-                            <div style={{ fontWeight: 700, color: '#4a2328' }}>{memberName}</div>
-                            <div style={{ fontSize: 12, color: '#6b6570' }}>{Array.isArray(member.role) ? member.role.join(', ') : ''}</div>
+                            <div style={{ fontWeight: 700, color: '#4a2328', fontSize: 12 }}>{memberName}</div>
+                            <div style={{ fontSize: 10, color: '#6b6570' }}>{Array.isArray(member.role) ? member.role.join(', ') : ''}</div>
                           </div>
-                          <button type="button" onClick={() => removeSpecificMember(member._id)} style={{ ...managePillButtonStyle, width: isPhone ? '100%' : 'auto' }}>
+                          <button type="button" onClick={() => removeSpecificMember(member._id)} style={{ ...managePillButtonStyle, width: isPhone ? '100%' : 'auto', fontSize: 10, padding: '4px 8px' }}>
                             Remove
                           </button>
                         </div>
                       );
                     })}
-                    {selectedChannelMembers.length === 0 && <div style={{ fontSize: 12, color: '#6b6570' }}>No members resolved for this channel yet.</div>}
+                    {selectedChannelMembers.length === 0 && <div style={{ fontSize: 10, color: '#6b6570' }}>No members resolved for this channel yet.</div>}
                   </div>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 // client/src/App.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import {
   HashRouter as Router,
@@ -67,7 +67,6 @@ function isOfficerLevel(user) {
     r.includes('vpcommunications') || r.includes('vp communications')
   );
 }
-
 
 function canAccessPointsOverview(user) {
   if (!user) return false;
@@ -180,7 +179,6 @@ function isPublicRoute(pathname) {
 // ---- AppContent so we can use useLocation ----
 function AppContent() {
   const [bgPosition, setBgPosition] = useState('40% -10%');
-  const footerRef = useRef(null);
   const location = useLocation();
   const isFeedsRoute = location.pathname.startsWith('/feeds');
   const showFooter = isPublicRoute(location.pathname);
@@ -193,17 +191,6 @@ function AppContent() {
     handleResize();
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  useEffect(() => {
-    const applyFooterHeight = () => {
-      const nextHeight = showFooter ? (footerRef.current?.offsetHeight || 220) : 0;
-      document.documentElement.style.setProperty('--site-footer-height', `${nextHeight}px`);
-    };
-
-    applyFooterHeight();
-    window.addEventListener('resize', applyFooterHeight);
-    return () => window.removeEventListener('resize', applyFooterHeight);
-  }, [showFooter]);
 
   useEffect(() => {
     document.documentElement.style.overflow = '';
@@ -275,7 +262,7 @@ function AppContent() {
       </main>
 
       {showFooter && (
-        <footer ref={footerRef} className={`site-footer${isFeedsRoute ? ' site-footer-feeds' : ''}`}>
+        <footer className={`site-footer${isFeedsRoute ? ' site-footer-feeds' : ''}`}>
           <div className="site-footer-inner">
             <div className="site-footer-brand-group">
               <img 

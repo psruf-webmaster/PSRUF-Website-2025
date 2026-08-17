@@ -16,18 +16,10 @@ export default function Partners() {
               Phi Sigma Rho partners with organizations and initiatives that strengthen our community and amplify our service work.
             </p>
             <div className="hero-actions">
-              <a className="button" href="/contact">
+              <a className="button" href="/#contact">
                 Collaborate with us <ArrowRight size={16} />
               </a>
             </div>
-          </div>
-
-          <div className="hero-card">
-            <img
-              src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80"
-              alt="Phi Sigma Rho community partners"
-            />
-            <div className="hero-card-float">Partnering with purpose.</div>
           </div>
         </div>
       </section>

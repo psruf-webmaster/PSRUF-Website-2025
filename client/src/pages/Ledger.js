@@ -62,6 +62,17 @@ export default function Ledger() {
   const [manualForm, setManualForm] = useState({ userId: "", category: allowedManualCategories[0] || "", points: "", note: "" });
   const [error, setError] = useState("");
 
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window === "undefined" ? 1400 : window.innerWidth
+  );
+  const isMobile = viewportWidth < 1024;
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const headers = useMemo(() => (
     userId ? { Authorization: `Bearer ${userId}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" }
   ), [userId]);
@@ -155,22 +166,22 @@ export default function Ledger() {
   const manualEntryCount = entries.filter(entry => entry.source === "manual").length;
 
   if (!isOfficer) {
-    return <div style={{ padding: 24 }}>Not authorized.</div>;
+    return <div style={{ padding: 24, textAlign: "center" }}>Not authorized.</div>;
   }
 
   return (
     <div style={styles.page}>
-      <div style={styles.heroCard}>
+      <div style={{ ...styles.heroCard, ...(isMobile ? styles.mobileCenter : {}) }}>
         <div style={styles.heroGlow} />
         <div style={styles.heroContent}>
-          <div>
-            <div style={styles.kicker}>Member Performance Ledger</div>
+          <div style={isMobile ? styles.centerText : undefined}>
+            <div style={{ ...styles.kicker, ...(isMobile ? { margin: "0 auto 14px" } : {}) }}>Member Performance Ledger</div>
             <h1 style={styles.pageTitle}>Points Ledger</h1>
             <p style={styles.pageSubtitle}>
               Review category totals, scan recent movement, and create tightly controlled manual adjustments.
             </p>
           </div>
-          <div style={styles.heroActions}>
+          <div style={{ ...styles.heroActions, ...(isMobile ? styles.centerFlex : styles.rightFlex) }}>
             <button
               style={canManageManualAdjustments ? styles.primaryBtn : styles.disabledBtn}
               onClick={() => canManageManualAdjustments && setManualOpen(true)}
@@ -180,7 +191,7 @@ export default function Ledger() {
               Add Manual Adjustment
             </button>
             {!canManageManualAdjustments && (
-              <div style={styles.permissionBadge}>Manual adjustments are limited to VP Social, VP Scholarship, VP Service, and VP Finance for their own categories.</div>
+              <div style={{ ...styles.permissionBadge, ...(isMobile ? {} : styles.centerText) }}>Manual adjustments are limited to VP Social, VP Scholarship, VP Service, and VP Finance for their own categories.</div>
             )}
           </div>
         </div>
@@ -196,8 +207,8 @@ export default function Ledger() {
         </div>
       </div>
 
-      <div style={styles.toolbarCard}>
-        <div style={styles.toolbarTitleRow}>
+      <div style={{ ...styles.toolbarCard, ...(isMobile ? styles.mobileCenter : {}) }}>
+        <div style={{ ...styles.toolbarTitleRow, ...(isMobile ? styles.centerText : {}) }}>
           <div>
             <h2 style={styles.sectionTitle}>Filter activity</h2>
             <p style={styles.sectionSubtitle}>Keep the controls compact while preserving breathing room between each filter.</p>
@@ -230,17 +241,17 @@ export default function Ledger() {
         </div>
       </div>
 
-      {error && <div style={styles.errorBanner}>{error}</div>}
+      {error && <div style={{ ...styles.errorBanner, ...(isMobile ? { textAlign: "center" } : {}) }}>{error}</div>}
 
-      <div style={styles.sectionCard}>
-        <div style={styles.sectionHeader}>
+      <div style={{ ...styles.sectionCard, ...(isMobile ? styles.mobileCenter : {}) }}>
+        <div style={{ ...styles.sectionHeader, ...(isMobile ? styles.centerText : {}) }}>
           <div>
             <h3 style={styles.sectionTitle}>Entries</h3>
             <p style={styles.sectionSubtitle}>Recent ledger activity with clearer spacing and softer contrast.</p>
           </div>
         </div>
-        <div style={styles.tableShell}>
-          <table style={styles.table}>
+        <div style={styles.tableShell(isMobile)}>
+          <table style={styles.table(isMobile)}>
             <thead>
               <tr style={styles.headerRow}>
                 <th style={styles.th}>Date</th>
@@ -277,7 +288,7 @@ export default function Ledger() {
             </tbody>
           </table>
         </div>
-        <div style={styles.paginationRow}>
+        <div style={{ ...styles.paginationRow, ...(isMobile ? styles.centerFlex : styles.rightFlex) }}>
           <button style={styles.secondaryBtn} disabled={page <= 1} onClick={() => { const p = Math.max(1, page - 1); setPage(p); loadEntries(p); }}>Prev</button>
           <div style={styles.paginationLabel}>Page {page} / {totalPages}</div>
           <button style={styles.secondaryBtn} disabled={page >= totalPages} onClick={() => { const p = Math.min(totalPages, page + 1); setPage(p); loadEntries(p); }}>Next</button>
@@ -286,9 +297,9 @@ export default function Ledger() {
 
       {manualOpen && (
         <div style={styles.modalBackdrop}>
-          <div style={styles.modalCard}>
+          <div style={{ ...styles.modalCard, ...(isMobile ? styles.mobileCenter : {}) }}>
             <div style={styles.modalHeader}>
-              <div>
+              <div style={isMobile ? styles.centerText : undefined}>
                 <h3 style={styles.modalTitle}>Add Manual Adjustment</h3>
                 <p style={styles.modalSubtitle}>Only approved categories for your role are available.</p>
               </div>
@@ -345,7 +356,7 @@ export default function Ledger() {
                   style={styles.textarea}
                 />
               </div>
-              <div style={styles.modalActions}>
+              <div style={{ ...styles.modalActions, ...(isMobile ? styles.centerFlex : styles.rightFlex) }}>
                 <button type="button" style={styles.secondaryBtn} onClick={() => setManualOpen(false)}>Cancel</button>
                 <button type="submit" style={canManageManualAdjustments ? styles.primaryBtn : styles.disabledBtn} disabled={!canManageManualAdjustments}>Save</button>
               </div>
@@ -364,36 +375,48 @@ const styles = {
     maxWidth: 1240,
     margin: "0 auto",
     color: PALETTE.ink,
-    background: `radial-gradient(circle at top right, rgba(232, 161, 179, 0.28), transparent 34%), linear-gradient(180deg, ${PALETTE.pearl} 0%, #fffdfb 100%)`,
+    background: "transparent",
+  },
+  mobileCenter: {
+    textAlign: "center",
+  },
+  centerText: {
+    textAlign: "center",
+    marginLeft: "auto",
+    marginRight: "auto",
+  },
+  centerFlex: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  rightFlex: {
+    justifyContent: "flex-end",
+    alignItems: "center",
+  },
+  rightText: {
+    textAlign: "right",
   },
   heroCard: {
     position: "relative",
     overflow: "hidden",
     borderRadius: 28,
-    padding: "28px 28px 24px",
+    padding: "32px 24px 32px 32px",
     marginBottom: 24,
-    background: `linear-gradient(145deg, rgba(248, 242, 238, 0.96) 0%, rgba(246, 215, 223, 0.94) 100%)`,
+    background: "#ffffff",
     border: `1px solid ${PALETTE.line}`,
-    boxShadow: PALETTE.shadow,
+    boxShadow: "none",
   },
   heroGlow: {
-    position: "absolute",
-    width: 240,
-    height: 240,
-    right: -80,
-    top: -90,
-    borderRadius: "50%",
-    background: "radial-gradient(circle, rgba(182, 138, 165, 0.34) 0%, rgba(232, 161, 179, 0) 72%)",
-    pointerEvents: "none",
+    display: "none",
   },
   heroContent: {
     position: "relative",
     display: "flex",
     justifyContent: "space-between",
-    gap: 20,
-    alignItems: "flex-start",
+    alignItems: "center",
+    gap: 32,
     flexWrap: "wrap",
-    marginBottom: 20,
+    marginBottom: 28,
   },
   kicker: {
     display: "inline-flex",
@@ -403,7 +426,7 @@ const styles = {
     borderRadius: 999,
     marginBottom: 14,
     color: PALETTE.burgundy,
-    background: "rgba(255,255,255,0.72)",
+    background: "#ffffff",
     border: `1px solid ${PALETTE.line}`,
     fontSize: 12,
     fontWeight: 700,
@@ -418,7 +441,7 @@ const styles = {
   },
   pageSubtitle: {
     margin: "12px 0 0",
-    maxWidth: 680,
+    maxWidth: 620,
     fontSize: 15,
     lineHeight: 1.65,
     color: "rgba(67, 37, 52, 0.82)",
@@ -426,18 +449,24 @@ const styles = {
   heroActions: {
     display: "flex",
     flexDirection: "column",
-    alignItems: "flex-end",
-    gap: 10,
+    alignItems: "center",
+    gap: 12,
+    flexShrink: 0,
+    width: "100%",
+    maxWidth: 320,
+    marginLeft: "auto",
+    marginRight: 0,
   },
   permissionBadge: {
-    maxWidth: 320,
-    padding: "10px 12px",
+    width: "100%",
+    padding: "10px 14px",
     borderRadius: 14,
-    background: "rgba(255,255,255,0.7)",
+    background: "#fcf8f9",
     border: `1px solid ${PALETTE.line}`,
     fontSize: 12,
     lineHeight: 1.45,
-    color: "rgba(67, 37, 52, 0.78)",
+    color: "rgba(67, 37, 52, 0.72)",
+    textAlign: "center",
   },
   metricGrid: {
     position: "relative",
@@ -448,9 +477,10 @@ const styles = {
   metricCard: {
     padding: "18px 18px 16px",
     borderRadius: 20,
-    background: "rgba(255,255,255,0.78)",
+    background: "#ffffff",
     border: `1px solid ${PALETTE.line}`,
     backdropFilter: "blur(12px)",
+    textAlign: "center",
   },
   metricLabel: {
     display: "block",
@@ -471,9 +501,9 @@ const styles = {
     padding: "18px 20px 20px",
     marginBottom: 18,
     borderRadius: 24,
-    background: "rgba(255,255,255,0.88)",
+    background: "#ffffff",
     border: `1px solid ${PALETTE.line}`,
-    boxShadow: "0 10px 30px rgba(111, 34, 50, 0.06)",
+    boxShadow: "none",
   },
   toolbarTitleRow: {
     display: "flex",
@@ -491,9 +521,9 @@ const styles = {
     padding: "18px 20px 20px",
     marginBottom: 18,
     borderRadius: 24,
-    background: "rgba(255,255,255,0.9)",
+    background: "#ffffff",
     border: `1px solid ${PALETTE.line}`,
-    boxShadow: "0 10px 30px rgba(111, 34, 50, 0.05)",
+    boxShadow: "none",
   },
   sectionHeader: {
     display: "flex",
@@ -508,34 +538,39 @@ const styles = {
     color: PALETTE.burgundy,
   },
   sectionSubtitle: {
-    margin: "6px 0 0",
+    margin: "6px auto 0",
     fontSize: 13,
     color: "rgba(67, 37, 52, 0.72)",
+    maxWidth: 600,
   },
   primaryBtn: {
-    padding: "12px 18px",
+    width: "100%",
+    padding: "12px 20px",
     borderRadius: 14,
     border: "none",
     background: `linear-gradient(135deg, ${PALETTE.burgundy} 0%, ${PALETTE.mauve} 100%)`,
     color: "white",
     cursor: "pointer",
     fontWeight: 600,
-    boxShadow: "0 14px 28px rgba(111, 34, 50, 0.18)",
+    textAlign: "center",
+    boxShadow: "0 10px 22px rgba(111, 34, 50, 0.15)",
   },
   disabledBtn: {
-    padding: "12px 18px",
+    width: "100%",
+    padding: "12px 20px",
     borderRadius: 14,
     border: "none",
     background: "linear-gradient(135deg, rgba(182, 138, 165, 0.45) 0%, rgba(232, 161, 179, 0.4) 100%)",
     color: "rgba(67, 37, 52, 0.6)",
     cursor: "not-allowed",
     fontWeight: 600,
+    textAlign: "center",
   },
   secondaryBtn: {
     padding: "10px 14px",
     borderRadius: 12,
     border: `1px solid ${PALETTE.line}`,
-    background: "rgba(255,255,255,0.86)",
+    background: "#ffffff",
     cursor: "pointer",
     color: PALETTE.ink,
     fontWeight: 600,
@@ -544,6 +579,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: 8,
+    textAlign: "left",
   },
   controlLabel: {
     fontSize: 12,
@@ -558,30 +594,34 @@ const styles = {
     padding: "11px 14px",
     borderRadius: 14,
     border: `1px solid ${PALETTE.line}`,
-    background: "rgba(255,255,255,0.92)",
+    background: "#ffffff",
     color: PALETTE.ink,
+    textAlign: "inherit",
   },
   textarea: {
     padding: "12px 14px",
     borderRadius: 14,
     border: `1px solid ${PALETTE.line}`,
-    background: "rgba(255,255,255,0.92)",
+    background: "#ffffff",
     resize: "vertical",
   },
-  tableShell: {
-    overflowX: "auto",
+  tableShell: (isMobile) => ({
+    overflowX: isMobile ? "auto" : "visible",
+    WebkitOverflowScrolling: "touch",
     borderRadius: 20,
     border: `1px solid ${PALETTE.line}`,
-    background: `linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248, 242, 238, 0.88) 100%)`,
-  },
-  table: {
+    background: "#ffffff",
+  }),
+  table: (isMobile) => ({
     width: "100%",
+    minWidth: isMobile ? 960 : 0,
     borderCollapse: "separate",
     borderSpacing: 0,
-  },
+    tableLayout: isMobile ? "auto" : "fixed",
+  }),
   headerRow: {
     textAlign: "left",
-    background: "linear-gradient(180deg, rgba(246, 215, 223, 0.58) 0%, rgba(255,255,255,0.9) 100%)",
+    background: "#ffffff",
   },
   th: {
     padding: "16px 18px",
@@ -598,9 +638,10 @@ const styles = {
     color: PALETTE.ink,
     borderTop: `1px solid ${PALETTE.line}`,
     verticalAlign: "top",
+    overflowWrap: "anywhere",
   },
   bodyRow: {
-    background: "rgba(255,255,255,0.84)",
+    background: "#ffffff",
   },
   memberCell: {
     padding: "18px 18px",
@@ -608,15 +649,8 @@ const styles = {
     color: PALETTE.ink,
     borderTop: `1px solid ${PALETTE.line}`,
     minWidth: 180,
-  },
-  memberName: {
-    fontWeight: 700,
-    color: PALETTE.burgundy,
-  },
-  memberSubtext: {
-    marginTop: 5,
-    fontSize: 12,
-    color: "rgba(67, 37, 52, 0.62)",
+    overflowWrap: "anywhere",
+    verticalAlign: "top",
   },
   noteCell: {
     padding: "18px 18px",
@@ -625,6 +659,8 @@ const styles = {
     borderTop: `1px solid ${PALETTE.line}`,
     minWidth: 220,
     lineHeight: 1.5,
+    overflowWrap: "anywhere",
+    verticalAlign: "top",
   },
   pointsCell: (points) => ({
     padding: "18px 18px",
@@ -632,6 +668,7 @@ const styles = {
     fontWeight: 700,
     color: points < 0 ? PALETTE.burgundy : "#5d3b55",
     borderTop: `1px solid ${PALETTE.line}`,
+    verticalAlign: "top",
   }),
   emptyCell: {
     padding: "28px 18px",
@@ -656,7 +693,7 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    background: "rgba(255,255,255,0.72)",
+    background: "#ffffff",
     fontSize: 12,
     fontWeight: 800,
   },
@@ -690,7 +727,7 @@ const styles = {
     padding: 12,
   },
   modalCard: {
-    background: `linear-gradient(180deg, rgba(255,255,255,0.98) 0%, ${PALETTE.pearl} 100%)`,
+    background: "#ffffff",
     borderRadius: 22,
     padding: 20,
     width: "100%",
@@ -699,6 +736,7 @@ const styles = {
     overflowY: "auto",
     boxShadow: PALETTE.shadow,
     border: `1px solid ${PALETTE.line}`,
+    textAlign: "left",
   },
   modalHeader: {
     display: "flex",
@@ -716,7 +754,7 @@ const styles = {
     fontSize: 13,
     color: "rgba(67, 37, 52, 0.72)",
   },
-  field: { display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 },
+  field: { display: "flex", flexDirection: "column", gap: 6, marginBottom: 14, textAlign: "left" },
   fieldLabel: {
     fontSize: 13,
     fontWeight: 700,
@@ -729,7 +767,6 @@ const styles = {
   },
   modalActions: {
     display: "flex",
-    justifyContent: "flex-end",
     gap: 8,
     marginTop: 18,
   },

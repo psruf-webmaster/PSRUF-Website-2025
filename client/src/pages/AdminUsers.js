@@ -136,7 +136,7 @@ function Multi({
   value,
   onChange,
   size = 5,
-  width = 220,
+  width = "100%",
 }) {
   const handle = (e) => {
     const selected = Array.from(
@@ -240,9 +240,6 @@ export default function AdminUsers() {
     [userId]
   );
 
-  /*
-   * Load users for the current approval tab.
-   */
   const load = useCallback(async () => {
     if (!allowed) {
       setRows([]);
@@ -309,9 +306,6 @@ export default function AdminUsers() {
     load();
   }, [load]);
 
-  /*
-   * Keep the logged-in user's cached permissions current.
-   */
   useEffect(() => {
     if (allowed) {
       refreshUser();
@@ -334,9 +328,6 @@ export default function AdminUsers() {
       );
   }, []);
 
-  /*
-   * Save position changes.
-   */
   const savePositions = async (id) => {
     const add = addPos[id] || [];
     const remove = removePos[id] || [];
@@ -370,9 +361,6 @@ export default function AdminUsers() {
     return data;
   };
 
-  /*
-   * Scholarship update.
-   */
   const updateScholarship = async (
     id,
     scholarship
@@ -415,18 +403,12 @@ export default function AdminUsers() {
     }
   };
 
-  /*
-   * Save roles, status, scholarship and positions.
-   */
   const updateRolesStatus = async (id) => {
     try {
       const hasPositionChanges =
         (addPos[id] || []).length > 0 ||
         (removePos[id] || []).length > 0;
 
-      /*
-       * First update roles/status/scholarship.
-       */
       const res = await fetch(
         `/api/admin/users/${id}/roles-status`,
         {
@@ -456,25 +438,11 @@ export default function AdminUsers() {
         );
       }
 
-      /*
-       * Then update positions.
-       */
       if (hasPositionChanges) {
         await savePositions(id);
       }
 
-      /*
-       * Refresh the logged-in user's data.
-       *
-       * This is especially important if the admin is
-       * editing themselves.
-       */
       await refreshUser();
-
-      /*
-       * Reload the admin table so current positions
-       * and history are immediately accurate.
-       */
       await load();
 
       if (
@@ -520,8 +488,6 @@ export default function AdminUsers() {
   return (
     <div style={styles.page}>
       <div style={styles.heroCard}>
-        <div style={styles.heroGlow} />
-
         <div style={styles.heroContent}>
           <div>
             <div style={styles.kicker}>
@@ -535,8 +501,7 @@ export default function AdminUsers() {
             <p style={styles.pageSubtitle}>
               Review approval states, update member
               roles and statuses, and manage
-              position assignments without changing
-              the existing workflow.
+              position assignments.
             </p>
           </div>
         </div>
@@ -582,78 +547,28 @@ export default function AdminUsers() {
         </div>
       ) : (
         <div style={styles.tableCard}>
-          <div
-            style={styles.tableScroller(isMobile)}
-          >
-            <table
-              style={styles.table(isMobile)}
-            >
+          <div style={styles.tableScroller(isMobile)}>
+            <table style={styles.table(isMobile)}>
               <thead>
                 <tr style={styles.headerRow}>
-                  <th style={styles.nameHeader}>
-                    Name
-                  </th>
-
-                  <th style={styles.emailHeader}>
-                    Emails
-                  </th>
-
-                  <th style={styles.multiHeader}>
-                    Roles
-                  </th>
-
-                  <th style={styles.multiHeader}>
-                    Member Status
-                  </th>
-
-                  <th
-                    style={
-                      styles.multiWideHeader
-                    }
-                  >
-                    Add Positions
-                  </th>
-
-                  <th
-                    style={
-                      styles.multiWideHeader
-                    }
-                  >
-                    Remove Positions
-                  </th>
-
-                  <th
-                    style={
-                      styles.positionsHeader
-                    }
-                  >
-                    Current Positions
-                  </th>
-
-                  <th
-                    style={
-                      styles.actionsHeader
-                    }
-                  >
-                    Actions
-                  </th>
+                  <th style={styles.nameHeader}>Name</th>
+                  <th style={styles.emailHeader}>Emails</th>
+                  <th style={styles.multiHeader}>Roles</th>
+                  <th style={styles.multiHeader}>Member Status</th>
+                  <th style={styles.multiWideHeader}>Add Positions</th>
+                  <th style={styles.multiWideHeader}>Remove Positions</th>
+                  <th style={styles.positionsHeader}>Current Positions</th>
+                  <th style={styles.actionsHeader}>Actions</th>
                 </tr>
               </thead>
 
               <tbody>
                 {rows.map((u) => {
-                  /*
-                   * Current positions only.
-                   */
                   const currentPositionKeys =
                     (u.positions || []).map(
                       (p) => p.key
                     );
 
-                  /*
-                   * Don't allow adding a position
-                   * the user already has.
-                   */
                   const availableToAdd =
                     ALL_POSITION_OPTIONS.filter(
                       (key) =>
@@ -662,10 +577,6 @@ export default function AdminUsers() {
                         )
                     );
 
-                  /*
-                   * Remove dropdown ONLY contains
-                   * currently active positions.
-                   */
                   const availableToRemove =
                     currentPositionKeys;
 
@@ -727,11 +638,7 @@ export default function AdminUsers() {
                             )
                           }
                           size={5}
-                          width={
-                            isMobile
-                              ? 180
-                              : 140
-                          }
+                          width={140}
                         />
                       </td>
 
@@ -759,11 +666,7 @@ export default function AdminUsers() {
                               )
                             }
                             size={5}
-                            width={
-                              isMobile
-                                ? 180
-                                : 140
-                            }
+                            width={140}
                           />
 
                           {scholarshipAllowed && (
@@ -845,11 +748,7 @@ export default function AdminUsers() {
                             )
                           }
                           size={7}
-                          width={
-                            isMobile
-                              ? 220
-                              : 180
-                          }
+                          width={180}
                         />
                       </td>
 
@@ -871,11 +770,7 @@ export default function AdminUsers() {
                             )
                           }
                           size={7}
-                          width={
-                            isMobile
-                              ? 220
-                              : 180
-                          }
+                          width={180}
                         />
                       </td>
 
@@ -937,7 +832,7 @@ export default function AdminUsers() {
                             }
                             title="Save roles, member status, scholarship, and positions"
                           >
-                            Save Changes
+                            Save
                           </button>
 
                           <div
@@ -999,8 +894,6 @@ export default function AdminUsers() {
           <p>Loading...</p>
         ) : (
           <>
-            {/* POSITION HISTORY */}
-
             <h3
               style={
                 styles.historyHeading
@@ -1084,8 +977,6 @@ export default function AdminUsers() {
               </p>
             )}
 
-            {/* ROLE HISTORY */}
-
             <h3
               style={
                 styles.historyHeadingSpaced
@@ -1145,8 +1036,6 @@ export default function AdminUsers() {
                 No role changes recorded.
               </p>
             )}
-
-            {/* MEMBER STATUS HISTORY */}
 
             <h3
               style={
@@ -1223,7 +1112,7 @@ const styles = {
     maxWidth: 1380,
     margin: "0 auto",
     color: PALETTE.ink,
-    background: `radial-gradient(circle at top right, rgba(232, 161, 179, 0.28), transparent 34%), linear-gradient(180deg, ${PALETTE.pearl} 0%, #fffdfb 100%)`,
+    background: "transparent",
   },
 
   unauthorized: {
@@ -1238,22 +1127,9 @@ const styles = {
     borderRadius: 28,
     padding: "28px 28px 24px",
     marginBottom: 18,
-    background:
-      "linear-gradient(145deg, rgba(248, 242, 238, 0.96) 0%, rgba(246, 215, 223, 0.94) 100%)",
+    background: "#ffffff",
     border: `1px solid ${PALETTE.line}`,
     boxShadow: PALETTE.shadow,
-  },
-
-  heroGlow: {
-    position: "absolute",
-    width: 240,
-    height: 240,
-    right: -70,
-    top: -90,
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(182, 138, 165, 0.34) 0%, rgba(232, 161, 179, 0) 72%)",
-    pointerEvents: "none",
   },
 
   heroContent: {
@@ -1274,7 +1150,7 @@ const styles = {
     borderRadius: 999,
     marginBottom: 14,
     color: PALETTE.burgundy,
-    background: "rgba(255,255,255,0.72)",
+    background: "#ffffff",
     border: `1px solid ${PALETTE.line}`,
     fontSize: 12,
     fontWeight: 700,
@@ -1311,7 +1187,7 @@ const styles = {
     padding: "10px 16px",
     borderRadius: 999,
     border: `1px solid ${PALETTE.line}`,
-    background: "rgba(255,255,255,0.8)",
+    background: "#ffffff",
     color: PALETTE.ink,
     fontWeight: 700,
     cursor: "pointer",
@@ -1326,8 +1202,7 @@ const styles = {
     borderRadius: 999,
     border:
       "1px solid rgba(111, 34, 50, 0.18)",
-    background:
-      "linear-gradient(135deg, rgba(232, 161, 179, 0.72) 0%, rgba(248, 242, 238, 0.95) 100%)",
+    background: PALETTE.blush,
     color: PALETTE.burgundy,
     fontWeight: 800,
     cursor: "pointer",
@@ -1340,7 +1215,7 @@ const styles = {
     width: 20,
     height: 20,
     borderRadius: "50%",
-    background: "rgba(255,255,255,0.72)",
+    background: "#ffffff",
     fontSize: 12,
   },
 
@@ -1350,14 +1225,14 @@ const styles = {
     borderRadius: 14,
     border:
       "1px solid rgba(111, 34, 50, 0.18)",
-    background: "rgba(255, 238, 241, 0.95)",
+    background: PALETTE.blush,
     color: PALETTE.burgundy,
   },
 
   emptyState: {
     padding: "28px 20px",
     borderRadius: 24,
-    background: "rgba(255,255,255,0.88)",
+    background: "#ffffff",
     border: `1px solid ${PALETTE.line}`,
     boxShadow:
       "0 10px 30px rgba(111, 34, 50, 0.06)",
@@ -1368,7 +1243,7 @@ const styles = {
   tableCard: {
     position: "relative",
     borderRadius: 24,
-    background: "rgba(255,255,255,0.9)",
+    background: "#ffffff",
     border: `1px solid ${PALETTE.line}`,
     boxShadow:
       "0 10px 30px rgba(111, 34, 50, 0.05)",
@@ -1376,9 +1251,8 @@ const styles = {
   },
 
   tableScroller: (isMobile) => ({
-    overflowX: isMobile
-      ? "auto"
-      : "visible",
+    overflowX: isMobile ? "auto" : "visible",
+    WebkitOverflowScrolling: "touch",
   }),
 
   table: (isMobile) => ({
@@ -1386,15 +1260,12 @@ const styles = {
     minWidth: isMobile ? 1180 : 0,
     borderCollapse: "separate",
     borderSpacing: 0,
-    tableLayout: isMobile
-      ? "auto"
-      : "fixed",
+    tableLayout: isMobile ? "auto" : "fixed",
   }),
 
   headerRow: {
     textAlign: "left",
-    background:
-      "linear-gradient(180deg, rgba(246, 215, 223, 0.58) 0%, rgba(255,255,255,0.9) 100%)",
+    background: "#ffffff",
   },
 
   nameHeader: {
@@ -1495,7 +1366,7 @@ const styles = {
     padding: "8px 10px",
     borderRadius: 12,
     border: `1px solid ${PALETTE.line}`,
-    background: "rgba(255,255,255,0.94)",
+    background: "#ffffff",
     color: PALETTE.ink,
     fontSize: 13,
     fontWeight: 600,
@@ -1507,7 +1378,7 @@ const styles = {
   },
 
   bodyRow: {
-    background: "rgba(255,255,255,0.84)",
+    background: "#ffffff",
   },
 
   nameCell: {
@@ -1542,6 +1413,7 @@ const styles = {
     opacity: 0.7,
     fontSize: 12,
     marginTop: 4,
+    textAlign: "right",
   },
 
   positionsCell: {
@@ -1555,6 +1427,7 @@ const styles = {
   positionList: {
     margin: 0,
     paddingLeft: 18,
+    fontSize: 13,
   },
 
   positionItem: {
@@ -1571,6 +1444,7 @@ const styles = {
   actionsStack: {
     display: "flex",
     flexDirection: "column",
+    alignItems: "center",
     gap: 10,
   },
 
@@ -1580,8 +1454,7 @@ const styles = {
     padding: "10px 12px",
     borderRadius: 12,
     border: "none",
-    background:
-      `linear-gradient(135deg, ${PALETTE.burgundy} 0%, ${PALETTE.mauve} 100%)`,
+    background: PALETTE.burgundy,
     color: "white",
     cursor: "pointer",
     fontWeight: 600,
@@ -1593,10 +1466,9 @@ const styles = {
   },
 
   secondaryActionRow: {
-    display: "grid",
-    gridTemplateColumns:
-      "minmax(0, 1fr)",
-    gap: 8,
+    display: "flex",
+    justifyContent: "center",
+    width: "100%",
   },
 
   ghostActionBtn: {
@@ -1606,21 +1478,21 @@ const styles = {
     borderRadius: 12,
     border:
       "1px dashed rgba(111, 34, 50, 0.22)",
-    background:
-      "rgba(248,242,238,0.88)",
+    background: "#ffffff",
     cursor: "pointer",
     color: PALETTE.burgundy,
     fontWeight: 700,
     fontSize: 13,
     lineHeight: 1.1,
     whiteSpace: "nowrap",
+    textAlign: "center",
   },
 
   secondaryBtn: {
     padding: "10px 12px",
     borderRadius: 12,
     border: `1px solid ${PALETTE.line}`,
-    background: "rgba(255,255,255,0.88)",
+    background: "#ffffff",
     cursor: "pointer",
     color: PALETTE.ink,
     fontWeight: 600,
@@ -1633,8 +1505,7 @@ const styles = {
     minHeight: 32,
     padding: "0 10px",
     borderRadius: 999,
-    background:
-      "rgba(246, 215, 223, 0.52)",
+    background: PALETTE.blush,
     color: PALETTE.burgundy,
     textDecoration: "none",
     fontSize: 12,
@@ -1647,7 +1518,7 @@ const styles = {
     padding: 8,
     borderRadius: 14,
     border: `1px solid ${PALETTE.line}`,
-    background: "rgba(255,255,255,0.92)",
+    background: "#ffffff",
     color: PALETTE.ink,
     fontSize: 12,
   }),
@@ -1665,8 +1536,7 @@ const styles = {
   },
 
   modalCard: {
-    background:
-      `linear-gradient(180deg, rgba(255,255,255,0.98) 0%, ${PALETTE.pearl} 100%)`,
+    background: "#ffffff",
     borderRadius: 22,
     padding: 20,
     width: "100%",
@@ -1697,7 +1567,7 @@ const styles = {
   },
 
   historyList: {
-    margin: 0,
+    margin: "0",
     paddingLeft: 18,
   },
 

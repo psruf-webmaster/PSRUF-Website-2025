@@ -1,0 +1,437 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --home-rose: #efd2d8;
+  --home-dusty: #d7a7b1;
+  --home-maroon: #6f2434;
+  --home-maroon-deep: #43121d;
+  --home-copy: #31161e;
+  --home-copy-soft: rgba(49, 22, 30, 0.72);
+  --home-border: rgba(111, 36, 52, 0.14);
+  --home-shadow: 0 20px 50px rgba(84, 28, 42, 0.08);
+  --transition-smooth: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ========================================
+   RECRUITMENT PAGE BASE & TYPOGRAPHY
+   ======================================== */
+.page-shell {
+  position: relative;
+  color: var(--home-copy);
+  overflow-x: hidden;
+  padding-bottom: 6rem;
+}
+
+.page-shell h1, 
+.page-shell h2, 
+.page-shell h3 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--home-maroon-deep);
+}
+
+.page-shell p, 
+.page-shell span, 
+.page-shell a, 
+.page-shell li {
+  font-family: 'Manrope', sans-serif;
+}
+
+/* ========================================
+   HERO SECTION
+   ======================================== */
+.hero-section {
+  position: relative;
+  padding: 0rem clamp(0rem, 4vw, 3rem) 3rem; /* Reduced top padding to 1.5rem */
+  padding-top: 0rem !important; /* Override any inline styles */
+  width: min(1320px, 100%);
+  margin: 0 auto;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: clamp(2.5rem, 5vw, 5rem);
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(111, 36, 52, 0.18);
+  border-radius: 999px;
+  padding: 0.52rem 1rem;
+  margin-bottom: 1.25rem;
+  background: #ffffff;
+  backdrop-filter: blur(12px);
+  color: var(--home-maroon);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(111, 36, 52, 0.04);
+}
+
+.hero-title {
+  margin: 0 0 1.25rem;
+  font-size: clamp(2.8rem, 5.5vw, 5rem);
+  line-height: 1.02;
+}
+
+.hero-description {
+  max-width: 40rem;
+  margin: 0 0 2rem;
+  color: var(--home-copy-soft);
+  font-size: clamp(1rem, 1.6vw, 1.15rem);
+  line-height: 1.75;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.5rem;
+  padding: 0.9rem 1.6rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7d3141 0%, #5f1f2d 100%);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(111, 36, 52, 0.25);
+  font-weight: 700;
+  text-decoration: none;
+  transition: var(--transition-smooth);
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(111, 36, 52, 0.35);
+}
+
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--home-border);
+  background: #ffffff;
+  backdrop-filter: blur(12px);
+  color: var(--home-maroon);
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(111, 36, 52, 0.04);
+  transition: transform 220ms ease, background 220ms ease, color 220ms ease, box-shadow 220ms ease;
+} 
+
+.button-secondary:hover {
+  color: var(--home-maroon-deep);
+  background: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(111, 36, 52, 0.08);
+}
+
+.hero-card {
+  position: relative;
+  border: 1px solid var(--home-border);
+  border-radius: 32px;
+  background: #ffffff;
+  backdrop-filter: blur(16px);
+  box-shadow: var(--home-shadow);
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.hero-card img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 24px;
+  display: block;
+}
+
+.hero-card-float {
+  position: absolute;
+  bottom: 2.25rem;
+  left: 2.25rem;
+  right: 2.25rem;
+  padding: 1.1rem 1.4rem;
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgba(67, 18, 29, 0.6) 0%, rgba(67, 18, 29, 0.88) 100%);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* ========================================
+   CONTENT SECTIONS & HEADERS
+   ======================================== */
+.content-section {
+  width: min(1200px, 92%);
+  margin: 4.5rem auto 0;
+  padding: 0;
+}
+
+.section-header-centered {
+  text-align: center;
+  max-width: 48rem;
+  margin: 0 auto 2.5rem;
+}
+
+.section-header-centered span {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--home-maroon);
+  margin-bottom: 0.75rem;
+}
+
+.section-header-centered h2 {
+  font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+  margin: 0 0 1rem;
+  line-height: 1.1;
+}
+
+.section-header-centered p {
+  color: var(--home-copy-soft);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ========================================
+   VP MEMBERSHIP MESSAGE SECTION (Uncropped)
+   ======================================== */
+.vp-message-grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  align-items: center;
+  gap: 3rem;
+  background: #ffffff;
+  border-radius: 32px;
+  padding: 3rem;
+  box-shadow: var(--home-shadow);
+  border: 1px solid var(--home-border);
+  backdrop-filter: blur(16px);
+}
+
+.vp-photo-card {
+  position: relative;
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vp-image {
+  width: 100%;
+  height: auto;
+  max-height: 600px;
+  object-fit: contain;
+  border-radius: 20px;
+  display: block;
+}
+
+.vp-letter-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.vp-letter-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  color: var(--home-copy-soft);
+  font-size: 1.02rem;
+  line-height: 1.8;
+}
+
+.vp-letter-content p {
+  margin: 0;
+}
+
+.vp-signoff {
+  margin-top: 0.5rem !important;
+  color: var(--home-copy);
+}
+
+/* ========================================
+   ACCEPTED MAJORS CHIPS
+   ======================================== */
+.majors-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  max-width: 1050px;
+  margin: 0 auto;
+}
+
+.major-chip {
+  border: 1px solid var(--home-border);
+  border-radius: 999px;
+  padding: 0.65rem 1.2rem;
+  background: #ffffff;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(91, 37, 50, 0.03);
+  color: var(--home-maroon-deep);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: default;
+  transition: var(--transition-smooth);
+}
+
+.major-chip:hover {
+  transform: translateY(-3px);
+  background: #ffffff;
+  border-color: var(--home-maroon);
+  box-shadow: 0 8px 25px rgba(91, 37, 50, 0.08);
+}
+
+/* ========================================
+   RECRUITMENT EVENTS RAIL
+   ======================================== */
+.recruitment-events-rail {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding: 1rem 0.5rem 2.5rem 0.5rem;
+  gap: 2rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--home-rose) transparent;
+}
+
+.event-loading-state {
+  text-align: center;
+  width: 100%;
+  padding: 4rem;
+  color: var(--home-copy-soft);
+  font-weight: 600;
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid var(--home-border);
+  backdrop-filter: blur(12px);
+}
+
+/* ========================================
+   PILLARS / INFO CARDS (3-column Grid)
+   ======================================== */
+.info-grid-3x1 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+@media screen and (max-width: 1024px) {
+  .info-grid-3x1 {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+.info-card {
+  border: 1px solid var(--home-border);
+  border-radius: 28px;
+  background: #ffffff;
+  backdrop-filter: blur(16px);
+  box-shadow: var(--home-shadow);
+  padding: 2.5rem;
+  transition: var(--transition-smooth);
+}
+
+.info-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 30px 60px rgba(91, 37, 50, 0.14);
+  border-color: rgba(111, 36, 52, 0.28);
+  background: #ffffff;
+}
+
+.pillar-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 1rem;
+  background: rgba(111, 36, 52, 0.06);
+  color: var(--home-maroon);
+  margin-bottom: 1.5rem;
+  transition: var(--transition-smooth);
+}
+
+.info-card:hover .pillar-icon {
+  background: var(--home-maroon);
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.info-card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.6rem;
+}
+
+.info-card p {
+  margin: 0;
+  color: var(--home-copy-soft);
+  font-size: 0.98rem;
+  line-height: 1.7;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN OVERRIDES
+   ======================================== */
+@media screen and (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .vp-message-grid {
+    grid-template-columns: 1fr;
+    padding: 2rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .button, .button-secondary {
+    justify-content: center;
+    text-align: center;
+  }
+}

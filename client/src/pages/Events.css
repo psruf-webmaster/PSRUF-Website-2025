@@ -1227,3 +1227,221 @@
     margin-top: 6px;
   }
 }
+
+@media (max-width: 640px) {
+  .events-card-footer {
+    padding-top: 10px;
+    gap: 8px;
+  }
+
+  .events-rsvp-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: 100%;
+  }
+
+  .events-rsvp-actions .events-rsvp-button,
+  .events-card-footer .events-secondary-button,
+  .events-card-footer .events-link-button {
+    width: 100%;
+    padding: 7px 4px;
+    font-size: 0.76rem;
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .events-card-footer {
+    display: flex;
+    flex-direction: column;
+  }
+}
+@media (max-width: 640px) {
+  /* 1. Remove the extra "Create" button from the mobile bar */
+  .events-mobile-bar > .events-primary-button:nth-child(2),
+  .events-mobile-bar button:has(svg + span:not(:empty)) {
+    display: none;
+  }
+  .events-mobile-bar {
+    grid-template-columns: 1fr;
+  }
+
+  /* 2. Fix filter & views bar layout */
+  .events-mobile-bar .events-secondary-button {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* 3. Scale down native date/time pickers and dropdown menus */
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"],
+  select.events-filter-select,
+  .events-field select {
+    font-size: 0.8rem !important;
+    padding: 8px 10px !important;
+    min-height: 38px !important;
+  }
+
+  /* 4. Center and shorten the View Details / secondary buttons */
+  .events-card-footer .events-secondary-button,
+  .events-card-footer .events-link-button {
+    max-width: 180px;
+    margin: 0 auto;
+    display: block;
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .events-card-points,
+  .events-card-body .events-card-points {
+    display: inline-block !important;
+    width: auto !important;
+    max-width: max-content !important;
+    padding: 3px 8px !important;
+    font-size: 0.7rem !important;
+  }
+
+  .events-card-footer .events-secondary-button,
+  .events-card-footer .events-link-button {
+    max-width: 140px !important;
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+    margin: 0 auto !important;
+  }
+}
+@media (max-width: 640px) {
+  .events-card-footer .events-secondary-button,
+  .events-card-footer .events-link-button {
+    width: auto !important;
+    max-width: 160px !important;
+    min-width: 120px !important;
+    margin: 0 auto !important;
+    display: block !important;
+    text-align: center !important;
+    padding: 6px 12px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .events-card-footer {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+}
+@media (max-width: 640px) {
+  .events-card-footer {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .events-card-footer .events-secondary-button,
+  .events-card-footer .events-link-button {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: 150px !important;
+    min-width: 110px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: inline-block !important;
+    text-align: center !important;
+    padding: 6px 12px !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .events-card-footer a.events-secondary-button,
+  .events-card-footer button.events-secondary-button,
+  .events-card-footer a.events-link-button,
+  .events-card-footer button.events-link-button {
+    all: unset !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    width: 140px !important;
+    margin: 0 auto !important;
+    text-align: center !important;
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+    background-color: var(--background, #fff) !important;
+    border: 1px solid var(--border-color, #e5e7eb) !important;
+    border-radius: 9999px !important;
+    color: inherit !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .events-card-footer {
+    text-align: center !important;
+  }
+
+  .events-card-footer .events-secondary-button,
+  .events-card-footer .events-link-button {
+    display: inline-block !important;
+    width: auto !important;
+    max-width: 150px !important;
+    min-width: 110px !important;
+    margin: 0 auto !important;
+    padding: 6px 12px !important;
+    font-size: 0.75rem !important;
+    text-align: center !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .events-card-footer {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  .events-card-footer .events-secondary-button,
+  .events-card-footer .events-link-button {
+    width: 150px !important;
+    max-width: 150px !important;
+    min-width: unset !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .events-manage-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .events-manage-row .events-secondary-button,
+  .events-manage-row .events-link-button {
+    width: 140px !important;
+    max-width: 140px !important;
+    min-width: unset !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+    box-sizing: border-box !important;
+  }
+}
+
+.events-card {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}

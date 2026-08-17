@@ -14,12 +14,12 @@ const PALETTE = {
   shadow: "0 18px 50px rgba(111, 34, 50, 0.12)",
 };
 const CATEGORY_META = {
-  phi: { label: "Phi", icon: "Φ", tint: "linear-gradient(135deg, #e8a1b3 0%, #f6d7df 100%)" },
-  sigma: { label: "Sigma", icon: "Σ", tint: "linear-gradient(135deg, #efd2dc 0%, #f8f2ee 100%)" },
-  rho: { label: "Rho", icon: "Ρ", tint: "linear-gradient(135deg, #dac0d2 0%, #f8f2ee 100%)" },
-  tau: { label: "Tau", icon: "Τ", tint: "linear-gradient(135deg, #b68aa5 0%, #f0dce4 100%)" },
-  any: { label: "Any", icon: "◇", tint: "linear-gradient(135deg, #f8f2ee 0%, #f1dbe3 100%)" },
-  total: { label: "Total", icon: "◎", tint: "linear-gradient(135deg, #f6d7df 0%, #e8a1b3 100%)" },
+  phi: { label: "Phi", icon: "Φ", tint: "#f6d7df" },
+  sigma: { label: "Sigma", icon: "Σ", tint: "#f8f2ee" },
+  rho: { label: "Rho", icon: "Ρ", tint: "#f8f2ee" },
+  tau: { label: "Tau", icon: "Τ", tint: "#f0dce4" },
+  any: { label: "Any", icon: "◇", tint: "#f1dbe3" },
+  total: { label: "Total", icon: "◎", tint: "#e8a1b3" },
 };
 const STATUS_META = {
   active: { label: "Active", icon: "●" },
@@ -154,11 +154,12 @@ export default function PointsOverview() {
     return <div style={{ padding: 24 }}>Not authorized.</div>;
   }
 
+  const styles = getStyles(isMobile, isCompact);
+
   return (
-    <div style={styles.page(isMobile)}>
+    <div style={styles.page}>
       <div style={styles.heroCard}>
-        <div style={styles.heroGlow} />
-        <div style={styles.heroTopRow(isMobile)}>
+        <div style={styles.heroTopRow}>
           <div>
             <div style={styles.kicker}>Executive Tracking Dashboard</div>
             <h1 style={styles.pageTitle}>Points Overview</h1>
@@ -168,7 +169,7 @@ export default function PointsOverview() {
           </div>
           <div style={styles.heroActions}>
             <button
-              style={styles.primaryBtn(isMobile)}
+              style={styles.primaryBtn}
               onClick={() => {
                 const header = ["User", "Status", "PHI", "SIGMA", "RHO", "TAU", "Any", "Total"];
                 const lines = [header.join(",")];
@@ -198,7 +199,7 @@ export default function PointsOverview() {
           </div>
         </div>
 
-        <div style={styles.metricsGrid(isMobile, isCompact)}>
+        <div style={styles.metricsGrid}>
           <div style={styles.metricCard}>
             <span style={styles.metricLabel}>Visible members</span>
             <strong style={styles.metricValue}>{trackedMembers}</strong>
@@ -219,7 +220,7 @@ export default function PointsOverview() {
             <p style={styles.sectionSubtitle}>Keep the table intact while making it easier to focus on one population at a time.</p>
           </div>
         </div>
-        <div style={styles.toolbarGrid(isMobile, isCompact)}>
+        <div style={styles.toolbarGrid}>
           <label style={styles.controlGroup}>
             <span style={styles.controlLabel}>Member status</span>
             <select value={status} onChange={e => setStatus(e.target.value)} style={styles.input}>
@@ -244,29 +245,29 @@ export default function PointsOverview() {
         <div style={styles.loadingCard}>Loading overview...</div>
       ) : (
         <div style={styles.tableCard}>
-          <div style={styles.scrollHint(isMobile)}>
+          <div style={styles.scrollHint}>
             {isMobile ? "Swipe to see all point categories" : "Scroll horizontally for the full breakdown if needed"}
           </div>
-          <div style={styles.tableScroller(isMobile)}>
-          <div style={styles.scrollFadeLeft(isMobile)} />
-          <div style={styles.scrollFadeRight(isMobile)} />
-          <table style={styles.table(isMobile)}>
+          <div style={styles.tableScroller}>
+          <div style={styles.scrollFadeLeft} />
+          <div style={styles.scrollFadeRight} />
+          <table style={styles.table}>
             <thead>
               <tr style={styles.headerRow}>
-                <th style={styles.th(isMobile)}>User</th>
-                <th style={styles.th(isMobile)}>
-                  <span style={styles.headerPill("status", isMobile)}>◌ {isMobile ? "Stat" : "Status"}</span>
+                <th style={styles.th}>User</th>
+                <th style={styles.thCenter}>
+                  <span style={styles.headerPill("status")}>◌ {isMobile ? "Stat" : "Status"}</span>
                 </th>
                 {CATEGORY_ORDER.map(categoryKey => (
-                  <th key={categoryKey} style={styles.th(isMobile)}>
-                    <span style={styles.headerPill(categoryKey, isMobile)}>
+                  <th key={categoryKey} style={styles.thCenter}>
+                    <span style={styles.headerPill(categoryKey)}>
                       <span style={styles.headerIcon}>{CATEGORY_META[categoryKey].icon}</span>
                       {isMobile ? CATEGORY_META[categoryKey].icon : CATEGORY_META[categoryKey].label}
                     </span>
                   </th>
                 ))}
-                <th style={styles.th(isMobile)}>
-                  <span style={styles.headerPill("meets", isMobile)}>✓ {isMobile ? "Met" : "Meets"}</span>
+                <th style={styles.thCenter}>
+                  <span style={styles.headerPill("meets")}>✓ {isMobile ? "Met" : "Meets"}</span>
                 </th>
               </tr>
             </thead>
@@ -282,11 +283,11 @@ export default function PointsOverview() {
                   onMouseLeave={() => !isMobile && setHoverRow(null)}
                   onClick={() => isMobile && setHoverRow(current => current?.userId === r.userId ? null : r)}
                 >
-                  <td style={styles.memberCell(isMobile)}>
+                  <td style={styles.memberCell}>
                     <div style={styles.memberName}>{r.firstName} {r.lastName}</div>
                     <div style={styles.memberSubtext}>{isMobile ? "Tap row for requirement detail" : "Hover for requirement detail"}</div>
                   </td>
-                  <td style={styles.statusCell(isMobile)}>
+                  <td style={styles.statusCell}>
                     <div style={styles.statusWrap}>
                       {(r.memberStatus || []).map(memberStatus => (
                         <span key={memberStatus} style={styles.statusBadge}>
@@ -296,13 +297,13 @@ export default function PointsOverview() {
                       ))}
                     </div>
                   </td>
-                  <td style={styles.numberCell(isMobile)}>{r.totals?.phi || 0}</td>
-                  <td style={styles.numberCell(isMobile)}>{r.totals?.sigma || 0}</td>
-                  <td style={styles.numberCell(isMobile)}>{r.totals?.rho || 0}</td>
-                  <td style={styles.numberCell(isMobile)}>{r.totals?.tau || 0}</td>
-                  <td style={styles.numberCell(isMobile)}>{r.totals?.any || 0}</td>
-                  <td style={styles.totalCell(isMobile)}>{r.totals?.total || 0}</td>
-                  <td style={styles.td(isMobile)}>
+                  <td style={styles.numberCell}>{r.totals?.phi || 0}</td>
+                  <td style={styles.numberCell}>{r.totals?.sigma || 0}</td>
+                  <td style={styles.numberCell}>{r.totals?.rho || 0}</td>
+                  <td style={styles.numberCell}>{r.totals?.tau || 0}</td>
+                  <td style={styles.numberCell}>{r.totals?.any || 0}</td>
+                  <td style={styles.totalCell}>{r.totals?.total || 0}</td>
+                  <td style={styles.tdCenter}>
                     <span style={r.requirements?.metAll ? styles.meetsBadge : styles.needsBadge}>
                       {r.requirements?.metAll ? "Yes" : "No"}
                     </span>
@@ -313,7 +314,7 @@ export default function PointsOverview() {
           </table>
           </div>
           {hoverRow && (
-            <div style={styles.tooltip(isMobile)}>
+            <div style={styles.tooltip}>
               <div style={styles.tooltipHeader}>
                 <div>
                   <div style={styles.tooltipName}>{hoverRow.firstName} {hoverRow.lastName}</div>
@@ -381,491 +382,516 @@ export default function PointsOverview() {
   );
 }
 
-const styles = {
-  page: (isMobile) => ({
-    minHeight: "100%",
-    padding: isMobile ? "20px 14px 32px" : "32px 24px 40px",
-    maxWidth: isMobile ? 1240 : 1420,
-    margin: "0 auto",
-    color: PALETTE.ink,
-    background: `radial-gradient(circle at top right, rgba(232, 161, 179, 0.28), transparent 34%), linear-gradient(180deg, ${PALETTE.pearl} 0%, #fffdfb 100%)`,
-  }),
-  heroCard: {
-    position: "relative",
-    overflow: "hidden",
-    borderRadius: 28,
-    padding: "28px 28px 24px",
-    marginBottom: 18,
-    background: `linear-gradient(145deg, rgba(248, 242, 238, 0.96) 0%, rgba(246, 215, 223, 0.94) 100%)`,
-    border: `1px solid ${PALETTE.line}`,
-    boxShadow: PALETTE.shadow,
-  },
-  heroGlow: {
-    position: "absolute",
-    width: 240,
-    height: 240,
-    right: -70,
-    top: -90,
-    borderRadius: "50%",
-    background: "radial-gradient(circle, rgba(182, 138, 165, 0.34) 0%, rgba(232, 161, 179, 0) 72%)",
-    pointerEvents: "none",
-  },
-  heroTopRow: (isMobile) => ({
-    position: "relative",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: isMobile ? "stretch" : "flex-start",
-    gap: 20,
-    flexWrap: "wrap",
-    marginBottom: 20,
-  }),
-  heroActions: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
-    gap: 10,
-  },
-  kicker: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "6px 12px",
-    borderRadius: 999,
-    marginBottom: 14,
-    color: PALETTE.burgundy,
-    background: "rgba(255,255,255,0.72)",
-    border: `1px solid ${PALETTE.line}`,
-    fontSize: 12,
-    fontWeight: 700,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-  },
-  pageTitle: {
-    margin: 0,
-    fontSize: "clamp(2rem, 3vw, 3rem)",
-    lineHeight: 1,
-    color: PALETTE.burgundy,
-  },
-  pageSubtitle: {
-    margin: "12px 0 0",
-    maxWidth: 720,
-    fontSize: 15,
-    lineHeight: 1.65,
-    color: "rgba(67, 37, 52, 0.82)",
-  },
-  metricsGrid: (isMobile, isCompact) => ({
-    position: "relative",
-    display: "grid",
-    gridTemplateColumns: isMobile
-      ? "repeat(2, minmax(0, 1fr))"
-      : "repeat(2, minmax(0, 1fr))",
-    gap: 14,
-    width: "100%",
-  }),
-  metricCard: {
-    padding: "18px 18px 16px",
-    borderRadius: 20,
-    background: "rgba(255,255,255,0.78)",
-    border: `1px solid ${PALETTE.line}`,
-    backdropFilter: "blur(12px)",
-  },
-  metricLabel: {
-    display: "block",
-    fontSize: 15,
-    fontWeight: 700,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-    color: "rgba(67, 37, 52, 0.72)",
-    lineHeight: 1.2,
-  },
-  metricValue: {
-    display: "block",
-    marginTop: 10,
-    fontSize: 28,
-    lineHeight: 1,
-    color: PALETTE.burgundy,
-  },
-  input: {
-    width: "100%",
-    minHeight: 46,
-    padding: "11px 14px",
-    borderRadius: 14,
-    border: `1px solid ${PALETTE.line}`,
-    background: "rgba(255,255,255,0.92)",
-    color: PALETTE.ink,
-  },
-  primaryBtn: (isMobile) => ({
-    padding: "12px 18px",
-    borderRadius: 14,
-    border: "none",
-    background: `linear-gradient(135deg, ${PALETTE.burgundy} 0%, ${PALETTE.mauve} 100%)`,
-    color: "white",
-    cursor: "pointer",
-    fontWeight: 600,
-    boxShadow: "0 14px 28px rgba(111, 34, 50, 0.18)",
-    width: isMobile ? "100%" : "auto",
-  }),
-  secondaryBtn: {
-    padding: "10px 14px",
-    borderRadius: 12,
-    border: `1px solid ${PALETTE.line}`,
-    background: "rgba(255,255,255,0.88)",
-    cursor: "pointer",
-    color: PALETTE.ink,
-    fontWeight: 600,
-  },
-  toolbarCard: {
-    padding: "18px 20px 20px",
-    marginBottom: 18,
-    borderRadius: 24,
-    background: "rgba(255,255,255,0.88)",
-    border: `1px solid ${PALETTE.line}`,
-    boxShadow: "0 10px 30px rgba(111, 34, 50, 0.06)",
-  },
-  toolbarHeader: {
-    marginBottom: 14,
-  },
-  sectionTitle: {
-    margin: 0,
-    fontSize: 20,
-    color: PALETTE.burgundy,
-  },
-  sectionSubtitle: {
-    margin: "6px 0 0",
-    fontSize: 13,
-    color: "rgba(67, 37, 52, 0.72)",
-  },
-  toolbarGrid: (isMobile, isCompact) => ({
-    display: "grid",
-    gridTemplateColumns: isMobile
-      ? "1fr"
-      : (isCompact ? "minmax(180px, 240px) minmax(220px, 1fr)" : "minmax(190px, 260px) minmax(260px, 1fr)"),
-    gap: 14,
-    alignItems: "end",
-  }),
-  controlGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-  controlGroupWide: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-  controlLabel: {
-    fontSize: 12,
-    fontWeight: 700,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-    color: "rgba(67, 37, 52, 0.72)",
-  },
-  loadingCard: {
-    padding: "28px 20px",
-    borderRadius: 24,
-    background: "rgba(255,255,255,0.88)",
-    border: `1px solid ${PALETTE.line}`,
-    boxShadow: "0 10px 30px rgba(111, 34, 50, 0.06)",
-    color: PALETTE.burgundy,
-    fontWeight: 600,
-  },
-  tableCard: {
-    position: "relative",
-    padding: 0,
-    borderRadius: 24,
-    background: "rgba(255,255,255,0.9)",
-    border: `1px solid ${PALETTE.line}`,
-    boxShadow: "0 10px 30px rgba(111, 34, 50, 0.05)",
-    overflow: "hidden",
-  },
-  scrollHint: (isMobile) => ({
-    display: isMobile ? "block" : "none",
-    padding: isMobile ? "10px 14px 0" : "12px 18px 0",
-    fontSize: 12,
-    color: "rgba(67, 37, 52, 0.68)",
-  }),
-  tableScroller: (isMobile) => ({
-    overflowX: isMobile ? "auto" : "visible",
-    borderRadius: 24,
-    WebkitOverflowScrolling: "touch",
-    scrollbarWidth: "thin",
-    scrollbarColor: `${PALETTE.mauve} rgba(232, 161, 179, 0.18)`,
-    position: "relative",
-    paddingBottom: isMobile ? 6 : 0,
-  }),
-  scrollFadeLeft: (isMobile) => ({
-    position: "sticky",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: isMobile ? 18 : 0,
-    background: isMobile ? `linear-gradient(90deg, rgba(248, 242, 238, 0.96) 0%, rgba(248, 242, 238, 0) 100%)` : "transparent",
-    pointerEvents: "none",
-    zIndex: 3,
-    float: "left",
-  }),
-  scrollFadeRight: (isMobile) => ({
-    position: "sticky",
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: isMobile ? 18 : 0,
-    marginLeft: "auto",
-    background: isMobile ? `linear-gradient(270deg, rgba(248, 242, 238, 0.96) 0%, rgba(248, 242, 238, 0) 100%)` : "transparent",
-    pointerEvents: "none",
-    zIndex: 3,
-    float: "right",
-  }),
-  table: (isMobile) => ({
-    width: isMobile ? "max-content" : "100%",
-    minWidth: isMobile ? 760 : 0,
-    borderCollapse: "separate",
-    borderSpacing: 0,
-    tableLayout: isMobile ? "auto" : "fixed",
-  }),
-  headerRow: {
-    textAlign: "left",
-    background: "linear-gradient(180deg, rgba(246, 215, 223, 0.58) 0%, rgba(255,255,255,0.9) 100%)",
-  },
-  th: (isMobile) => ({
-    padding: isMobile ? "13px 10px" : "16px 18px",
-    fontSize: isMobile ? 11 : 12,
-    fontWeight: 700,
-    letterSpacing: "0.05em",
-    textTransform: "uppercase",
-    color: "rgba(67, 37, 52, 0.74)",
-    borderBottom: `1px solid ${PALETTE.line}`,
-    whiteSpace: isMobile ? "nowrap" : "normal",
-  }),
-  td: (isMobile) => ({
-    padding: isMobile ? "14px 10px" : "18px 18px",
-    fontSize: isMobile ? 13 : 14,
-    color: PALETTE.ink,
-    borderTop: `1px solid ${PALETTE.line}`,
-    verticalAlign: "top",
-    whiteSpace: isMobile ? "nowrap" : "normal",
-  }),
-  bodyRow: {
-    background: "rgba(255,255,255,0.84)",
-  },
-  memberCell: (isMobile) => ({
-    padding: isMobile ? "14px 10px" : "18px 18px",
-    fontSize: isMobile ? 13 : 14,
-    color: PALETTE.ink,
-    borderTop: `1px solid ${PALETTE.line}`,
-    minWidth: isMobile ? 132 : 0,
-    width: isMobile ? 132 : "18%",
-    verticalAlign: "top",
-  }),
-  memberName: {
-    fontWeight: 700,
-    color: PALETTE.burgundy,
-  },
-  memberSubtext: {
-    marginTop: 5,
-    fontSize: 12,
-    color: "rgba(67, 37, 52, 0.62)",
-  },
-  statusCell: (isMobile) => ({
-    padding: isMobile ? "14px 10px" : "18px 18px",
-    borderTop: `1px solid ${PALETTE.line}`,
-    minWidth: isMobile ? 132 : 0,
-    width: isMobile ? 132 : "16%",
-    verticalAlign: "top",
-  }),
-  statusWrap: {
-    display: "flex",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-  statusBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6,
-    minHeight: 28,
-    padding: "4px 10px",
-    borderRadius: 999,
-    background: "rgba(246, 215, 223, 0.62)",
-    color: PALETTE.burgundy,
-    border: `1px solid ${PALETTE.line}`,
-    fontSize: 12,
-    fontWeight: 600,
-  },
-  statusIcon: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: 16,
-    height: 16,
-    borderRadius: "50%",
-    background: "rgba(255,255,255,0.72)",
-    fontSize: 10,
-  },
-  numberCell: (isMobile) => ({
-    padding: isMobile ? "14px 8px" : "18px 18px",
-    fontSize: isMobile ? 13 : 14,
-    fontWeight: 600,
-    color: PALETTE.ink,
-    borderTop: `1px solid ${PALETTE.line}`,
-    textAlign: "center",
-    verticalAlign: "top",
-    minWidth: isMobile ? 48 : 0,
-    width: isMobile ? 48 : "7.25%",
-  }),
-  totalCell: (isMobile) => ({
-    padding: isMobile ? "14px 8px" : "18px 18px",
-    fontSize: isMobile ? 13 : 14,
-    fontWeight: 800,
-    color: PALETTE.burgundy,
-    borderTop: `1px solid ${PALETTE.line}`,
-    textAlign: "center",
-    verticalAlign: "top",
-    minWidth: isMobile ? 56 : 0,
-    width: isMobile ? 56 : "8%",
-  }),
-  meetsBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 68,
-    minHeight: 30,
-    padding: "4px 10px",
-    borderRadius: 999,
-    background: "linear-gradient(135deg, rgba(232, 161, 179, 0.7) 0%, rgba(248, 242, 238, 0.95) 100%)",
-    color: PALETTE.burgundy,
-    border: `1px solid ${PALETTE.line}`,
-    fontSize: 12,
-    fontWeight: 700,
-  },
-  needsBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 90,
-    minHeight: 30,
-    padding: "4px 10px",
-    borderRadius: 999,
-    background: "rgba(255,255,255,0.88)",
-    color: PALETTE.ink,
-    border: `1px solid ${PALETTE.line}`,
-    fontSize: 12,
-    fontWeight: 700,
-  },
-  emptyCell: {
-    padding: "28px 18px",
-    textAlign: "center",
-    fontSize: 14,
-    color: "rgba(67, 37, 52, 0.7)",
-  },
-  headerPill: (key, isMobile) => ({
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    minHeight: 30,
-    padding: isMobile ? "5px 8px" : "6px 10px",
-    borderRadius: 999,
-    background: CATEGORY_META[key]?.tint || "rgba(246, 215, 223, 0.6)",
-    color: PALETTE.burgundy,
-    fontSize: isMobile ? 11 : 12,
-  }),
-  headerIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: "50%",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "rgba(255,255,255,0.72)",
-    fontSize: 12,
-    fontWeight: 800,
-  },
-  errorBanner: {
-    marginBottom: 16,
-    padding: "12px 14px",
-    borderRadius: 14,
-    border: `1px solid rgba(111, 34, 50, 0.18)`,
-    background: "rgba(255, 238, 241, 0.95)",
-    color: PALETTE.burgundy,
-  },
-  paginationRow: {
-    display: "flex",
-    gap: 10,
-    alignItems: "center",
-    marginTop: 14,
-    flexWrap: "wrap",
-  },
-  paginationLabel: {
-    fontSize: 14,
-    color: "rgba(67, 37, 52, 0.76)",
-  },
-  tooltip: (isMobile) => ({
-    position: isMobile ? "static" : "fixed",
-    right: isMobile ? "auto" : 20,
-    bottom: isMobile ? "auto" : 20,
-    left: isMobile ? "auto" : undefined,
-    margin: isMobile ? "14px 14px 0" : 0,
-    background: `linear-gradient(180deg, rgba(255,255,255,0.98) 0%, ${PALETTE.pearl} 100%)`,
-    border: `1px solid ${PALETTE.line}`,
-    borderRadius: 18,
-    padding: 16,
-    boxShadow: PALETTE.shadow,
-    minWidth: isMobile ? 0 : 280,
-    width: isMobile ? "auto" : "auto",
-    zIndex: 50,
-  }),
-  tooltipHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 12,
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  tooltipName: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: PALETTE.burgundy,
-  },
-  tooltipSubtitle: {
-    marginTop: 4,
-    fontSize: 12,
-    color: "rgba(67, 37, 52, 0.66)",
-  },
-  tooltipList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-  tooltipRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 12,
-    alignItems: "center",
-  },
-  tooltipCategory: (categoryKey) => ({
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    minHeight: 30,
-    padding: "6px 10px",
-    borderRadius: 999,
-    background: CATEGORY_META[categoryKey].tint,
-    color: PALETTE.burgundy,
-    fontSize: 12,
-    fontWeight: 700,
-  }),
-  tooltipValue: {
-    fontSize: 13,
-    fontWeight: 700,
-    color: PALETTE.ink,
-  },
-  tooltipNeed: {
-    fontSize: 12,
-    fontWeight: 500,
-    color: "rgba(67, 37, 52, 0.66)",
-  },
-  tooltipRuleNote: {
-    fontSize: 13,
-    lineHeight: 1.5,
-    color: "rgba(67, 37, 52, 0.78)",
-  },
-};
+function getStyles(isMobile, isCompact) {
+  return {
+    page: {
+      minHeight: "100%",
+      padding: isMobile ? "12px 8px 24px" : "32px 24px 40px",
+      maxWidth: isMobile ? "100%" : 1420,
+      margin: "0 auto",
+      color: PALETTE.ink,
+      background: "transparent",
+      overflowX: "hidden",
+    },
+    heroCard: {
+      position: "relative",
+      overflow: "hidden",
+      borderRadius: 28,
+      padding: "20px 16px 18px",
+      marginBottom: 18,
+      background: "#ffffff",
+      border: `1px solid ${PALETTE.line}`,
+      boxShadow: "none",
+    },
+    heroTopRow: {
+      position: "relative",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: isMobile ? "stretch" : "flex-start",
+      gap: 16,
+      flexWrap: "wrap",
+      marginBottom: 16,
+    },
+    heroActions: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: isMobile ? "center" : "flex-end",
+      gap: 10,
+      width: "100%",
+    },
+    kicker: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "6px 12px",
+      borderRadius: 999,
+      marginBottom: 10,
+      color: PALETTE.burgundy,
+      background: "#ffffff",
+      border: `1px solid ${PALETTE.line}`,
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+    },
+    pageTitle: {
+      margin: 0,
+      fontSize: "clamp(1.6rem, 2.5vw, 3rem)",
+      lineHeight: 1.1,
+      color: PALETTE.burgundy,
+    },
+    pageSubtitle: {
+      margin: "10px 0 0",
+      maxWidth: 720,
+      fontSize: 13.5,
+      lineHeight: 1.5,
+      color: "rgba(67, 37, 52, 0.82)",
+    },
+    metricsGrid: {
+      position: "relative",
+      display: "grid",
+      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+      gap: 10,
+      width: "100%",
+    },
+    metricCard: {
+      padding: "14px 12px 12px",
+      borderRadius: 16,
+      background: "#ffffff",
+      border: `1px solid ${PALETTE.line}`,
+      backdropFilter: "blur(12px)",
+      textAlign: "center",
+    },
+    metricLabel: {
+      display: "block",
+      fontSize: 11.5,
+      fontWeight: 700,
+      letterSpacing: "0.04em",
+      textTransform: "uppercase",
+      color: "rgba(67, 37, 52, 0.72)",
+      lineHeight: 1.2,
+      textAlign: "center",
+    },
+    metricValue: {
+      display: "block",
+      marginTop: 8,
+      fontSize: 24,
+      lineHeight: 1,
+      color: PALETTE.burgundy,
+      textAlign: "center",
+    },
+    input: {
+      width: "100%",
+      minHeight: 46,
+      padding: "11px 14px",
+      borderRadius: 14,
+      border: `1px solid ${PALETTE.line}`,
+      background: "#ffffff",
+      color: PALETTE.ink,
+      fontSize: 14,
+    },
+    primaryBtn: {
+      padding: "12px 18px",
+      borderRadius: 14,
+      border: "none",
+      background: `linear-gradient(135deg, ${PALETTE.burgundy} 0%, ${PALETTE.mauve} 100%)`,
+      color: "white",
+      cursor: "pointer",
+      fontWeight: 600,
+      boxShadow: "0 14px 28px rgba(111, 34, 50, 0.18)",
+      width: isMobile ? "100%" : "auto",
+    },
+    secondaryBtn: {
+      padding: "10px 14px",
+      borderRadius: 12,
+      border: `1px solid ${PALETTE.line}`,
+      background: "#ffffff",
+      cursor: "pointer",
+      color: PALETTE.ink,
+      fontWeight: 600,
+      fontSize: 13,
+    },
+    toolbarCard: {
+      padding: "18px 16px 18px",
+      marginBottom: 18,
+      borderRadius: 24,
+      background: "#ffffff",
+      border: `1px solid ${PALETTE.line}`,
+      boxShadow: "none",
+    },
+    toolbarHeader: {
+      marginBottom: 12,
+    },
+    sectionTitle: {
+      margin: 0,
+      fontSize: 18,
+      color: PALETTE.burgundy,
+    },
+    sectionSubtitle: {
+      margin: "4px 0 0",
+      fontSize: 12.5,
+      color: "rgba(67, 37, 52, 0.72)",
+    },
+    toolbarGrid: {
+      display: "grid",
+      gridTemplateColumns: isMobile
+        ? "1fr"
+        : (isCompact ? "minmax(180px, 240px) minmax(220px, 1fr)" : "minmax(190px, 260px) minmax(260px, 1fr)"),
+      gap: 12,
+      alignItems: "end",
+    },
+    controlGroup: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+    },
+    controlGroupWide: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+    },
+    controlLabel: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      letterSpacing: "0.04em",
+      textTransform: "uppercase",
+      color: "rgba(67, 37, 52, 0.72)",
+    },
+    loadingCard: {
+      padding: "28px 20px",
+      borderRadius: 24,
+      background: "#ffffff",
+      border: `1px solid ${PALETTE.line}`,
+      boxShadow: "none",
+      color: PALETTE.burgundy,
+      fontWeight: 600,
+      textAlign: "center",
+    },
+    tableCard: {
+      position: "relative",
+      padding: 0,
+      borderRadius: 20,
+      background: "#ffffff",
+      border: `1px solid ${PALETTE.line}`,
+      boxShadow: "none",
+      overflow: "hidden",
+    },
+    scrollHint: {
+      display: isMobile ? "block" : "none",
+      padding: "10px 12px 0",
+      fontSize: 11.5,
+      color: "rgba(67, 37, 52, 0.68)",
+    },
+    tableScroller: {
+      overflowX: isMobile ? "auto" : "visible",
+      borderRadius: 20,
+      WebkitOverflowScrolling: "touch",
+      scrollbarWidth: "thin",
+      scrollbarColor: `${PALETTE.mauve} rgba(232, 161, 179, 0.18)`,
+      position: "relative",
+      paddingBottom: isMobile ? 6 : 0,
+    },
+    scrollFadeLeft: {
+      position: "sticky",
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: isMobile ? 12 : 0,
+      background: isMobile ? "linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0) 100%)" : "transparent",
+      pointerEvents: "none",
+      zIndex: 3,
+      float: "left",
+    },
+    scrollFadeRight: {
+      position: "sticky",
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: isMobile ? 12 : 0,
+      marginLeft: "auto",
+      background: isMobile ? "linear-gradient(270deg, #ffffff 0%, rgba(255,255,255,0) 100%)" : "transparent",
+      pointerEvents: "none",
+      zIndex: 3,
+      float: "right",
+    },
+    table: {
+      width: isMobile ? "max-content" : "100%",
+      minWidth: isMobile ? 640 : 0,
+      borderCollapse: "separate",
+      borderSpacing: 0,
+      tableLayout: isMobile ? "auto" : "fixed",
+    },
+    headerRow: {
+      textAlign: "left",
+      background: "#ffffff",
+    },
+    th: {
+      padding: isMobile ? "10px 6px" : "16px 18px",
+      fontSize: isMobile ? 10.5 : 12,
+      fontWeight: 700,
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
+      color: "rgba(67, 37, 52, 0.74)",
+      borderBottom: `1px solid ${PALETTE.line}`,
+      whiteSpace: isMobile ? "nowrap" : "normal",
+      textAlign: "left",
+    },
+    thCenter: {
+      padding: isMobile ? "10px 6px" : "16px 18px",
+      fontSize: isMobile ? 10.5 : 12,
+      fontWeight: 700,
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
+      color: "rgba(67, 37, 52, 0.74)",
+      borderBottom: `1px solid ${PALETTE.line}`,
+      whiteSpace: isMobile ? "nowrap" : "normal",
+      textAlign: "center",
+    },
+    td: {
+      padding: isMobile ? "10px 6px" : "18px 18px",
+      fontSize: isMobile ? 12 : 14,
+      color: PALETTE.ink,
+      borderTop: `1px solid ${PALETTE.line}`,
+      verticalAlign: "top",
+      whiteSpace: isMobile ? "nowrap" : "normal",
+      textAlign: "left",
+    },
+    tdCenter: {
+      padding: isMobile ? "10px 6px" : "18px 18px",
+      fontSize: isMobile ? 12 : 14,
+      color: PALETTE.ink,
+      borderTop: `1px solid ${PALETTE.line}`,
+      verticalAlign: "top",
+      whiteSpace: isMobile ? "nowrap" : "normal",
+      textAlign: "center",
+    },
+    bodyRow: {
+      background: "#ffffff",
+    },
+    memberCell: {
+      padding: isMobile ? "10px 6px" : "18px 18px",
+      fontSize: isMobile ? 12 : 14,
+      color: PALETTE.ink,
+      borderTop: `1px solid ${PALETTE.line}`,
+      minWidth: isMobile ? 110 : 0,
+      width: isMobile ? 110 : "18%",
+      verticalAlign: "top",
+      textAlign: "left",
+    },
+    memberName: {
+      fontWeight: 700,
+      color: PALETTE.burgundy,
+      fontSize: isMobile ? 12.5 : 14,
+    },
+    memberSubtext: {
+      marginTop: 3,
+      fontSize: 11,
+      color: "rgba(67, 37, 52, 0.62)",
+    },
+    statusCell: {
+      padding: isMobile ? "10px 6px" : "18px 18px",
+      borderTop: `1px solid ${PALETTE.line}`,
+      minWidth: isMobile ? 110 : 0,
+      width: isMobile ? 110 : "16%",
+      verticalAlign: "top",
+      textAlign: "center",
+    },
+    statusWrap: {
+      display: "flex",
+      gap: 4,
+      flexWrap: "wrap",
+      justifyContent: "center",
+    },
+    statusBadge: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 4,
+      minHeight: 24,
+      padding: "2px 8px",
+      borderRadius: 999,
+      background: "#ffffff",
+      color: PALETTE.burgundy,
+      border: `1px solid ${PALETTE.line}`,
+      fontSize: 11,
+      fontWeight: 600,
+    },
+    statusIcon: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: 14,
+      height: 14,
+      borderRadius: "50%",
+      background: "#ffffff",
+      fontSize: 9,
+    },
+    numberCell: {
+      padding: isMobile ? "10px 4px" : "18px 18px",
+      fontSize: isMobile ? 12 : 14,
+      fontWeight: 600,
+      color: PALETTE.ink,
+      borderTop: `1px solid ${PALETTE.line}`,
+      textAlign: "center",
+      verticalAlign: "top",
+      minWidth: isMobile ? 38 : 0,
+      width: isMobile ? 38 : "7.25%",
+    },
+    totalCell: {
+      padding: isMobile ? "10px 4px" : "18px 18px",
+      fontSize: isMobile ? 12 : 14,
+      fontWeight: 800,
+      color: PALETTE.burgundy,
+      borderTop: `1px solid ${PALETTE.line}`,
+      textAlign: "center",
+      verticalAlign: "top",
+      minWidth: isMobile ? 44 : 0,
+      width: isMobile ? 44 : "8%",
+    },
+    meetsBadge: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: 52,
+      minHeight: 26,
+      padding: "2px 8px",
+      borderRadius: 999,
+      background: "#ffffff",
+      color: PALETTE.burgundy,
+      border: `1px solid ${PALETTE.line}`,
+      fontSize: 11.5,
+      fontWeight: 700,
+    },
+    needsBadge: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: 52,
+      minHeight: 26,
+      padding: "2px 8px",
+      borderRadius: 999,
+      background: "#ffffff",
+      color: PALETTE.ink,
+      border: `1px solid ${PALETTE.line}`,
+      fontSize: 11.5,
+      fontWeight: 700,
+    },
+    emptyCell: {
+      padding: "28px 18px",
+      textAlign: "center",
+      fontSize: 14,
+      color: "rgba(67, 37, 52, 0.7)",
+    },
+    headerPill: (key) => ({
+      display: "inline-flex",
+      alignItems: "center",
+      gap: isMobile ? 4 : 8,
+      minHeight: 26,
+      padding: isMobile ? "3px 6px" : "6px 10px",
+      borderRadius: 999,
+      background: CATEGORY_META[key]?.tint || "#ffffff",
+      color: PALETTE.burgundy,
+      fontSize: isMobile ? 10.5 : 12,
+    }),
+    headerIcon: {
+      width: 16,
+      height: 16,
+      borderRadius: "50%",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "#ffffff",
+      fontSize: 10,
+      fontWeight: 800,
+    },
+    errorBanner: {
+      marginBottom: 16,
+      padding: "12px 14px",
+      borderRadius: 14,
+      border: "1px solid rgba(111, 34, 50, 0.18)",
+      background: "rgba(255, 238, 241, 0.95)",
+      color: PALETTE.burgundy,
+      fontSize: 13,
+    },
+    paginationRow: {
+      display: "flex",
+      gap: 10,
+      alignItems: "center",
+      justifyContent: isMobile ? "center" : "space-between",
+      marginTop: 14,
+      flexWrap: "wrap",
+    },
+    paginationLabel: {
+      fontSize: 13,
+      color: "rgba(67, 37, 52, 0.76)",
+    },
+    tooltip: {
+      position: isMobile ? "relative" : "fixed",
+      right: isMobile ? "auto" : 20,
+      bottom: isMobile ? "auto" : 20,
+      left: isMobile ? "auto" : undefined,
+      margin: isMobile ? "12px 0 0" : 0,
+      background: "#ffffff",
+      border: `1px solid ${PALETTE.line}`,
+      borderRadius: 18,
+      padding: 14,
+      boxShadow: PALETTE.shadow,
+      width: "100%",
+      zIndex: 50,
+    },
+    tooltipHeader: {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: 10,
+      alignItems: "flex-start",
+      marginBottom: 10,
+    },
+    tooltipName: {
+      fontSize: 15,
+      fontWeight: 700,
+      color: PALETTE.burgundy,
+    },
+    tooltipSubtitle: {
+      marginTop: 3,
+      fontSize: 11.5,
+      color: "rgba(67, 37, 52, 0.66)",
+    },
+    tooltipList: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+    },
+    tooltipRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: 10,
+      alignItems: "center",
+    },
+    tooltipCategory: (categoryKey) => ({
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      minHeight: 26,
+      padding: "4px 8px",
+      borderRadius: 999,
+      background: CATEGORY_META[categoryKey].tint,
+      color: PALETTE.burgundy,
+      fontSize: 11.5,
+      fontWeight: 700,
+    }),
+    tooltipValue: {
+      fontSize: 12.5,
+      fontWeight: 700,
+      color: PALETTE.ink,
+    },
+    tooltipNeed: {
+      fontSize: 11.5,
+      fontWeight: 500,
+      color: "rgba(67, 37, 52, 0.66)",
+    },
+    tooltipRuleNote: {
+      fontSize: 12,
+      lineHeight: 1.4,
+      color: "rgba(67, 37, 52, 0.78)",
+    },
+  };
+}

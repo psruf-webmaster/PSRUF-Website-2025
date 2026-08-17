@@ -258,142 +258,143 @@ export default function ProfileSettings() {
           </ul>
         </motion.aside>
 
-        <div style={{ display: 'grid', gap: '1rem' }}>
-        <motion.section
-          className="profile-form-card"
-          initial={{ opacity: 0, x: 14 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.45, delay: 0.18, ease: 'easeOut' }}
-        >
-          <form className="profile-form" onSubmit={handleSubmit}>
-            <div className="profile-form-header">
-              <h2>Edit profile</h2>
-              <p>Personal email is what you use to sign in.</p>
-            </div>
+        <div className="profile-sections-stack">
+          <motion.section
+            className="profile-form-card"
+            initial={{ opacity: 0, x: 14 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45, delay: 0.18, ease: 'easeOut' }}
+          >
+            <form className="profile-form" onSubmit={handleSubmit}>
+              <div className="profile-form-header">
+                <h2>Edit profile</h2>
+                <p>Personal email is what you use to sign in.</p>
+              </div>
 
-            <div className="profile-form-grid">
-              <label className="profile-field">
-                <span>First name</span>
-                <input name="firstName" value={form.firstName} onChange={handleChange} />
-              </label>
+              <div className="profile-form-grid">
+                <label className="profile-field">
+                  <span>First name</span>
+                  <input name="firstName" value={form.firstName} onChange={handleChange} />
+                </label>
 
-              <label className="profile-field">
-                <span>Last name</span>
-                <input name="lastName" value={form.lastName} onChange={handleChange} />
-              </label>
+                <label className="profile-field">
+                  <span>Last name</span>
+                  <input name="lastName" value={form.lastName} onChange={handleChange} />
+                </label>
 
-              <label className="profile-field profile-field-wide">
-                <span>Personal email</span>
-                <input type="email" name="personalEmail" value={form.personalEmail} onChange={handleChange} />
-              </label>
+                <label className="profile-field profile-field-wide">
+                  <span>Personal email</span>
+                  <input type="email" name="personalEmail" value={form.personalEmail} onChange={handleChange} />
+                </label>
 
-              <label className="profile-field profile-field-wide">
-                <span>UF email</span>
-                <input type="email" name="ufEmail" value={form.ufEmail} onChange={handleChange} />
-              </label>
+                <label className="profile-field profile-field-wide">
+                  <span>UF email</span>
+                  <input type="email" name="ufEmail" value={form.ufEmail} onChange={handleChange} />
+                </label>
 
-              <label className="profile-field profile-field-wide">
-                <span>Phone number</span>
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={form.phoneNumber}
-                  onChange={handleChange}
-                  placeholder="3525551234"
-                />
-              </label>
+                <label className="profile-field profile-field-wide">
+                  <span>Phone number</span>
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={form.phoneNumber}
+                    onChange={handleChange}
+                    placeholder="3525551234"
+                  />
+                </label>
 
-              <label className="profile-field">
-                <span>Major</span>
-                <select className="profile-select" name="major" value={form.major} onChange={handleChange}>
-                  <option value="">Select a major</option>
-                  {majorOptions.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </label>
+                <label className="profile-field">
+                  <span>Major</span>
+                  <select className="profile-select" name="major" value={form.major} onChange={handleChange}>
+                    <option value="">Select a major</option>
+                    {majorOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
 
-              <label className="profile-field">
-                <span>Year</span>
-                <select className="profile-select" name="year" value={form.year} onChange={handleChange}>
-                  <option value="">Select a year</option>
-                  {yearOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
+                <label className="profile-field">
+                  <span>Year</span>
+                  <select className="profile-select" name="year" value={form.year} onChange={handleChange}>
+                    <option value="">Select a year</option>
+                    {yearOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
 
-            {error && <div className="profile-feedback profile-feedback-error">{error}</div>}
-            {message && <div className="profile-feedback profile-feedback-success">{message}</div>}
+              {error && <div className="profile-feedback profile-feedback-error">{error}</div>}
+              {message && <div className="profile-feedback profile-feedback-success">{message}</div>}
 
-            <div className="profile-form-actions">
-              <motion.button
-                className="button"
-                type="submit"
-                disabled={saving}
-                whileHover={{ y: -1, scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {saving ? 'Saving...' : 'Save changes'}
-              </motion.button>
-              <motion.button
-                className="button"
-                type="button"
-                onClick={() => navigate('/dashboard')}
-                whileHover={{ y: -1, scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Cancel
-              </motion.button>
-            </div>
-          </form>
-        </motion.section>
-        <motion.section
-          className="profile-form-card"
-          initial={{ opacity: 0, x: 14 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.45, delay: 0.24, ease: 'easeOut' }}
-        >
-          <form className="profile-form" onSubmit={handlePasswordSubmit}>
-            <div className="profile-form-header">
-              <h2>Reset password</h2>
-              <p>Change your sign-in password with your current password.</p>
-            </div>
+              <div className="profile-form-actions">
+                <motion.button
+                  className="button"
+                  type="submit"
+                  disabled={saving}
+                  whileHover={{ y: -1, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {saving ? 'Saving...' : 'Save changes'}
+                </motion.button>
+                <motion.button
+                  className="button"
+                  type="button"
+                  onClick={() => navigate('/dashboard')}
+                  whileHover={{ y: -1, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Cancel
+                </motion.button>
+              </div>
+            </form>
+          </motion.section>
 
-            <div className="profile-form-grid">
-              <label className="profile-field profile-field-wide">
-                <span>Current password</span>
-                <input type="password" name="currentPassword" value={passwordForm.currentPassword} onChange={handlePasswordChange} />
-              </label>
+          <motion.section
+            className="profile-form-card"
+            initial={{ opacity: 0, x: 14 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45, delay: 0.24, ease: 'easeOut' }}
+          >
+            <form className="profile-form" onSubmit={handlePasswordSubmit}>
+              <div className="profile-form-header">
+                <h2>Reset password</h2>
+                <p>Change your sign-in password with your current password.</p>
+              </div>
 
-              <label className="profile-field">
-                <span>New password</span>
-                <input type="password" name="newPassword" value={passwordForm.newPassword} onChange={handlePasswordChange} />
-              </label>
+              <div className="profile-form-grid">
+                <label className="profile-field profile-field-wide">
+                  <span>Current password</span>
+                  <input type="password" name="currentPassword" value={passwordForm.currentPassword} onChange={handlePasswordChange} />
+                </label>
 
-              <label className="profile-field">
-                <span>Confirm new password</span>
-                <input type="password" name="confirmPassword" value={passwordForm.confirmPassword} onChange={handlePasswordChange} />
-              </label>
-            </div>
+                <label className="profile-field">
+                  <span>New password</span>
+                  <input type="password" name="newPassword" value={passwordForm.newPassword} onChange={handlePasswordChange} />
+                </label>
 
-            {passwordError && <div className="profile-feedback profile-feedback-error">{passwordError}</div>}
-            {passwordMessage && <div className="profile-feedback profile-feedback-success">{passwordMessage}</div>}
+                <label className="profile-field">
+                  <span>Confirm new password</span>
+                  <input type="password" name="confirmPassword" value={passwordForm.confirmPassword} onChange={handlePasswordChange} />
+                </label>
+              </div>
 
-            <div className="profile-form-actions">
-              <motion.button
-                className="button"
-                type="submit"
-                disabled={savingPassword}
-                whileHover={{ y: -1, scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {savingPassword ? 'Updating...' : 'Update password'}
-              </motion.button>
-            </div>
-          </form>
-        </motion.section>
+              {passwordError && <div className="profile-feedback profile-feedback-error">{passwordError}</div>}
+              {passwordMessage && <div className="profile-feedback profile-feedback-success">{passwordMessage}</div>}
+
+              <div className="profile-form-actions">
+                <motion.button
+                  className="button"
+                  type="submit"
+                  disabled={savingPassword}
+                  whileHover={{ y: -1, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {savingPassword ? 'Updating...' : 'Update password'}
+                </motion.button>
+              </div>
+            </form>
+          </motion.section>
         </div>
       </div>
     </motion.div>

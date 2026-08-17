@@ -5,29 +5,40 @@
  */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
-:root {
-  color-scheme: light;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+/* Make sure the entire page fills the screen */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Target React's root div and force it to fill the viewport as a flex column */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Expand the main container to push the footer down */
+.app-shell {
+  flex: 1;
+}
+
+/* Force the footer to show up cleanly at the bottom */
+.site-footer {
+  display: block !important;
+  visibility: visible !important;
+  background-color: #fcf5f6;
+  border-top: 1px solid #f0e1e3;
+  padding: 16px 24px;
+  font-size: 0.85rem;
+  color: #6b4c52;
+  width: 100%;
+  margin-top: auto;
 }
 
 *, *::before, *::after {
   box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: inherit;
-  background:
-    radial-gradient(circle at top left, rgba(236, 144, 184, 0.16), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(109, 44, 44, 0.10), transparent 38%),
-    linear-gradient(135deg, #fffafc 0%, #fcf6f7 54%, #fff7fb 100%);
-  color: #23171a;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-#root {
-  min-height: 100vh;
 }
 
 img {
@@ -48,11 +59,7 @@ button, select {
  * --------------------------------------------------------------------------
  * Layout & Shells
  * --------------------------------------------------------------------------
- */
-.app-shell {
-  min-height: calc(100vh - 76px);
-  padding-bottom: 18px;
-}
+*/ 
 
 .app-shell-feeds {
   min-height: calc(100vh - 76px);
@@ -899,10 +906,6 @@ button, select {
  * Layout & Shells
  * --------------------------------------------------------------------------
  */
-.app-shell {
-  min-height: calc(100vh - 76px);
-  padding-bottom: 18px;
-}
 
 .page-shell {
   max-width: 1280px;
@@ -993,15 +996,7 @@ button, select {
  * Realigned Footer (Brand: Left | Copyright/Love: Middle | Links: Right)
  * --------------------------------------------------------------------------
  */
-.site-footer {
-  background-color: #fcf5f6;
-  border-top: 1px solid #f0e1e3;
-  padding: 16px 24px;
-  font-size: 0.85rem;
-  color: #6b4c52;
-  width: 100%;
-  margin-top: auto;
-}
+
 
 .site-footer-inner {
   max-width: 1300px;
@@ -1479,3 +1474,71 @@ button, select {
   margin-top: 0.5rem;
 }
 
+/* Zero left padding on desktop */
+.profile-page-shell {
+  padding: 2.5rem 2rem 2.5rem 0rem; 
+  max-width: 1240px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Left-align titles and elements */
+.profile-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  text-align: left;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.profile-hero-content {
+  text-align: left;
+}
+
+@media (max-width: 768px) {
+  .profile-page-shell {
+    padding: 1.25rem 1rem; /* Keeps padding safe on mobile viewports */
+  }
+
+  .profile-hero {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .profile-hero-content {
+    text-align: center;
+  }
+
+  /* Center buttons on mobile */
+  .profile-form-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .profile-form-actions .button,
+  .profile-form-actions .button-secondary {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+/* Align the hero section so the button sits a bit lower relative to the title block */
+.profile-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex; /* Changes alignment from flex-start to flex-end to push the button down */
+  text-align: left;
+  width: 100%;
+  margin-bottom: 2.5rem;
+}
+
+/* Optional: If you want finer control with a manual offset, use this instead: */
+.profile-hero .button-secondary {
+  margin-top: 2.5rem; /* Pushes the button down specifically */
+}

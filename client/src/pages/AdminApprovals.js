@@ -156,8 +156,8 @@ export default function AdminApprovals() {
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>
+    <div style={{ padding: "16px 12px", maxWidth: 1200, margin: "0 auto" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>
         Pending Approvals
       </h1>
       {msg && <div style={{ marginBottom: 12 }}>{msg}</div>}
@@ -166,112 +166,116 @@ export default function AdminApprovals() {
       ) : rows.length === 0 ? (
         <div>No pending users.</div>
       ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ textAlign: "left", background: "#f3f4f6" }}>
-              <th style={{ padding: 8 }}>Name</th>
-              <th style={{ padding: 8 }}>Emails</th>
-              <th style={{ padding: 8 }}>Roles</th>
-              <th style={{ padding: 8 }}>Member Status</th>
-              <th style={{ padding: 8 }}>Positions</th>
-              <th style={{ padding: 8 }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(u => (
-              <tr key={u._id} style={{ borderTop: "1px solid #e5e7eb" }}>
-                <td style={{ padding: 8 }}>{u.firstName} {u.lastName}</td>
-                <td style={{ padding: 8 }}>
-                  <div>{u.personalEmail}</div>
-                  <div style={{ opacity: 0.8, fontSize: 12 }}>{u.ufEmail || "-"}</div>
-                </td>
+        <div style={{ width: "100%", overflowX: "-webkit-paged-x", WebkitOverflowScrolling: "touch" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 650 }}>
+            <thead>
+              <tr style={{ textAlign: "left", background: "#f3f4f6" }}>
+                <th style={{ padding: 8 }}>Name</th>
+                <th style={{ padding: 8 }}>Emails</th>
+                <th style={{ padding: 8 }}>Roles</th>
+                <th style={{ padding: 8 }}>Member Status</th>
+                <th style={{ padding: 8 }}>Positions</th>
+                <th style={{ padding: 8 }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(u => (
+                <tr key={u._id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                  <td style={{ padding: 8, whiteSpace: "nowrap" }}>{u.firstName} {u.lastName}</td>
+                  <td style={{ padding: 8 }}>
+                    <div>{u.personalEmail}</div>
+                    <div style={{ opacity: 0.8, fontSize: 12 }}>{u.ufEmail || "-"}</div>
+                  </td>
 
-                {/* Roles multi-select */}
-                <td style={{ padding: 8 }}>
-                  <select
-                    multiple
-                    size={4}
-                    value={roleSel[u._id] || []}
-                    onChange={(e) => handleMultiChange(e, setRoleSel, u._id)}
-                    style={{ width: 160, padding: 6 }}
-                  >
-                    {ROLE_OPTIONS.map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </td>
-
-                {/* Member status multi-select */}
-                <td style={{ padding: 8 }}>
-                  <div style={{ display: "grid", gap: 8 }}>
+                  {/* Roles multi-select */}
+                  <td style={{ padding: 8 }}>
                     <select
                       multiple
                       size={4}
-                      value={statusSel[u._id] || []}
-                      onChange={(e) => handleMultiChange(e, setStatusSel, u._id)}
-                      style={{ width: 160, padding: 6 }}
+                      value={roleSel[u._id] || []}
+                      onChange={(e) => handleMultiChange(e, setRoleSel, u._id)}
+                      style={{ width: "100%", minWidth: 140, padding: 6 }}
                     >
-                      {MEMBER_STATUS_OPTIONS.map(opt => (
+                      {ROLE_OPTIONS.map(opt => (
                         <option key={opt} value={opt}>{opt}</option>
                       ))}
                     </select>
-                    {scholarshipAllowed && (
-                      <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#432534", fontWeight: 600 }}>
-                        Scholarship
-                        <select
-                          value={Number(scholarshipSel[u._id] ?? 0)}
-                          onChange={(e) => setScholarshipSel(prev => ({ ...prev, [u._id]: Number(e.target.value) }))}
-                          style={{ width: 160, padding: 6 }}
-                        >
-                          {SCHOLARSHIP_OPTIONS.map(opt => (
-                            <option key={opt} value={opt}>{opt}%</option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
-                  </div>
-                </td>
+                  </td>
 
-                {/* Positions multi-select */}
-                <td style={{ padding: 8 }}>
-                  <select
-                    multiple
-                    size={6}
-                    value={posSel[u._id] || []}
-                    onChange={(e) => handleMultiChange(e, setPosSel, u._id)}
-                    style={{ width: 280, padding: 6 }}
-                  >
-                    <optgroup label="Exec Seats">
-                      {EXEC_OPTIONS.map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Boards / Officers">
-                      {POSITION_OPTIONS.map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </td>
+                  {/* Member status multi-select */}
+                  <td style={{ padding: 8 }}>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      <select
+                        multiple
+                        size={4}
+                        value={statusSel[u._id] || []}
+                        onChange={(e) => handleMultiChange(e, setStatusSel, u._id)}
+                        style={{ width: "100%", minWidth: 140, padding: 6 }}
+                      >
+                        {MEMBER_STATUS_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                      {scholarshipAllowed && (
+                        <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#432534", fontWeight: 600 }}>
+                          Scholarship
+                          <select
+                            value={Number(scholarshipSel[u._id] ?? 0)}
+                            onChange={(e) => setScholarshipSel(prev => ({ ...prev, [u._id]: Number(e.target.value) }))}
+                            style={{ width: "100%", minWidth: 140, padding: 6 }}
+                          >
+                            {SCHOLARSHIP_OPTIONS.map(opt => (
+                              <option key={opt} value={opt}>{opt}%</option>
+                            ))}
+                          </select>
+                        </label>
+                      )}
+                    </div>
+                  </td>
 
-                <td style={{ padding: 8 }}>
-                  <button
-                    onClick={() => approve(u._id)}
-                    style={{ padding: "6px 10px", marginRight: 8 }}
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => reject(u._id)}
-                    style={{ padding: "6px 10px", background: "#eee" }}
-                  >
-                    Reject
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  {/* Positions multi-select */}
+                  <td style={{ padding: 8 }}>
+                    <select
+                      multiple
+                      size={6}
+                      value={posSel[u._id] || []}
+                      onChange={(e) => handleMultiChange(e, setPosSel, u._id)}
+                      style={{ width: "100%", minWidth: 200, padding: 6 }}
+                    >
+                      <optgroup label="Exec Seats">
+                        {EXEC_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Boards / Officers">
+                        {POSITION_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </optgroup>
+                    </select>
+                  </td>
+
+                  <td style={{ padding: 8, whiteSpace: "nowrap" }}>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => approve(u._id)}
+                        style={{ padding: "6px 10px" }}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => reject(u._id)}
+                        style={{ padding: "6px 10px", background: "#eee" }}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

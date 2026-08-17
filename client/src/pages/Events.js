@@ -414,16 +414,17 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
           </div>
         )}
 
-        {view !== "mine" && isManager(user, event) ? (
-          <div className="events-manage-row">
-            <Link to={`/events/${event._id}`} className="events-secondary-button events-link-button">View Details</Link>
-            <button type="button" className="events-secondary-button" onClick={() => onManage(event._id)}>Manage Event</button>
-          </div>
-        ) : (
-          <div className="events-manage-row">
-            <Link to={`/events/${event._id}`} className="events-secondary-button events-link-button">View Details</Link>
-          </div>
-        )}
+      <div className="events-manage-row">
+  <Link to={`/events/${event._id}`} className="events-secondary-button events-link-button">
+    View Details
+  </Link>
+
+  {view !== "mine" && isManager(user, event) && (
+    <button type="button" className="events-secondary-button" onClick={() => onManage(event._id)}>
+      Manage Event
+    </button>
+  )}
+</div>
       </div>
     </motion.article>
   );

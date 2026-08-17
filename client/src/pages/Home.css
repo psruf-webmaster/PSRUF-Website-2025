@@ -24,6 +24,22 @@
     linear-gradient(180deg, #fffbfc 0%, #fff6f7 100%); 
   scroll-snap-type: y proximity; 
 } 
+
+@supports (animation-timeline: scroll()) {
+  .home-landing { 
+    animation: backgroundShift linear both; 
+    animation-timeline: scroll(); 
+  } 
+
+  @keyframes backgroundShift { 
+    0% { 
+      background-position: 0% 0%, 80% 16%, 0% 0%; 
+    } 
+    100% { 
+      background-position: 100% 100%, 80% 40%, 0% 100%; 
+    } 
+  } 
+}
  
 .home-panel { 
   position: relative; 
@@ -99,7 +115,7 @@
 @media (max-width: 720px) {
   .home-hero-kicker, .home-social-kicker, .home-small-label {
     padding: 0.45rem 0.85rem;
-    margin-bottom: 0; /* Margin handled by flex gaps */
+    margin-bottom: 0; 
     font-size: 0.75rem;
   }
 }
@@ -120,6 +136,21 @@
   font-size: clamp(4.1rem, 8vw, 7.6rem); 
   line-height: 0.92; 
 } 
+
+@supports (animation-timeline: scroll()) {
+  .home-hero-title {
+    animation: heroTitleScroll linear both;
+    animation-timeline: scroll();
+    animation-range: 0vh 40vh;
+  }
+
+  @keyframes heroTitleScroll {
+    to {
+      transform: translateY(-40px) scale(0.95);
+      opacity: 0.2;
+    }
+  }
+}
  
 .home-mask-line { display: block; overflow: hidden; padding-bottom: 0.99rem; } 
 @media (max-width: 720px) {
@@ -247,18 +278,40 @@
   .home-editorial-meta { margin-bottom: 0.8rem; font-size: 0.75rem; }
 }
  
-.home-editorial-frame { position: relative; width: 100%; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 1.35rem; background: #e9e5df; } 
-@media (max-width: 720px) {
-  .home-editorial-frame { border-radius: 1.15rem; }
-}
 .home-editorial-frame { 
   position: relative; 
   width: 100%; 
   aspect-ratio: 4 / 5; 
   overflow: hidden; 
   border-radius: 1.35rem; 
-  background: transparent; /* Dark background so it doesn't flash white during transitions */
+  background: transparent; 
 } 
+@media (max-width: 720px) {
+  .home-editorial-frame { border-radius: 1.15rem; }
+}
+
+@supports (animation-timeline: scroll()) {
+  .home-editorial-frame {
+    animation: coverPhotoParallax linear both;
+    animation-timeline: scroll(self);
+    animation-range: entry 0% exit 100%;
+  }
+
+  @keyframes coverPhotoParallax {
+    0% {
+      transform: translateY(20px) scale(0.96);
+      filter: brightness(0.95);
+    }
+    50% {
+      transform: translateY(0px) scale(1);
+      filter: brightness(1);
+    }
+    100% {
+      transform: translateY(-20px) scale(0.98);
+      filter: brightness(0.95);
+    }
+  }
+}
 
 .home-editorial-image { 
   position: absolute;
@@ -269,7 +322,7 @@
   object-fit: cover; 
   object-position: center center; 
   opacity: 0; 
-  transition: opacity 0.65s ease-in-out; /* Smooth, gentle cross-fade duration */
+  transition: opacity 0.65s ease-in-out; 
 } 
 
 .home-editorial-image.is-visible { 
@@ -333,7 +386,35 @@
   overflow: hidden; 
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 7%, black 96%, transparent 100%); 
   mask-image: linear-gradient(to bottom, transparent 0%, black 7%, black 96%, transparent 100%); 
+
+  /* Pure fade in and out on scroll (No Zoom) */
+  opacity: 0;
+  transition: opacity 0.5s ease;
 } 
+
+@supports (animation-timeline: view()) {
+  .home-panel-sisterhood {
+    animation: sisterhoodScrollFade linear both;
+    animation-timeline: view();
+    animation-range: entry 0% exit 100%;
+  }
+
+  @keyframes sisterhoodScrollFade {
+    0% {
+      opacity: 0;
+    }
+    25% {
+      opacity: 1;
+    }
+    75% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+}
+
 @media (max-width: 720px) {
   .home-panel-sisterhood {
     height: 55vh;
@@ -341,7 +422,13 @@
   }
 }
 .home-sisterhood-media { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; } 
-.home-sisterhood-media img { width: 100%; height: 100%; object-fit: cover; object-position: center 75%; will-change: transform; } 
+.home-sisterhood-media img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  object-position: center 75%; 
+} 
+
 .home-sisterhood-wash { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 192, 203, 0.25) 0%, rgba(20, 15, 15, 0.15) 30%, rgba(20, 15, 15, 0.15) 70%, rgba(255, 192, 203, 0.25) 100%); pointer-events: none; z-index: 1; } 
 .home-sisterhood-copy { position: absolute; bottom: 2rem; right: 3rem; z-index: 2; text-align: right; background: transparent; } 
 @media (max-width: 720px) {
@@ -360,30 +447,24 @@
    SOCIAL / INSTAGRAM SECTION 
    ======================================== */ 
 .home-panel-social { 
-  padding: clamp(3.5rem, 5vw, 5rem) clamp(1.2rem, 4vw, 3rem) 0; 
-  padding-bottom: 0rem;
+  padding: clamp(3.5rem, 5vw, 5rem) clamp(1.2rem, 4vw, 3rem) 2rem; 
+  -webkit-mask-image: none;
+  mask-image: none;
 } 
 @media (max-width: 720px) {
   .home-panel-social { padding: clamp(2.5rem, 4vw, 4rem) clamp(1.2rem, 4vw, 3rem) 2rem; }
 }
-/* Remove the gradient overlay/wash from the bottom of the social section */
+
 .home-panel-social::before { 
   content: ''; 
   position: absolute; 
   inset: 0; 
   z-index: 0; 
-  background: transparent; /* Replaced the multi-stop fading gradient with a clean, solid background */
+  background: transparent; 
 } 
 
-/* If there is a mask or gradient fading into the footer from the bottom container, remove it here */
-.home-panel-social { 
-  padding: clamp(3.5rem, 5vw, 5rem) clamp(1.2rem, 4vw, 3rem) 2rem; 
-  -webkit-mask-image: none;
-  mask-image: none;
-}
 .home-social-header, .home-social-rail { position: relative; z-index: 1; } 
 
-/* FIXED: Stacked Layout for Title and Intro */
 .home-social-header { 
   display: flex; 
   flex-direction: column;
@@ -460,6 +541,18 @@
    ======================================== */ 
 .home-social-card {
   scroll-snap-align: start;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: cardScrollReveal ease-out forwards;
+  animation-timeline: view();
+  animation-range: entry 10% entry 40%;
+}
+
+@keyframes cardScrollReveal {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .home-social-card-instagram { 
@@ -662,7 +755,7 @@
    REDUCED MOTION 
    ======================================== */ 
 @media (prefers-reduced-motion: reduce) { 
-  .home-landing { scroll-behavior: auto; } 
-  .home-social-rail, .home-primary-cta, .home-secondary-link, .home-social-card-instagram, .home-social-card-event, .instagram-fade-image { transition: none; } 
+  .home-landing { scroll-behavior: auto; animation: none !important; } 
+  .home-social-rail, .home-primary-cta, .home-secondary-link, .home-social-card-instagram, .home-social-card-event, .instagram-fade-image, .home-sisterhood-media img, .home-hero-title, .home-editorial-frame, .home-panel-sisterhood { transition: none; animation: none !important; } 
   .instagram-fade-image, .home-editorial-image { animation: none; } 
 }
