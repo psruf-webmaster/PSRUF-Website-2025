@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion'; // Upgraded import for AnimatePresence
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Aperture,
@@ -54,7 +54,6 @@ function MaskedReveal({ children, delay = 0, className = 'home-mask-line' }) {
 export default function Home() {
   const [pnmEvents, setPnmEvents] = useState([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
-  const [parallaxOffset, setParallaxOffset] = useState(0);
 
   const [editorialPhotoIndex, setEditorialPhotoIndex] = useState(() =>
     editorialPhotos.length > 0
@@ -70,7 +69,7 @@ export default function Home() {
   const carouselRef = useRef(null);
 
   /* ------------------------------------------------------------
-   * EDITORIAL PHOTO ROTATION (Smoother Transition)
+   * EDITORIAL PHOTO ROTATION
    * ------------------------------------------------------------ */
   useEffect(() => {
     if (editorialPhotos.length <= 1) return undefined;
@@ -86,7 +85,7 @@ export default function Home() {
           return nextIndex;
         });
         setIsEditorialPhotoVisible(true);
-      }, 800); // Increased slightly for a more natural fade gap
+      }, 800);
     }, 7000);
 
     return () => clearInterval(interval);
@@ -101,7 +100,6 @@ export default function Home() {
         setIsLoadingPosts(true);
         setPostsError(null);
         
-        const feedId = process.env.REACT_APP_BEHOLD_FEED_ID;
         const response = await fetch(`https://feeds.behold.so/nEj0Q8QsOwXl8z2yctYp`);
         
         if (!response.ok) throw new Error(`Instagram feed returned ${response.status}`);
@@ -161,7 +159,7 @@ export default function Home() {
   }, []);
 
   /* ------------------------------------------------------------
-   * INSTAGRAM ALBUM SLIDES (Auto-rotate for carousels)
+   * INSTAGRAM ALBUM SLIDES (Auto-rotate)
    * ------------------------------------------------------------ */
   useEffect(() => {
     const albumPosts = posts.filter((post) => post.images.length > 1);
@@ -180,42 +178,6 @@ export default function Home() {
 
     return () => clearInterval(interval);
   }, [posts]);
-
-  /* ------------------------------------------------------------
-   * SISTERHOOD PARALLAX
-   * ------------------------------------------------------------ */
-  useEffect(() => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return undefined;
-
-    let frameId = null;
-    const updateParallax = () => {
-      frameId = null;
-      const sisterhoodSection = document.querySelector('.home-panel-sisterhood');
-      if (!sisterhoodSection) return;
-
-      const rect = sisterhoodSection.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-
-      if (rect.bottom >= 0 && rect.top <= windowHeight) {
-        const progress = (windowHeight - rect.top) / (windowHeight + rect.height);
-        const maxOffset = 90;
-        setParallaxOffset((progress - 0.5) * maxOffset * 2);
-      }
-    };
-
-    const handleScroll = () => {
-      if (frameId === null) frameId = window.requestAnimationFrame(updateParallax);
-    };
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      if (frameId !== null) window.cancelAnimationFrame(frameId);
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
 
   return (
     <div className="home-landing">
@@ -304,7 +266,7 @@ export default function Home() {
       {/* SISTERHOOD */}
       <section className="home-panel home-panel-sisterhood">
         <div className="home-sisterhood-media">
-        <img src={chapterPhoto} alt="Chapter cover" className="home-editorial-image" />
+          <img src={chapterPhoto} alt="Chapter cover" className="home-editorial-image" />
           <div className="home-sisterhood-wash" />
           <motion.div className="home-sisterhood-copy" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}>
             <span>Phi Sigma Rho · Tau Chapter</span>
@@ -325,7 +287,6 @@ export default function Home() {
           </motion.p>
         </div>
 
-        {/* Removed JS dragging constraints, using native CSS horizontal scroll for smoothness on touch devices */}
         <div ref={carouselRef} className="home-social-rail">
 
           {/* INSTAGRAM CAROUSEL */}
@@ -395,7 +356,6 @@ export default function Home() {
                     </div>
                     <h3>{post.title}</h3>
                     
-                    {/* The link is now cleanly separated from the card wrapper for touch/click safety */}
                     <a href={post.permalink} target="_blank" rel="noopener noreferrer" className="home-instagram-view">
                       View on Instagram
                       <ArrowRight size={14} />
@@ -437,7 +397,6 @@ export default function Home() {
               const day = startDate.getDate();
               const time = startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
               
-              // Map potential image fields from your backend
               const eventImageUrl = event.image || event.imageUrl || event.coverImage;
 
               return (
@@ -449,7 +408,6 @@ export default function Home() {
                   viewport={{ once: true, amount: 0.25 }}
                   transition={{ duration: 0.65, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  {/* Updated: Sleek Event Image with Pink Fallback */}
                   <div className="home-event-hero-image">
                     {eventImageUrl ? (
                       <img src={eventImageUrl} alt={event.title} loading="lazy" />
@@ -482,7 +440,6 @@ export default function Home() {
             })
           ) : (
             <article className="home-social-card home-social-card-event home-social-card-empty">
-              {/* Uses your new pink gradient to make the empty state look intentional */}
               <div className="home-event-hero-image">
                 <div className="home-event-fallback-image" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Sparkles size={42} color="white" style={{ opacity: 0.4 }} />

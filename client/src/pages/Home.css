@@ -316,55 +316,36 @@
 }
  
 /* ======================================== 
-   SISTERHOOD (FIXED)
+   SISTERHOOD (FIXED & STABILIZED)
    ======================================== */ 
 .home-panel-sisterhood { 
   position: relative; 
   width: 100%; 
-  height: 75vh; 
+  min-height: 75vh; 
+  height: auto;
   overflow: hidden; 
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 7%, black 96%, transparent 100%); 
-  mask-image: linear-gradient(to bottom, transparent 0%, black 7%, black 96%, transparent 100%); 
-
-  /* Fallback visibility set to 1 so it's never stuck invisible */
-  opacity: 1;
+  opacity: 1 !important;
 } 
 
-/* Safe fallback/enhancement for modern browsers supporting view timelines */
-@supports (animation-timeline: view()) {
-  .home-panel-sisterhood {
-    animation: sisterhoodScrollFade linear both;
-    animation-timeline: view();
-    animation-range: entry 0% cover 40%;
-  }
-
-  @keyframes sisterhoodScrollFade {
-    0% {
-      opacity: 0.2;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
-}
+.home-sisterhood-media { 
+  position: relative; 
+  width: 100%; 
+  height: 75vh; 
+  overflow: hidden; 
+  z-index: 0;
+} 
 
 @media (max-width: 720px) {
-  .home-panel-sisterhood {
+  .home-panel-sisterhood,
+  .home-sisterhood-media {
     height: 55vh;
     min-height: 380px;
   }
 }
 
-.home-sisterhood-media { 
-  position: absolute; 
-  inset: 0; 
-  width: 100%; 
-  height: 100%; 
-  overflow: hidden; 
-  z-index: 0;
-} 
-
 .home-sisterhood-media img { 
+  position: absolute;
+  inset: 0;
   width: 100%; 
   height: 100%; 
   object-fit: cover; 
@@ -406,20 +387,10 @@
    ======================================== */ 
 .home-panel-social { 
   padding: clamp(3.5rem, 5vw, 5rem) clamp(1.2rem, 4vw, 3rem) 2rem; 
-  -webkit-mask-image: none;
-  mask-image: none;
 } 
 @media (max-width: 720px) {
   .home-panel-social { padding: clamp(2.5rem, 4vw, 4rem) clamp(1.2rem, 4vw, 3rem) 2rem; }
 }
-
-.home-panel-social::before { 
-  content: ''; 
-  position: absolute; 
-  inset: 0; 
-  z-index: 0; 
-  background: transparent; 
-} 
 
 .home-social-header, .home-social-rail { position: relative; z-index: 1; } 
 
