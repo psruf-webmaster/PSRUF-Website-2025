@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import './Home.css';
 
-const chapterPhoto = '/dbb97d8762356babafe63b3cef9f46fcfedf78a1.png';
+import chapterPhoto from '../pics/dbb97d8762356babafe63b3cef9f46fcfedf78a1.png';
 
 const editorialPhotosContext = require.context(
   '../pics',

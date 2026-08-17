@@ -24,22 +24,6 @@
     linear-gradient(180deg, #fffbfc 0%, #fff6f7 100%); 
   scroll-snap-type: y proximity; 
 } 
-
-@supports (animation-timeline: scroll()) {
-  .home-landing { 
-    animation: backgroundShift linear both; 
-    animation-timeline: scroll(); 
-  } 
-
-  @keyframes backgroundShift { 
-    0% { 
-      background-position: 0% 0%, 80% 16%, 0% 0%; 
-    } 
-    100% { 
-      background-position: 100% 100%, 80% 40%, 0% 100%; 
-    } 
-  } 
-}
  
 .home-panel { 
   position: relative; 
@@ -60,12 +44,12 @@
 .home-panel-hero { 
   display: flex; 
   align-items: center; 
-  padding: 1.5rem clamp(1.2rem, 4vw, 3rem) clamp(2.5rem, 4vw, 3.5rem); 
+  padding: 2.5rem clamp(1.2rem, 4vw, 3rem) clamp(2.5rem, 4vw, 3.5rem); 
 } 
 
 @media (min-width: 1081px) {
   .home-panel-hero {
-    padding: 0.5rem clamp(1.2rem, 4vw, 3rem) clamp(2.5rem, 4vw, 3.5rem); 
+    padding: 1.5rem clamp(1.2rem, 4vw, 3rem) clamp(2.5rem, 4vw, 3.5rem); 
   }
 }
  
@@ -86,7 +70,7 @@
   gap: clamp(2rem, 4vw, 4rem); 
 } 
  
-.home-hero-copy { max-width: 44rem; align-self: start; margin-top: 2rem; } 
+.home-hero-copy { max-width: 44rem; align-self: start; margin-top: 1.5rem; } 
 @media (max-width: 1080px) {
   .home-hero-copy { margin-top: 0; }
 }
@@ -101,7 +85,8 @@
   border: 1px solid rgba(111, 36, 52, 0.1); 
   border-radius: 999px; 
   padding: 0.52rem 0.9rem; 
-  margin-bottom: 0.8rem; 
+  margin-top: 0.5rem;
+  margin-bottom: 1.2rem; 
   background: rgba(255, 255, 255, 0.66); 
   backdrop-filter: blur(20px); 
   color: var(--home-maroon); 
@@ -115,7 +100,8 @@
 @media (max-width: 720px) {
   .home-hero-kicker, .home-social-kicker, .home-small-label {
     padding: 0.45rem 0.85rem;
-    margin-bottom: 0; 
+    margin-top: 0.2rem;
+    margin-bottom: 0.8rem; 
     font-size: 0.75rem;
   }
 }
@@ -136,21 +122,6 @@
   font-size: clamp(4.1rem, 8vw, 7.6rem); 
   line-height: 0.92; 
 } 
-
-@supports (animation-timeline: scroll()) {
-  .home-hero-title {
-    animation: heroTitleScroll linear both;
-    animation-timeline: scroll();
-    animation-range: 0vh 40vh;
-  }
-
-  @keyframes heroTitleScroll {
-    to {
-      transform: translateY(-40px) scale(0.95);
-      opacity: 0.2;
-    }
-  }
-}
  
 .home-mask-line { display: block; overflow: hidden; padding-bottom: 0.99rem; } 
 @media (max-width: 720px) {
@@ -290,29 +261,6 @@
   .home-editorial-frame { border-radius: 1.15rem; }
 }
 
-@supports (animation-timeline: scroll()) {
-  .home-editorial-frame {
-    animation: coverPhotoParallax linear both;
-    animation-timeline: scroll(self);
-    animation-range: entry 0% exit 100%;
-  }
-
-  @keyframes coverPhotoParallax {
-    0% {
-      transform: translateY(20px) scale(0.96);
-      filter: brightness(0.95);
-    }
-    50% {
-      transform: translateY(0px) scale(1);
-      filter: brightness(1);
-    }
-    100% {
-      transform: translateY(-20px) scale(0.98);
-      filter: brightness(0.95);
-    }
-  }
-}
-
 .home-editorial-image { 
   position: absolute;
   inset: 0;
@@ -321,17 +269,8 @@
   height: 100%; 
   object-fit: cover; 
   object-position: center center; 
-  opacity: 0; 
-  transition: opacity 0.65s ease-in-out; 
+  opacity: 1 !important; /* Force cover photo visible */
 } 
-
-.home-editorial-image.is-visible { 
-  opacity: 1; 
-} 
-
-.home-editorial-frame:hover .home-editorial-image { 
-  transform: none; 
-}
 
 .home-editorial-overlay { 
   position: absolute; 
@@ -725,7 +664,7 @@
    EMPTY INSTAGRAM STATE 
    ======================================== */ 
 .home-social-media-empty { display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 5; color: #762e42; } 
-.home-social-instagram-link { display: inline-flex; margin-top: 18px; text-decoration: none; font-weight: 600; } 
+.home-social-instagram-link { display: inline-flex; margin-top: 18px; text-navigation: none; font-weight: 600; } 
 @media (max-width: 720px) {
   .home-social-instagram-link { margin-top: 14px; }
 }
