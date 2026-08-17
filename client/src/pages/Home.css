@@ -269,7 +269,7 @@
   height: 100%; 
   object-fit: cover; 
   object-position: center center; 
-  opacity: 1 !important; /* Force cover photo visible */
+  opacity: 1 !important; 
 } 
 
 .home-editorial-overlay { 
@@ -316,7 +316,7 @@
 }
  
 /* ======================================== 
-   SISTERHOOD 
+   SISTERHOOD (FIXED)
    ======================================== */ 
 .home-panel-sisterhood { 
   position: relative; 
@@ -326,30 +326,24 @@
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 7%, black 96%, transparent 100%); 
   mask-image: linear-gradient(to bottom, transparent 0%, black 7%, black 96%, transparent 100%); 
 
-  /* FIXED: Changed from opacity: 0 to opacity: 1 so it doesn't stay hidden if scroll-timeline fails */
+  /* Fallback visibility set to 1 so it's never stuck invisible */
   opacity: 1;
-  transition: opacity 0.5s ease;
 } 
 
+/* Safe fallback/enhancement for modern browsers supporting view timelines */
 @supports (animation-timeline: view()) {
   .home-panel-sisterhood {
     animation: sisterhoodScrollFade linear both;
     animation-timeline: view();
-    animation-range: entry 0% exit 100%;
+    animation-range: entry 0% cover 40%;
   }
 
   @keyframes sisterhoodScrollFade {
     0% {
-      opacity: 0;
-    }
-    25% {
-      opacity: 1;
-    }
-    75% {
-      opacity: 1;
+      opacity: 0.2;
     }
     100% {
-      opacity: 0;
+      opacity: 1;
     }
   }
 }
@@ -360,16 +354,41 @@
     min-height: 380px;
   }
 }
-.home-sisterhood-media { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; } 
+
+.home-sisterhood-media { 
+  position: absolute; 
+  inset: 0; 
+  width: 100%; 
+  height: 100%; 
+  overflow: hidden; 
+  z-index: 0;
+} 
+
 .home-sisterhood-media img { 
   width: 100%; 
   height: 100%; 
   object-fit: cover; 
   object-position: center 75%; 
+  opacity: 1 !important;
+  visibility: visible !important;
 } 
 
-.home-sisterhood-wash { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 192, 203, 0.25) 0%, rgba(20, 15, 15, 0.15) 30%, rgba(20, 15, 15, 0.15) 70%, rgba(255, 192, 203, 0.25) 100%); pointer-events: none; z-index: 1; } 
-.home-sisterhood-copy { position: absolute; bottom: 2rem; right: 3rem; z-index: 2; text-align: right; background: transparent; } 
+.home-sisterhood-wash { 
+  position: absolute; 
+  inset: 0; 
+  background: linear-gradient(180deg, rgba(255, 192, 203, 0.15) 0%, rgba(20, 15, 15, 0.05) 30%, rgba(20, 15, 15, 0.05) 70%, rgba(255, 192, 203, 0.15) 100%); 
+  pointer-events: none; 
+  z-index: 1; 
+} 
+
+.home-sisterhood-copy { 
+  position: absolute; 
+  bottom: 2rem; 
+  right: 3rem; 
+  z-index: 2; 
+  text-align: right; 
+  background: transparent; 
+} 
 @media (max-width: 720px) {
   .home-sisterhood-copy { bottom: 1.25rem; right: 1rem; max-width: calc(100% - 2rem); }
 }
@@ -439,7 +458,7 @@
 }
  
 /* ======================================== 
-   CAROUSEL (Expanded on Desktop)
+   CAROUSEL 
    ======================================== */ 
 .home-social-rail { 
   display: flex; 
@@ -476,22 +495,12 @@
 .home-social-rail::-webkit-scrollbar { display: none; } 
  
 /* ======================================== 
-   SOCIAL CARDS (Global)
+   SOCIAL CARDS 
    ======================================== */ 
 .home-social-card {
   scroll-snap-align: start;
-  opacity: 1; /* FIXED: Changed from opacity: 0 so cards don't stay hidden if view-timeline fails */
-  transform: translateY(0); /* FIXED: Removed initial offset to prevent render glitches */
-  animation: cardScrollReveal ease-out forwards;
-  animation-timeline: view();
-  animation-range: entry 10% entry 40%;
-}
-
-@keyframes cardScrollReveal {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  opacity: 1; 
+  transform: translateY(0); 
 }
 
 .home-social-card-instagram { 
@@ -557,7 +566,7 @@
 .home-social-card-instagram:hover .home-instagram-view svg { transform: translateX(4px); } 
  
 /* ======================================== 
-   Sleek Event Cards 
+   Event Cards 
    ======================================== */ 
 .home-social-card-event { 
   flex: 0 0 365px; 
@@ -664,7 +673,7 @@
    EMPTY INSTAGRAM STATE 
    ======================================== */ 
 .home-social-media-empty { display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 5; color: #762e42; } 
-.home-social-instagram-link { display: inline-flex; margin-top: 18px; text-navigation: none; font-weight: 600; } 
+.home-social-instagram-link { display: inline-flex; margin-top: 18px; text-decoration: none; font-weight: 600; } 
 @media (max-width: 720px) {
   .home-social-instagram-link { margin-top: 14px; }
 }
