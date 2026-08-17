@@ -304,11 +304,7 @@ export default function Home() {
       {/* SISTERHOOD */}
       <section className="home-panel home-panel-sisterhood">
         <div className="home-sisterhood-media">
-          <motion.img
-            src={chapterPhoto}
-            alt="The full Phi Sigma Rho Tau Chapter"
-            style={{ transform: `translate3d(0, ${-parallaxOffset}px, 0) scale(1.20)`, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 75%' }}
-          />
+        <img src={chapterPhoto} alt="Chapter cover" className="home-editorial-image" />
           <div className="home-sisterhood-wash" />
           <motion.div className="home-sisterhood-copy" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}>
             <span>Phi Sigma Rho · Tau Chapter</span>
