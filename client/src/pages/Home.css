@@ -326,8 +326,8 @@
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 7%, black 96%, transparent 100%); 
   mask-image: linear-gradient(to bottom, transparent 0%, black 7%, black 96%, transparent 100%); 
 
-  /* Pure fade in and out on scroll (No Zoom) */
-  opacity: 0;
+  /* FIXED: Changed from opacity: 0 to opacity: 1 so it doesn't stay hidden if scroll-timeline fails */
+  opacity: 1;
   transition: opacity 0.5s ease;
 } 
 
@@ -480,8 +480,8 @@
    ======================================== */ 
 .home-social-card {
   scroll-snap-align: start;
-  opacity: 0;
-  transform: translateY(30px);
+  opacity: 1; /* FIXED: Changed from opacity: 0 so cards don't stay hidden if view-timeline fails */
+  transform: translateY(0); /* FIXED: Removed initial offset to prevent render glitches */
   animation: cardScrollReveal ease-out forwards;
   animation-timeline: view();
   animation-range: entry 10% entry 40%;
