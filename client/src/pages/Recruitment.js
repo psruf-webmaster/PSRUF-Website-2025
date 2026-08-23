@@ -76,7 +76,7 @@ export default function Recruitment() {
               </motion.a>
               <motion.a 
                 className="button-secondary" 
-                href="https://docs.google.com/forms/d/e/1FAIpQLSeTE2XKeGyC-lJQFz9iNIeMwzJIWO0qif_XZ0CYuo3hvKyHmw/viewform"
+                href="https://https://docs.google.com/forms/d/e/1FAIpQLSd7XzAEOR7hOqxU3NOFY9df0ZQFcPGI5LPeSI1pW3jQLo4aXg/viewform"
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.96 }}
               >
