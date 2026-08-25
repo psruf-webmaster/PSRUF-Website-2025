@@ -127,7 +127,7 @@ export default function ProfileSettings() {
       const response = await fetch('/api/users/me', {
         method: 'PATCH',
         headers: {
-          'x-user-id': user?.id || '',
+          Authorization: `Bearer ${user?.id || user?._id || ''}`,
         },
         body: payload,
       });
