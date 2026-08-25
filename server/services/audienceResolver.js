@@ -2,16 +2,12 @@ const mongoose = require('mongoose');
 const Channel = require('../models/Channel');
 const User = require('../models/User');
 const { dedupeIds } = require('../utils/recipients');
+const { MEMBER_STATUS_ENUM, sanitizeMemberStatuses } = require('../constants/memberOptions');
 
 const ROLE_ENUM = [
   'pending', 'pnm', 'candidate', 'candOfficer', 'member',
   'alumni', 'officer', 'exec', 'webmaster', 'webdev'
 ];
-const MEMBER_STATUS_ENUM = [
-  'active', 'inactive', 'probation', 'seniorStatus',
-  'scholarship', 'co-op', 'dropped'
-];
-
 function normalizeArray(val) {
   if (!val) return [];
   return Array.isArray(val) ? val : [val];
@@ -23,7 +19,7 @@ function resolveEffectiveMembers(channel, users) {
 
   const fromRules = users.filter(u => {
     const roles = Array.isArray(u.role) ? u.role : (u.role ? [u.role] : []);
-    const statuses = Array.isArray(u.memberStatus) ? u.memberStatus : (u.memberStatus ? [u.memberStatus] : []);
+    const statuses = sanitizeMemberStatuses(u.memberStatus);
     const roleHit = (channel.includeRoles || []).length === 0 || roles.some(r => (channel.includeRoles || []).includes(r));
     const statusHit = (channel.includeMemberStatuses || []).length === 0 || statuses.some(s => (channel.includeMemberStatuses || []).includes(s));
     return roleHit && statusHit;
@@ -39,7 +35,7 @@ function toRecipient(u) {
     userId: u._id,
     displayName: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
     role: u.role,
-    memberStatus: u.memberStatus,
+    memberStatus: sanitizeMemberStatuses(u.memberStatus),
   };
 }
 

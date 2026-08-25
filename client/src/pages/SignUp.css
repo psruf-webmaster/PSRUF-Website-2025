@@ -1,128 +1,219 @@
 html, body {
-  background-color: #bcd1ee;
-  color: #323B67;
+  background-color: #FAF8F9;
+  color: #4A1E1E;
   margin: 0;
   padding: 0;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 .signup-form-container {
-  background-color: #e6f0ff;
-  padding: 40px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 45px 40px;
   margin: 5rem auto;
-  border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 24px;
+  border: 1px solid #ECCCD8;
+  box-shadow: 0 12px 32px rgba(62, 18, 34, 0.06);
   max-width: 600px;
   width: 90%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Heading */
-.signup-form h1 {
+.signup-form-container:hover {
+  box-shadow: 0 16px 40px rgba(62, 18, 34, 0.1);
+}
+
+/* Heading - Styled as a grand, sleek title */
+.signup-form-container h1 {
   text-align: center;
-  font-size: 2rem;
-  margin-bottom: 20px;
-  background-color: #e6f0ff;
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #2D1212;
+  margin-top: 0;
+  margin-bottom: 8px;
+  letter-spacing: -0.03em;
+  background: none;
+  text-transform: capitalize;
+}
+
+/* Subtitle effect or decorative anchor underneath the main title */
+.signup-form-container h1::after {
+  content: "";
+  display: block;
+  width: 48px;
+  height: 4px;
+  background: linear-gradient(135deg, #6D2C2C, #EC90B8);
+  margin: 12px auto 32px auto;
+  border-radius: 2px;
 }
 
 /* Form Row */
 .signup-form .form-row {
   display: flex;
   flex-direction: column;
-  margin-bottom: 15px;
-  background-color: #e6f0ff;
+  margin-bottom: 20px;
+  background: transparent;
 }
 
-/* Label */
+/* Label & Required Asterisk styling */
 .signup-form label {
   font-weight: 600;
-  margin-bottom: 5px;
+  font-size: 0.92rem;
+  color: #5C2424;
+  margin-bottom: 8px;
+  letter-spacing: 0.01em;
+}
+
+.signup-form label span {
+  color: #B83A6A;
+  margin-left: 3px;
 }
 
 /* Inputs & Selects */
 .signup-form input,
 .signup-form select {
-  padding: 10px;
+  padding: 12px 16px;
   font-size: 1rem;
-  border-radius: 5px;
-  border: 1px solid #ccc;
+  border-radius: 12px;
+  border: 1.5px solid #DDD0D2;
   width: 100%;
   box-sizing: border-box;
-  background-color: #e6f0ff;
+  background-color: #FEF5FA;
+  color: #2D1212;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.signup-form input:hover,
+.signup-form select:hover {
+  border-color: #CE90A8;
+}
+
+.signup-form input:focus,
+.signup-form select:focus {
+  outline: none;
+  border-color: #EC90B8;
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 4px rgba(236, 144, 184, 0.15);
+}
+
+/* Custom Select Dropdown with Repositioned Arrow */
+.signup-form select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B3F3F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 22px center;
+  background-size: 16px;
+  padding-right: 48px;
+}
+
+/* Specific styling for Date Inputs */
+.signup-form input[type="date"] {
+  position: relative;
+  cursor: pointer;
+}
+
+.signup-form input[type="date"]::-webkit-calendar-picker-indicator {
+  background-color: transparent;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B3F3F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3e%3c/rect%3e%3cline x1='16' y1='2' x2='16' y2='6'%3e%3c/line%3e%3cline x1='8' y1='2' x2='8' y2='6'%3e%3c/line%3e%3cline x1='3' y1='10' x2='21' y2='10'%3e%3c/line%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 18px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.signup-form input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: rgba(236, 144, 184, 0.2);
 }
 
 /* Submit Button */
 .signup-form button {
-  margin-top: 20px;
-  padding: 12px;
+  margin-top: 10px;
+  padding: 14px 20px;
   width: 100%;
-  background-color:  #323B67;
-  color: white;
-  font-weight: bold;
+  background: linear-gradient(135deg, #6D2C2C, #8B3F3F);
+  color: #FEF5FA;
+  font-weight: 600;
   font-size: 1rem;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  box-shadow: 0 4px 14px rgba(109, 44, 44, 0.25);
+  transition: all 0.25s ease;
 }
 
 .signup-form button:hover {
-  background-color:  #202647;
+  background: linear-gradient(135deg, #5C2424, #6D2C2C);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(109, 44, 44, 0.35);
 }
 
-/* === Super Small Screens (<500px) === */
+.signup-form button:active {
+  transform: translateY(0);
+}
+
+/* === Responsive Media Queries === */
 @media (max-width: 499px) {
   .signup-form-container {
-    padding: 25px;
-    border-radius: 12px;
+    padding: 25px 20px;
+    border-radius: 16px;
+    margin: 2.5rem auto;
   }
 
-  .signup-form h1 {
-    font-size: 1.5rem;
+  .signup-form-container h1 {
+    font-size: 1.75rem;
+  }
+
+  .signup-form-container h1::after {
+    margin: 10px auto 24px auto;
+    width: 36px;
   }
 
   .signup-form input,
   .signup-form select {
     font-size: 0.95rem;
-    padding: 8px;
+    padding: 10px 14px;
+  }
+
+  .signup-form select {
+    padding-right: 42px;
+    background-position: right 18px center;
   }
 
   .signup-form button {
     font-size: 0.95rem;
-    padding: 10px;
+    padding: 12px;
   }
 }
 
-/* === Small Screens (500px–767px) === */
 @media (min-width: 500px) and (max-width: 767px) {
   .signup-form-container {
-    padding: 30px;
+    padding: 35px 30px;
   }
 
-  .signup-form h1 {
-    font-size: 1.7rem;
+  .signup-form-container h1 {
+    font-size: 2rem;
   }
 }
 
-/* === Medium Screens (768px–1023px) === */
 @media (min-width: 768px) and (max-width: 1023px) {
   .signup-form-container {
     max-width: 550px;
   }
-
-  .signup-form h1 {
-    font-size: 1.9rem;
-  }
 }
 
-/* === Large Screens (≥1024px) === */
 @media (min-width: 1024px) {
   .signup-form-container {
     max-width: 600px;
-    margin: 7rem auto;
-  }
-
-  .signup-form h1 {
-    font-size: 2rem;
+    margin: 6rem auto;
   }
 }
 
@@ -130,9 +221,9 @@ html, body {
   text-transform: capitalize;
 }
 
-
 .error-message {
-  color: red;
-  font-size: 0.9rem;
-  margin-top: 4px;
+  color: #B83A6A;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 6px;
 }

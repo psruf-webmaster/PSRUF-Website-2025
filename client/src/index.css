@@ -1,3 +1,35 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+@source "./**/*.{js,jsx,ts,tsx}";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --background: #fffafc;
+  --foreground: #23171a;
+  --primary: #6d2c2c;
+  --primary-foreground: #ffffff;
+  --muted-foreground: #7a6267;
+  --accent: rgba(236, 144, 184, 0.16);
+  --accent-foreground: #6d2c2c;
+  --popover: #ffffff;
+  --popover-foreground: #23171a;
+  --border: rgba(109, 44, 44, 0.14);
+  --ring: #ec90b8;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,6 +37,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 code {
@@ -17,11 +51,11 @@ html, body, #root {
   padding: 0;
 }
 html, body {
-  overflow-x: hidden;       /* prevent any x-scroll */
+  overflow-x: hidden;
 }
 
 img {
   max-width: 100%;
   height: auto;
-  display: block;           /* avoids inline gaps */
+  display: block;
 }

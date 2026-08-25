@@ -30,6 +30,7 @@ const POSITIONS = {
   WEBDEV: { key: 'WEBDEV', exec: EXEC.VP_COMMUNICATIONS, title: 'Web Dev Team', seats: 3 },
   PR_DIRECTOR: { key: 'PR_DIRECTOR', exec: EXEC.VP_COMMUNICATIONS, title: 'PR Director', seats: 2 },
   BEC_REP: { key: 'BEC_REP', exec: EXEC.VP_COMMUNICATIONS, title: 'BEC Rep / External Affairs', seats: 1 },
+  SPONSORSHIP_CHAIR: { key: 'SPONSORSHIP_CHAIR', exec: EXEC.VP_COMMUNICATIONS, title: 'Sponsorship Chair', seats: 1 },
 
   FUNDRAISING: { key: 'FUNDRAISING', exec: EXEC.VP_FINANCE, title: 'Fundraising', seats: 2 },
   MEMORABILIA: { key: 'MEMORABILIA', exec: EXEC.VP_FINANCE, title: 'Memorabilia', seats: 2 },

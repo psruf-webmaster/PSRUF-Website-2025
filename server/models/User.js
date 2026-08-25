@@ -1,45 +1,102 @@
 const mongoose = require('mongoose');
 
-const ROLE_ENUM = [
-  'pending', 'pnm', 'candidate', 'candOfficer', 'member',
-  'alumni', 'officer', 'exec', 'webmaster', 'webdev'
-];
+const {
+  MEMBER_STATUS_ENUM,
+  SCHOLARSHIP_TIERS,
+  DEFAULT_SCHOLARSHIP,
+} = require('../constants/memberOptions');
 
-const MEMBER_STATUS_ENUM = [
-  'active', 'inactive', 'probation', 'seniorStatus',
-  'scholarship', 'co-op', 'dropped'
+const ROLE_ENUM = [
+  'pending',
+  'pnm',
+  'candidate',
+  'candOfficer',
+  'member',
+  'alumni',
+  'officer',
+  'exec',
+  'webmaster',
+  'webdev',
 ];
 
 const PERMISSION_ENUM = [
-  'sms.send'
+  'sms.send',
 ];
 
-const PositionSchema = new mongoose.Schema({
-  key: { type: String, required: true },  // e.g., 'WEBMASTER'
-  exec: { type: String, default: null },  // e.g., 'VP_COMMUNICATIONS'
-  title: { type: String },
-  startDate: { type: Date },
-  endDate: { type: Date },
-}, { _id: false });
+const PositionSchema = new mongoose.Schema(
+  {
+    key: {
+      type: String,
+      required: true,
+    },
+    exec: {
+      type: String,
+      default: null,
+    },
+    title: {
+      type: String,
+    },
+    startDate: {
+      type: Date,
+    },
+    endDate: {
+      type: Date,
+    },
+  },
+  { _id: false }
+);
+
+const FeedReadStateSchema = new mongoose.Schema(
+  {
+    lastReadAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  { _id: false }
+);
 
 const userSchema = new mongoose.Schema({
   firstName: String,
   lastName: String,
+
   phoneNumber: String,
   phoneServiceProvider: String,
 
-  personalEmail: { type: String, unique: true },
+  personalEmail: {
+    type: String,
+    unique: true,
+  },
+
   personalPassword: String,
 
-  ufEmail: { type: String, unique: true },
+  ufEmail: {
+    type: String,
+    unique: true,
+  },
+
   birthday: Date,
   major: String,
   year: String,
+
+  profilePicUrl: String,
+
+  feedReadState: {
+    type: Map,
+    of: FeedReadStateSchema,
+    default: () => ({}),
+  },
 
   memberStatus: {
     type: [String],
     enum: MEMBER_STATUS_ENUM,
     default: ['active'],
+  },
+
+  scholarship: {
+    type: Number,
+    enum: SCHOLARSHIP_TIERS,
+    default: DEFAULT_SCHOLARSHIP,
   },
 
   role: {
@@ -48,49 +105,108 @@ const userSchema = new mongoose.Schema({
     default: ['pending'],
   },
 
-  // Active positions
-  positions: [PositionSchema],
+  // ============================================================
+  // CURRENT / ACTIVE POSITIONS
+  // ============================================================
+  positions: {
+    type: [PositionSchema],
+    default: [],
+  },
 
-  // History of past positions (when removed, they are copied here with endDate)
-  positionsHistory: [PositionSchema],
+  // ============================================================
+  // HISTORICAL POSITIONS
+  // Removed positions are copied here with an endDate.
+  // ============================================================
+  positionsHistory: {
+    type: [PositionSchema],
+    default: [],
+  },
 
-  // Log-style history: every change creates a snapshot
-roleHistory: [{
-  values: [String],        // e.g. ["member","officer"]
-  at: { type: Date, default: Date.now },
-  by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // optional
-}],
+  // ============================================================
+  // ROLE HISTORY
+  // ============================================================
+  roleHistory: [
+    {
+      values: [String],
+      at: {
+        type: Date,
+        default: Date.now,
+      },
+      by: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+      },
+    },
+  ],
 
-// Same for member status
-memberStatusHistory: [{
-  values: [String],        // e.g. ["active","probation"]
-  at: { type: Date, default: Date.now },
-  by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-}],
+  // ============================================================
+  // MEMBER STATUS HISTORY
+  // ============================================================
+  memberStatusHistory: [
+    {
+      values: [String],
+      at: {
+        type: Date,
+        default: Date.now,
+      },
+      by: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+      },
+    },
+  ],
 
-
-  // Derived permissions (e.g., VP Comms / Webmaster => sms.send)
+  // ============================================================
+  // DERIVED PERMISSIONS
+  // ============================================================
   permissions: {
     type: [String],
     enum: PERMISSION_ENUM,
-    default: []
+    default: [],
   },
 
-  // Approval lifecycle
-  isApproved: { type: Boolean, default: false },
+  // ============================================================
+  // APPROVAL LIFECYCLE
+  // ============================================================
+  isApproved: {
+    type: Boolean,
+    default: false,
+  },
+
   approvalState: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
-    default: 'pending'
+    default: 'pending',
   },
-  approvedAt: { type: Date },
-  approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 
-  rejectedAt: { type: Date },
-  rejectedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  rejectionReason: { type: String },
+  approvedAt: {
+    type: Date,
+  },
 
-  createdAt: { type: Date, default: Date.now },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+
+  rejectedAt: {
+    type: Date,
+  },
+
+  rejectedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+
+  rejectionReason: {
+    type: String,
+  },
+
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = mongoose.model('User', userSchema);

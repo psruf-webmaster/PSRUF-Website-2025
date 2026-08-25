@@ -4,11 +4,38 @@ const router = express.Router();
 const Event = require('../models/Event');
 const User = require('../models/User');
 const PointsLedger = require('../models/PointsLedger');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const ROLE_CREATE = ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer'];
 const POINT_CATEGORIES = ['phi', 'sigma', 'rho', 'tau'];
 const ATTENDANCE_STATUSES = ['present', 'absent', 'excused'];
 const COHOST_ROLES = ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer'];
+const RECURRENCE_FREQUENCIES = ['none', 'daily', 'weekly', 'biweekly', 'monthly'];
+
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadsDir),
+  filename: (_req, file, cb) => {
+    const safeName = String(file.originalname || 'event-image').replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, `${Date.now()}-${safeName}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+const eventUpload = upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'attachments', maxCount: 10 },
+]);
 
 // Helpers
 async function getUser(req) {
@@ -30,6 +57,153 @@ function normalizeStrings(values) {
   if (!values) return [];
   if (Array.isArray(values)) return values.map(v => String(v));
   return [String(values)];
+}
+
+function parseMaybeJson(value, fallback) {
+  if (value == null || value === '') return fallback;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch (_err) {
+    return fallback;
+  }
+}
+
+function parseOptionalNumber(value) {
+  if (value == null || value === '') return undefined;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : undefined;
+}
+
+function parseBoolean(value, fallback = false) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'true') return true;
+    if (value.toLowerCase() === 'false') return false;
+  }
+  return fallback;
+}
+
+function getUploadedFiles(req) {
+  const image = req.files?.image?.[0] || req.file || null;
+  const attachments = Array.isArray(req.files?.attachments) ? req.files.attachments : [];
+  return { image, attachments };
+}
+
+function normalizeAttachments(files = []) {
+  return files.map(file => ({
+    name: String(file.originalname || file.filename || 'attachment'),
+    url: `/uploads/${file.filename}`,
+    mimeType: String(file.mimetype || ''),
+    size: Number(file.size || 0),
+  }));
+}
+
+function normalizeShifts(value) {
+  const raw = parseMaybeJson(value, value || []);
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((shift, index) => ({
+      shiftId: String(shift?.shiftId || new mongoose.Types.ObjectId()),
+      label: String(shift?.label || `Shift ${index + 1}`).trim(),
+      startAt: shift?.startAt ? new Date(shift.startAt) : null,
+      endAt: shift?.endAt ? new Date(shift.endAt) : null,
+      capacityMax: parseOptionalNumber(shift?.capacityMax),
+    }))
+    .filter((shift) => shift.label && shift.startAt instanceof Date && !Number.isNaN(shift.startAt.getTime()) && shift.endAt instanceof Date && !Number.isNaN(shift.endAt.getTime()));
+}
+
+function normalizeRecurrence(value) {
+  const raw = parseMaybeJson(value, value || {});
+  const frequency = String(raw?.frequency || 'none').toLowerCase();
+  return {
+    frequency: RECURRENCE_FREQUENCIES.includes(frequency) ? frequency : 'none',
+    endDate: raw?.endDate ? new Date(raw.endDate) : undefined,
+    seriesId: raw?.seriesId ? String(raw.seriesId) : undefined,
+  };
+}
+
+function addRecurrenceStep(date, frequency) {
+  const next = new Date(date);
+  if (frequency === 'daily') next.setDate(next.getDate() + 1);
+  else if (frequency === 'weekly') next.setDate(next.getDate() + 7);
+  else if (frequency === 'biweekly') next.setDate(next.getDate() + 14);
+  else if (frequency === 'monthly') next.setMonth(next.getMonth() + 1);
+  return next;
+}
+
+function buildRecurringInstances(payload) {
+  const frequency = payload?.recurrence?.frequency || 'none';
+  const recurrenceEnd = payload?.recurrence?.endDate instanceof Date && !Number.isNaN(payload.recurrence.endDate.getTime())
+    ? payload.recurrence.endDate
+    : null;
+  if (frequency === 'none' || !recurrenceEnd) return [];
+
+  const instances = [];
+  const baseStart = new Date(payload.startAt);
+  const baseEnd = new Date(payload.endAt);
+
+  let nextStart = addRecurrenceStep(baseStart, frequency);
+  let nextEnd = addRecurrenceStep(baseEnd, frequency);
+
+  while (nextStart <= recurrenceEnd) {
+    instances.push({
+      ...payload,
+      startAt: new Date(nextStart),
+      endAt: new Date(nextEnd),
+      recurrence: {
+        ...payload.recurrence,
+      },
+      rsvps: [],
+      attendance: [],
+    });
+    nextStart = addRecurrenceStep(nextStart, frequency);
+    nextEnd = addRecurrenceStep(nextEnd, frequency);
+  }
+
+  return instances;
+}
+
+function normalizeEventPayload(body = {}, uploaded = {}) {
+  const visibility = parseMaybeJson(body.visibility, body.visibility || {});
+  const points = parseMaybeJson(body.points, body.points || {});
+  const recurrence = normalizeRecurrence(body.recurrence);
+  const shifts = normalizeShifts(body.shifts);
+  const attachmentsInput = parseMaybeJson(body.attachments, body.attachments || []);
+  const existingAttachments = Array.isArray(attachmentsInput)
+    ? attachmentsInput.filter((attachment) => attachment?.url && attachment?.name).map((attachment) => ({
+        name: String(attachment.name),
+        url: String(attachment.url),
+        mimeType: String(attachment.mimeType || ''),
+        size: Number(attachment.size || 0),
+      }))
+    : [];
+  const uploadedAttachments = normalizeAttachments(uploaded.attachments || []);
+
+  return {
+    title: body.title,
+    description: body.description,
+    startAt: body.startAt,
+    endAt: body.endAt,
+    location: body.location,
+    imageUrl: uploaded.image ? `/uploads/${uploaded.image.filename}` : (body.imageUrl || ''),
+    attachments: [...existingAttachments, ...uploadedAttachments],
+    isMandatory: parseBoolean(body.isMandatory, false),
+    shiftBasedRegistration: parseBoolean(body.shiftBasedRegistration, false),
+    shifts,
+    recurrence,
+    capacityMax: parseOptionalNumber(body.capacityMax),
+    isPublished: parseBoolean(body.isPublished, true),
+    visibility: {
+      rolesAllowed: normalizeStrings(visibility?.rolesAllowed),
+      memberStatusesAllowed: normalizeStrings(visibility?.memberStatusesAllowed),
+    },
+    points: {
+      category: points?.category,
+      defaultRatePerHour: parseOptionalNumber(points?.defaultRatePerHour),
+      overrideTotalPoints: parseOptionalNumber(points?.overrideTotalPoints),
+    },
+  };
 }
 
 function isOfficerLevel(user) {
@@ -82,22 +256,30 @@ function getDateRange(viewParam) {
   todayStart.setHours(0, 0, 0, 0);
 
   const view = String(viewParam || 'week').toLowerCase();
+  if (view === 'allupcoming') {
+    return { start: todayStart, end: null, mode: 'future' };
+  }
+
+  if (view === 'past') {
+    return { start: null, end: now, mode: 'past' };
+  }
+
   if (view === 'week') {
     const end = new Date(todayStart);
     end.setDate(end.getDate() + 7);
     end.setHours(23, 59, 59, 999);
-    return { start: todayStart, end };
+    return { start: todayStart, end, mode: 'between' };
   }
 
   if (view === 'month') {
     const end = new Date(todayStart.getFullYear(), todayStart.getMonth() + 1, 0, 23, 59, 59, 999);
-    return { start: todayStart, end };
+    return { start: todayStart, end, mode: 'between' };
   }
 
   if (view === 'nextmonth' || view === 'nextMonth') {
     const start = new Date(todayStart.getFullYear(), todayStart.getMonth() + 1, 1, 0, 0, 0, 0);
     const end = new Date(todayStart.getFullYear(), todayStart.getMonth() + 2, 0, 23, 59, 59, 999);
-    return { start, end };
+    return { start, end, mode: 'between' };
   }
 
   return null;
@@ -112,6 +294,15 @@ function canManageEvent(event, user) {
   return false;
 }
 
+function isEventCreator(event, user) {
+  if (!user || !event) return false;
+  return String(event.createdBy || '') === String(user._id || user.id || '');
+}
+
+function canManageEventDetails(event, user) {
+  return isEventCreator(event, user);
+}
+
 function computePoints(eventDoc) {
   const override = eventDoc?.points?.overrideTotalPoints;
   if (override != null) return override;
@@ -119,6 +310,38 @@ function computePoints(eventDoc) {
   const durationMs = Math.max(0, new Date(eventDoc.endAt).getTime() - new Date(eventDoc.startAt).getTime());
   const hours = durationMs / (1000 * 60 * 60);
   return Math.ceil(hours * defaultRate);
+}
+
+function userMatchesTargeting(userDoc, filters = {}) {
+  const roles = normalizeStrings(userDoc?.role);
+  const memberStatuses = normalizeStrings(userDoc?.memberStatus);
+  const targetRoles = normalizeStrings(filters.roles);
+  const targetStatuses = normalizeStrings(filters.memberStatuses);
+
+  const roleMatch = targetRoles.length === 0 || roles.some((role) => targetRoles.includes(role));
+  const statusMatch = targetStatuses.length === 0 || memberStatuses.some((status) => targetStatuses.includes(status));
+  return roleMatch && statusMatch;
+}
+
+function upsertRsvpEntry(event, { userId, status, shiftId }) {
+  const existingIndex = (event.rsvps || []).findIndex((entry) => String(entry.user) === String(userId));
+  if (existingIndex >= 0) {
+    event.rsvps[existingIndex] = {
+      ...event.rsvps[existingIndex].toObject?.() || event.rsvps[existingIndex],
+      user: userId,
+      status,
+      shiftId: shiftId || undefined,
+      createdAt: new Date(),
+    };
+    return;
+  }
+
+  event.rsvps.push({
+    user: userId,
+    status,
+    shiftId: shiftId || undefined,
+    createdAt: new Date(),
+  });
 }
 
 function isEligibleCohostUser(doc) {
@@ -129,29 +352,101 @@ function isEligibleCohostUser(doc) {
 
 function summarizeRsvps(eventDoc, user) {
   const rsvps = Array.isArray(eventDoc.rsvps) ? eventDoc.rsvps : [];
-  let totalGoing = 0, totalMaybe = 0, currentUserRsvp = null;
+  let totalGoing = 0, totalMaybe = 0, currentUserRsvp = null, currentUserShiftId = null;
   rsvps.forEach(r => {
     if (r.status === 'going') totalGoing += 1;
     if (r.status === 'maybe') totalMaybe += 1;
     if (user && String(r.user) === String(user._id || user.id)) {
       currentUserRsvp = r.status;
+      currentUserShiftId = r.shiftId || null;
     }
   });
-  return { totalGoing, totalMaybe, currentUserRsvp };
+  return { totalGoing, totalMaybe, currentUserRsvp, currentUserShiftId };
 }
 
-// GET /api/events?view=week|month|nextMonth
+function cloneDateWithTemplateTime(baseDate, templateDate) {
+  const base = new Date(baseDate);
+  const template = new Date(templateDate);
+  return new Date(
+    base.getFullYear(),
+    base.getMonth(),
+    base.getDate(),
+    template.getHours(),
+    template.getMinutes(),
+    template.getSeconds(),
+    template.getMilliseconds(),
+  );
+}
+
+function mapShiftsForSeries(templateShifts = [], templateStartAt, targetStartAt) {
+  const templateStart = new Date(templateStartAt);
+  const targetStart = new Date(targetStartAt);
+  return templateShifts.map((shift) => {
+    const shiftStart = new Date(shift.startAt);
+    const shiftEnd = new Date(shift.endAt);
+    const startOffsetMs = shiftStart.getTime() - templateStart.getTime();
+    const endOffsetMs = shiftEnd.getTime() - templateStart.getTime();
+    return {
+      shiftId: shift.shiftId,
+      label: shift.label,
+      startAt: new Date(targetStart.getTime() + startOffsetMs),
+      endAt: new Date(targetStart.getTime() + endOffsetMs),
+      capacityMax: shift.capacityMax,
+    };
+  });
+}
+
+function applySeriesTemplate(targetEvent, templatePayload, sourceEventId) {
+  const templateStart = new Date(templatePayload.startAt);
+  const templateEnd = new Date(templatePayload.endAt);
+  const durationMs = templateEnd.getTime() - templateStart.getTime();
+  const targetStart = String(targetEvent._id) === String(sourceEventId)
+    ? new Date(templatePayload.startAt)
+    : cloneDateWithTemplateTime(targetEvent.startAt, templateStart);
+  const targetEnd = new Date(targetStart.getTime() + durationMs);
+
+  return {
+    title: templatePayload.title,
+    description: templatePayload.description,
+    location: templatePayload.location,
+    imageUrl: templatePayload.imageUrl,
+    attachments: templatePayload.attachments,
+    isMandatory: templatePayload.isMandatory,
+    shiftBasedRegistration: templatePayload.shiftBasedRegistration,
+    shifts: templatePayload.shiftBasedRegistration ? mapShiftsForSeries(templatePayload.shifts || [], templatePayload.startAt, targetStart) : [],
+    startAt: targetStart,
+    endAt: targetEnd,
+    capacityMax: templatePayload.capacityMax,
+    isPublished: templatePayload.isPublished,
+    visibility: templatePayload.visibility,
+    points: templatePayload.points,
+    recurrence: {
+      ...(targetEvent.recurrence?.toObject?.() || targetEvent.recurrence || {}),
+      ...(templatePayload.recurrence || {}),
+    },
+  };
+}
+
+// GET /api/events?view=week|month|nextMonth|allUpcoming|past
 router.get('/', async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
 
     const range = getDateRange(req.query.view);
-    if (!range) return res.status(400).json({ message: 'Invalid view. Use week|month|nextMonth.' });
+    if (!range) return res.status(400).json({ message: 'Invalid view. Use week|month|nextMonth|allUpcoming|past.' });
 
-    const events = await Event.find({
-      startAt: { $gte: range.start, $lte: range.end },
-    }).sort({ startAt: 1 });
+    const query = {};
+    if (range.mode === 'future') {
+      query.endAt = { $gte: range.start };
+    } else if (range.mode === 'past') {
+      query.endAt = { $lt: range.end };
+    } else {
+      query.startAt = { $gte: range.start, $lte: range.end };
+    }
+
+    const sortDirection = range.mode === 'past' ? -1 : 1;
+    const events = await Event.find(query).sort({ startAt: sortDirection });
 
     const visible = events.filter(e => eventVisibleToUser(e, user));
     const enriched = visible.map(e => ({
@@ -184,11 +479,30 @@ router.get('/mine', async (req, res) => {
       return {
         _id: ev._id,
         title: ev.title,
+        description: ev.description,
         startAt: ev.startAt,
         endAt: ev.endAt,
+        location: ev.location,
+        imageUrl: ev.imageUrl || '',
+        attachments: ev.attachments || [],
+        isMandatory: !!ev.isMandatory,
+        shiftBasedRegistration: !!ev.shiftBasedRegistration,
+        shifts: ev.shifts || [],
+        recurrence: ev.recurrence,
+        capacityMax: ev.capacityMax,
+        visibility: ev.visibility,
         pointsCategory: ev.points?.category,
+        points: ev.points,
         currentUserRsvp: rsvp?.status || null,
-        attendance: att ? { status: att.status, pointsAwarded: att.pointsAwarded } : null,
+        currentUserShiftId: rsvp?.shiftId || null,
+        rsvpAt: rsvp?.createdAt || null,
+        attendance: att
+          ? {
+              status: att.status,
+              pointsAwarded: att.pointsAwarded,
+              updatedAt: att.updatedAt || null,
+            }
+          : null,
       };
     });
 
@@ -202,14 +516,6 @@ router.get('/mine', async (req, res) => {
 function canCreate(user) {
   const roles = normalizeStrings(user?.role);
   return roles.some(r => ROLE_CREATE.includes(r));
-}
-
-function requireCreatorOrOfficer(eventDoc, user) {
-  if (isOfficerLevel(user)) return true;
-  if (isCandOfficer(user)) {
-    return String(eventDoc.createdBy || '') === String(user?._id || '');
-  }
-  return false;
 }
 
 function validateEventPayload(body, isCandOfficerCreator) {
@@ -232,21 +538,59 @@ function validateEventPayload(body, isCandOfficerCreator) {
     errors.push('candOfficer events must allow candidate visibility');
   }
 
+  const startAt = new Date(body?.startAt);
+  const endAt = new Date(body?.endAt);
+  if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
+    errors.push('startAt and endAt must be valid dates');
+  } else if (endAt <= startAt) {
+    errors.push('endAt must be after startAt');
+  }
+
+  const shiftBasedRegistration = !!body?.shiftBasedRegistration;
+  const shifts = Array.isArray(body?.shifts) ? body.shifts : [];
+  if (shiftBasedRegistration && shifts.length === 0) {
+    errors.push('at least one shift is required when shift registration is enabled');
+  }
+  shifts.forEach((shift, index) => {
+    const shiftStart = new Date(shift?.startAt);
+    const shiftEnd = new Date(shift?.endAt);
+    if (!shift?.label) errors.push(`shift ${index + 1} label required`);
+    if (Number.isNaN(shiftStart.getTime()) || Number.isNaN(shiftEnd.getTime())) {
+      errors.push(`shift ${index + 1} must have valid dates`);
+      return;
+    }
+    if (shiftEnd <= shiftStart) errors.push(`shift ${index + 1} end must be after start`);
+  });
+
+  const recurrence = body?.recurrence || { frequency: 'none' };
+  if (!RECURRENCE_FREQUENCIES.includes(String(recurrence.frequency || 'none').toLowerCase())) {
+    errors.push('recurrence.frequency invalid');
+  }
+  if (recurrence.frequency && recurrence.frequency !== 'none') {
+    const recurrenceEnd = new Date(recurrence.endDate);
+    if (Number.isNaN(recurrenceEnd.getTime())) {
+      errors.push('recurrence.endDate required for recurring events');
+    } else if (recurrenceEnd < startAt) {
+      errors.push('recurrence.endDate must be on or after event start');
+    }
+  }
+
   return errors;
 }
 
 // POST /api/events
-router.post('/', async (req, res) => {
+router.post('/', eventUpload, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
     if (!canCreate(user)) return res.status(403).json({ message: 'Not allowed to create events' });
 
     const isCandOfficerCreator = isCandOfficer(user);
-    const errors = validateEventPayload(req.body, isCandOfficerCreator);
+    const payload = normalizeEventPayload(req.body, getUploadedFiles(req));
+    const errors = validateEventPayload(payload, isCandOfficerCreator);
     if (errors.length) return res.status(400).json({ message: errors.join(', ') });
 
-    const payload = { ...req.body };
+    const seriesId = payload.recurrence?.frequency !== 'none' ? String(new mongoose.Types.ObjectId()) : undefined;
     payload.createdBy = user._id;
     payload.points = {
       defaultRatePerHour: 10,
@@ -255,11 +599,31 @@ router.post('/', async (req, res) => {
     };
     payload.visibility = {
       rolesAllowed: payload.visibility.rolesAllowed,
-      memberStatusesAllowed: payload.visibility.memberStatusesAllowed,
+      memberStatusesAllowed: payload.visibility.memberStatusesAllowed?.length ? payload.visibility.memberStatusesAllowed : undefined,
+    };
+    payload.recurrence = {
+      frequency: payload.recurrence?.frequency || 'none',
+      ...(payload.recurrence?.endDate ? { endDate: payload.recurrence.endDate } : {}),
+      ...(seriesId ? { seriesId } : {}),
     };
 
-    const event = await Event.create(payload);
-    return res.status(201).json(event);
+    const createdEvents = await Event.create([
+      payload,
+      ...buildRecurringInstances({ ...payload, recurrence: payload.recurrence }),
+    ]);
+
+    if (createdEvents.length > 1) {
+      const rootId = createdEvents[0]._id;
+      await Promise.all(createdEvents.slice(1).map((eventDoc) => Event.findByIdAndUpdate(eventDoc._id, {
+        $set: {
+          'recurrence.generatedFromEventId': rootId,
+        }
+      })));
+      createdEvents[0].recurrence.generatedFromEventId = rootId;
+      await createdEvents[0].save();
+    }
+
+    return res.status(201).json(createdEvents[0]);
   } catch (err) {
     console.error('Event create error:', err);
     return res.status(500).json({ message: 'Server error' });
@@ -267,7 +631,7 @@ router.post('/', async (req, res) => {
 });
 
 // PATCH /api/events/:id
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', eventUpload, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -275,27 +639,59 @@ router.patch('/:id', async (req, res) => {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    if (!requireCreatorOrOfficer(event, user)) {
+    if (!isEventCreator(event, user)) {
       return res.status(403).json({ message: 'Not allowed to edit this event' });
     }
 
+    const uploaded = getUploadedFiles(req);
+  const applyToSeries = parseBoolean(req.body?.applyToSeries, false);
+    const has = (key) => Object.prototype.hasOwnProperty.call(req.body || {}, key);
+    const visibilityInput = parseMaybeJson(req.body?.visibility, req.body?.visibility || {});
+    const pointsInput = parseMaybeJson(req.body?.points, req.body?.points || {});
+    const recurrenceInput = normalizeRecurrence(req.body?.recurrence);
+    const shiftsInput = normalizeShifts(req.body?.shifts);
+    const attachmentsInput = parseMaybeJson(req.body?.attachments, req.body?.attachments || []);
+    const preservedAttachments = Array.isArray(attachmentsInput)
+      ? attachmentsInput.filter((attachment) => attachment?.url && attachment?.name).map((attachment) => ({
+          name: String(attachment.name),
+          url: String(attachment.url),
+          mimeType: String(attachment.mimeType || ''),
+          size: Number(attachment.size || 0),
+        }))
+      : event.attachments || [];
+
     const isCandOfficerEditor = isCandOfficer(user);
     const merged = {
-      title: req.body?.title ?? event.title,
-      description: req.body?.description ?? event.description,
-      startAt: req.body?.startAt ?? event.startAt,
-      endAt: req.body?.endAt ?? event.endAt,
-      location: req.body?.location ?? event.location,
-      capacityMax: req.body?.capacityMax ?? event.capacityMax,
-      isPublished: req.body?.isPublished ?? event.isPublished,
+      title: has('title') ? req.body?.title : event.title,
+      description: has('description') ? req.body?.description : event.description,
+      startAt: has('startAt') ? req.body?.startAt : event.startAt,
+      endAt: has('endAt') ? req.body?.endAt : event.endAt,
+      location: has('location') ? req.body?.location : event.location,
+      imageUrl: uploaded.image ? `/uploads/${uploaded.image.filename}` : (has('imageUrl') ? req.body?.imageUrl : event.imageUrl),
+      attachments: has('attachments') || uploaded.attachments.length
+        ? [...preservedAttachments, ...normalizeAttachments(uploaded.attachments)]
+        : (event.attachments || []),
+      isMandatory: has('isMandatory') ? parseBoolean(req.body?.isMandatory, false) : event.isMandatory,
+      shiftBasedRegistration: has('shiftBasedRegistration') ? parseBoolean(req.body?.shiftBasedRegistration, false) : event.shiftBasedRegistration,
+      shifts: has('shifts') ? shiftsInput : (event.shifts || []),
+      recurrence: has('recurrence')
+        ? {
+            frequency: recurrenceInput.frequency,
+            ...(recurrenceInput.endDate ? { endDate: recurrenceInput.endDate } : {}),
+            ...(event.recurrence?.seriesId ? { seriesId: event.recurrence.seriesId } : {}),
+            ...(event.recurrence?.generatedFromEventId ? { generatedFromEventId: event.recurrence.generatedFromEventId } : {}),
+          }
+        : event.recurrence,
+      capacityMax: has('capacityMax') ? parseOptionalNumber(req.body?.capacityMax) : event.capacityMax,
+      isPublished: has('isPublished') ? parseBoolean(req.body?.isPublished, true) : event.isPublished,
       visibility: {
-        rolesAllowed: req.body?.visibility?.rolesAllowed ?? event.visibility?.rolesAllowed,
-        memberStatusesAllowed: req.body?.visibility?.memberStatusesAllowed ?? event.visibility?.memberStatusesAllowed,
+        rolesAllowed: has('visibility') ? normalizeStrings(visibilityInput?.rolesAllowed) : event.visibility?.rolesAllowed,
+        memberStatusesAllowed: has('visibility') ? normalizeStrings(visibilityInput?.memberStatusesAllowed) : event.visibility?.memberStatusesAllowed,
       },
       points: {
-        category: req.body?.points?.category ?? event.points?.category,
-        defaultRatePerHour: req.body?.points?.defaultRatePerHour ?? event.points?.defaultRatePerHour,
-        overrideTotalPoints: req.body?.points?.overrideTotalPoints ?? event.points?.overrideTotalPoints,
+        category: has('points') ? pointsInput?.category : event.points?.category,
+        defaultRatePerHour: has('points') ? parseOptionalNumber(pointsInput?.defaultRatePerHour) : event.points?.defaultRatePerHour,
+        overrideTotalPoints: has('points') ? parseOptionalNumber(pointsInput?.overrideTotalPoints) : event.points?.overrideTotalPoints,
       }
     };
 
@@ -304,12 +700,51 @@ router.patch('/:id', async (req, res) => {
 
     merged.points.category = String(merged.points.category).toLowerCase();
 
+    if (applyToSeries && event.recurrence?.seriesId) {
+      const seriesEvents = await Event.find({ 'recurrence.seriesId': event.recurrence.seriesId }).sort({ startAt: 1 });
+      for (const seriesEvent of seriesEvents) {
+        const seriesUpdate = applySeriesTemplate(seriesEvent, merged, event._id);
+        Object.assign(seriesEvent, seriesUpdate);
+        await seriesEvent.save();
+      }
+
+      const refreshed = await Event.findById(req.params.id);
+      return res.json(refreshed);
+    }
+
     Object.assign(event, merged);
     await event.save();
     return res.json(event);
   } catch (err) {
     console.error('Event update error:', err);
     return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/events/public/pnm
+// Public homepage feed for upcoming PNM/recruitment events
+router.get('/public/pnm', async (req, res) => {
+  try {
+    const now = new Date();
+
+    const events = await Event.find({
+      isPublished: true,
+      endAt: { $gte: now },
+      'visibility.rolesAllowed': 'pnm',
+    })
+      .sort({ startAt: 1 })
+      .limit(6)
+      .select(
+        'title description startAt endAt location imageUrl visibility'
+      )
+      .lean();
+
+    return res.json(events);
+  } catch (err) {
+    console.error('Public PNM events error:', err);
+    return res.status(500).json({
+      message: 'Unable to load PNM events',
+    });
   }
 });
 
@@ -339,7 +774,7 @@ router.get('/:id/manage', async (req, res) => {
 
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (!canManageEvent(event, user)) return res.status(403).json({ message: 'Not allowed' });
+    if (!canManageEventDetails(event, user)) return res.status(403).json({ message: 'Not allowed' });
 
     const ids = new Set();
     (event.rsvps || []).forEach(r => ids.add(String(r.user)));
@@ -349,6 +784,11 @@ router.get('/:id/manage', async (req, res) => {
     const users = await User.find({ _id: { $in: Array.from(ids) } })
       .select('firstName lastName role memberStatus');
     const userMap = new Map(users.map(u => [String(u._id), u]));
+
+    const eligibleMembers = await User.find({
+      isApproved: true,
+    })
+      .select('firstName lastName role memberStatus');
 
     const rsvps = (event.rsvps || []).map(r => ({
       ...r.toObject?.() || r,
@@ -371,9 +811,17 @@ router.get('/:id/manage', async (req, res) => {
       event: {
         _id: event._id,
         title: event.title,
+        description: event.description,
         startAt: event.startAt,
         endAt: event.endAt,
         location: event.location,
+        imageUrl: event.imageUrl || '',
+        attachments: event.attachments || [],
+        isMandatory: !!event.isMandatory,
+        shiftBasedRegistration: !!event.shiftBasedRegistration,
+        shifts: event.shifts || [],
+        recurrence: event.recurrence,
+        isPublished: event.isPublished !== false,
         points: event.points,
         visibility: event.visibility,
         capacityMax: event.capacityMax,
@@ -382,6 +830,15 @@ router.get('/:id/manage', async (req, res) => {
       },
       rsvps,
       attendance,
+      eligibleMembers: eligibleMembers
+        .filter((member) => eventVisibleToUser(event, member) || canManageEvent(event, member))
+        .map((member) => ({
+          _id: member._id,
+          firstName: member.firstName,
+          lastName: member.lastName,
+          role: member.role,
+          memberStatus: member.memberStatus,
+        })),
       goingCount: counts.goingCount,
       maybeCount: counts.maybeCount,
       notGoingCount: counts.notGoingCount,
@@ -399,14 +856,28 @@ router.post('/:id/rsvp', async (req, res) => {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
 
-    const { status } = req.body || {};
-    if (!['going', 'maybe', 'notGoing'].includes(status)) {
+    const { status, shiftId } = req.body || {};
+    if (status != null && status !== 'none' && !['going', 'maybe', 'notGoing'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
 
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
     if (!eventVisibleToUser(event, user)) return res.status(403).json({ message: 'Not allowed to RSVP' });
+
+    if (event.shiftBasedRegistration) {
+      const shifts = Array.isArray(event.shifts) ? event.shifts : [];
+      if (!shiftId) return res.status(400).json({ message: 'A shift is required for this event' });
+      const shift = shifts.find((entry) => String(entry.shiftId) === String(shiftId));
+      if (!shift) return res.status(400).json({ message: 'Invalid shift' });
+
+      if (status === 'going' && shift.capacityMax) {
+        const shiftGoingCount = (event.rsvps || []).filter((entry) => entry.status === 'going' && String(entry.shiftId) === String(shiftId) && String(entry.user) !== String(user._id)).length;
+        if (shiftGoingCount + 1 > shift.capacityMax) {
+          return res.status(400).json({ message: 'Selected shift is at capacity' });
+        }
+      }
+    }
 
     // capacity check for "going"
     if (status === 'going' && event.capacityMax) {
@@ -416,17 +887,13 @@ router.post('/:id/rsvp', async (req, res) => {
       }
     }
 
-    let updated = false;
-    event.rsvps = (event.rsvps || []).map(r => {
-      if (String(r.user) === String(user._id)) {
-        updated = true;
-        return { ...r.toObject?.() || r, status, createdAt: new Date() };
-      }
-      return r;
-    });
+    const existing = (event.rsvps || []).find((entry) => String(entry.user) === String(user._id));
+    const sameSelection = existing && existing.status === status && String(existing.shiftId || '') === String(shiftId || '');
 
-    if (!updated) {
-      event.rsvps.push({ user: user._id, status, createdAt: new Date() });
+    if (status === 'none' || sameSelection) {
+      event.rsvps = (event.rsvps || []).filter((entry) => String(entry.user) !== String(user._id));
+    } else {
+      upsertRsvpEntry(event, { userId: user._id, status, shiftId });
     }
 
     await event.save();
@@ -446,7 +913,7 @@ router.patch('/:id/cohosts', async (req, res) => {
 
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (!canManageEvent(event, user)) return res.status(403).json({ message: 'Not allowed' });
+    if (!canManageEventDetails(event, user)) return res.status(403).json({ message: 'Not allowed' });
 
     const coHostIds = Array.isArray(req.body?.coHostIds) ? req.body.coHostIds : [];
     if (coHostIds.length > 7) return res.status(400).json({ message: 'Max 7 co-hosts' });
@@ -479,7 +946,7 @@ router.put('/:id/attendance', async (req, res) => {
 
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (!canManageEvent(event, user)) return res.status(403).json({ message: 'Not allowed' });
+    if (!canManageEventDetails(event, user)) return res.status(403).json({ message: 'Not allowed' });
 
     const entries = Array.isArray(req.body?.entries) ? req.body.entries : [];
     const pointsDefault = computePoints(event);
@@ -551,6 +1018,151 @@ router.put('/:id/attendance', async (req, res) => {
     return res.json({ attendance: event.attendance });
   } catch (err) {
     console.error('Event attendance error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /api/events/:id/mass-rsvp
+router.post('/:id/mass-rsvp', async (req, res) => {
+  try {
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ message: 'User required' });
+
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+    if (!canManageEventDetails(event, user)) return res.status(403).json({ message: 'Not allowed' });
+
+    const { status = 'going', roles = [], memberStatuses = [], shiftId } = req.body || {};
+    if (!['going', 'maybe', 'notGoing'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    if (event.shiftBasedRegistration && shiftId) {
+      const shift = (event.shifts || []).find((entry) => String(entry.shiftId) === String(shiftId));
+      if (!shift) return res.status(400).json({ message: 'Invalid shift' });
+    }
+
+    const matchedUsers = await User.find({ isApproved: true }).select('_id role memberStatus');
+    const recipients = matchedUsers.filter((member) => userMatchesTargeting(member, { roles, memberStatuses }) && eventVisibleToUser(event, member));
+
+    recipients.forEach((member) => {
+      upsertRsvpEntry(event, { userId: member._id, status, shiftId });
+    });
+
+    await event.save();
+    return res.json({ count: recipients.length, event: { ...event.toObject(), ...summarizeRsvps(event, user) } });
+  } catch (err) {
+    console.error('Event mass RSVP error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /api/events/:id/manage-members
+router.post('/:id/manage-members', async (req, res) => {
+  try {
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ message: 'User required' });
+
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+    if (!canManageEventDetails(event, user)) return res.status(403).json({ message: 'Not allowed' });
+
+    const { userId, rsvpStatus = 'going', attendanceStatus = 'present', shiftId, pointsAwarded } = req.body || {};
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: 'Valid userId required' });
+    }
+    if (!['going', 'maybe', 'notGoing'].includes(rsvpStatus)) {
+      return res.status(400).json({ message: 'Invalid rsvpStatus' });
+    }
+    if (!ATTENDANCE_STATUSES.includes(attendanceStatus)) {
+      return res.status(400).json({ message: 'Invalid attendanceStatus' });
+    }
+
+    const member = await User.findById(userId).select('_id firstName lastName role memberStatus isApproved');
+    if (!member || !member.isApproved) return res.status(404).json({ message: 'Member not found' });
+    if (!eventVisibleToUser(event, member) && !canManageEvent(event, member)) {
+      return res.status(400).json({ message: 'Member is not eligible for this event' });
+    }
+
+    if (event.shiftBasedRegistration) {
+      const shift = (event.shifts || []).find((entry) => String(entry.shiftId) === String(shiftId));
+      if (!shift) return res.status(400).json({ message: 'Valid shiftId required for shift-based events' });
+    }
+
+    upsertRsvpEntry(event, { userId, status: rsvpStatus, shiftId });
+
+    const attendanceMap = new Map((event.attendance || []).map((entry) => [String(entry.user), entry]));
+    const computedPoints = attendanceStatus === 'present'
+      ? (pointsAwarded != null ? Number(pointsAwarded) : computePoints(event))
+      : (pointsAwarded != null ? Number(pointsAwarded) : 0);
+
+    attendanceMap.set(String(userId), {
+      user: userId,
+      status: attendanceStatus,
+      pointsAwarded: computedPoints,
+      updatedAt: new Date(),
+    });
+
+    event.attendance = Array.from(attendanceMap.values());
+    await event.save();
+
+    if (POINT_CATEGORIES.includes(event.points?.category)) {
+      await PointsLedger.findOneAndUpdate(
+        { user: userId, event: event._id, source: 'attendance' },
+        {
+          $set: {
+            user: userId,
+            event: event._id,
+            source: 'attendance',
+            category: event.points.category,
+            status: attendanceStatus,
+            points: computedPoints,
+            note: `Attendance: ${attendanceStatus}`,
+            createdBy: user._id,
+            updatedAt: new Date(),
+          },
+          $setOnInsert: { createdAt: new Date() },
+        },
+        { upsert: true, new: true }
+      );
+    }
+
+    return res.json({ event: { ...event.toObject(), ...summarizeRsvps(event, user) } });
+  } catch (err) {
+    console.error('Event manual add error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// DELETE /api/events/:id?scope=single|series
+router.delete('/:id', async (req, res) => {
+  try {
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ message: 'User required' });
+
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    if (!isEventCreator(event, user)) {
+      return res.status(403).json({ message: 'Not allowed to delete this event' });
+    }
+
+    const scope = String(req.query.scope || 'single').toLowerCase();
+    const deleteSeries = scope === 'series' && !!event.recurrence?.seriesId;
+    const targetEvents = deleteSeries
+      ? await Event.find({ 'recurrence.seriesId': event.recurrence.seriesId }).select('_id')
+      : [{ _id: event._id }];
+    const targetIds = targetEvents.map((entry) => entry._id);
+
+    await PointsLedger.deleteMany({ event: { $in: targetIds } });
+    const result = await Event.deleteMany({ _id: { $in: targetIds } });
+
+    return res.json({
+      deletedCount: result.deletedCount || 0,
+      scope: deleteSeries ? 'series' : 'single',
+    });
+  } catch (err) {
+    console.error('Event delete error:', err);
     return res.status(500).json({ message: 'Server error' });
   }
 });

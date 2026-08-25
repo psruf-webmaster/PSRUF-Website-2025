@@ -4,9 +4,19 @@ const router = express.Router();
 const PointsLedger = require('../models/PointsLedger');
 const User = require('../models/User');
 const Event = require('../models/Event');
+const { EXEC, POSITIONS } = require('../constants/positions');
+const { buildRequirements } = require('../utils/pointRequirements');
+const { sanitizeMemberStatuses } = require('../constants/memberOptions');
 
 const OFFICER_ROLES = ['officer', 'exec', 'webmaster', 'webdev'];
 const POINT_CATEGORIES = ['phi', 'sigma', 'rho', 'tau'];
+
+const MANUAL_CATEGORY_BY_EXEC = {
+  [EXEC.VP_SOCIAL]: 'phi',
+  [EXEC.VP_SCHOLARSHIP]: 'sigma',
+  [EXEC.VP_SERVICE]: 'rho',
+  [EXEC.VP_FINANCE]: 'tau',
+};
 
 async function getUser(req) {
   if (req.user) return req.user;
@@ -25,6 +35,36 @@ function isOfficer(user) {
   if (!user) return false;
   const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
   return roles.some(r => OFFICER_ROLES.includes(r));
+}
+
+function isExecUser(user) {
+  if (!user) return false;
+  const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
+  return roles.some(role => String(role).toLowerCase() === 'exec');
+}
+
+function getAllowedManualCategories(user) {
+  if (!user) return [];
+
+  const positions = Array.isArray(user.positions) ? user.positions : [];
+  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+
+  const allowed = new Set();
+  Object.entries(MANUAL_CATEGORY_BY_EXEC).forEach(([positionKey, category]) => {
+    if (positionKeys.has(positionKey)) {
+      allowed.add(category);
+    }
+  });
+
+  return [...allowed];
+}
+
+function isPointsOverviewAllowed(user) {
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  return positionKeys.has(EXEC.PRESIDENT)
+    || positionKeys.has(EXEC.VP_STANDARDS)
+    || positionKeys.has(EXEC.VP_FINANCE);
 }
 
 function buildDateFilter(from, to) {
@@ -136,7 +176,7 @@ router.get('/summary/self', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const user = await getUser(req);
-    if (!isOfficer(user)) return res.status(403).json({ message: 'Not allowed' });
+    if (!isExecUser(user)) return res.status(403).json({ message: 'Not allowed' });
 
     const match = {};
     if (req.query.userId && mongoose.Types.ObjectId.isValid(req.query.userId)) {
@@ -236,9 +276,7 @@ router.get('/overview', async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
-    const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
-    const isAllowed = roles.some(r => ['exec', 'webmaster', 'webdev'].includes(r));
-    if (!isAllowed) return res.status(403).json({ message: 'Not allowed' });
+    if (!isPointsOverviewAllowed(user)) return res.status(403).json({ message: 'Not allowed' });
 
     const matchUsers = { isApproved: req.query.approved === 'false' ? undefined : true };
     if (req.query.memberStatus) {
@@ -254,7 +292,7 @@ router.get('/overview', async (req, res) => {
     const skip = (page - 1) * limit;
 
     const users = await User.find(matchUsers)
-      .select('firstName lastName memberStatus role')
+      .select('firstName lastName memberStatus role scholarship')
       .skip(skip)
       .limit(limit);
     const userIds = users.map(u => u._id);
@@ -276,19 +314,27 @@ router.get('/overview', async (req, res) => {
     const rows = users.map(u => {
       const l = ledgerMap.get(String(u._id)) || {};
       const cat = l.totalsByCategory || {};
-      const any = Math.max(0, (l.grandTotal || 0) - ((cat.phi || 0) + (cat.sigma || 0) + (cat.rho || 0) + (cat.tau || 0)));
+      const reqs = buildRequirements(cat, u.scholarship, u.memberStatus);
       return {
         userId: u._id,
         firstName: u.firstName || '',
         lastName: u.lastName || '',
-        memberStatus: u.memberStatus || [],
+        memberStatus: sanitizeMemberStatuses(u.memberStatus),
         totals: {
           phi: cat.phi || 0,
           sigma: cat.sigma || 0,
           rho: cat.rho || 0,
           tau: cat.tau || 0,
-          any,
+          any: reqs.any.have,
           total: l.grandTotal || 0,
+        },
+        any: reqs.any,
+        requirements: {
+          buckets: reqs.buckets,
+          metAll: reqs.metAll,
+          minPerCategory: reqs.minPerCategory,
+          totalRequired: reqs.totalRequired,
+          rule: reqs.rule,
         },
       };
     });
@@ -306,7 +352,10 @@ router.get('/overview', async (req, res) => {
 router.post('/manual', async (req, res) => {
   try {
     const user = await getUser(req);
-    if (!isOfficer(user)) return res.status(403).json({ message: 'Not allowed' });
+    const allowedCategories = getAllowedManualCategories(user);
+    if (allowedCategories.length === 0) {
+      return res.status(403).json({ message: 'You are not allowed to add manual point adjustments' });
+    }
 
     const { userId, category, points, note } = req.body || {};
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
@@ -314,6 +363,9 @@ router.post('/manual', async (req, res) => {
     }
     if (!POINT_CATEGORIES.includes(category)) {
       return res.status(400).json({ message: 'Invalid category' });
+    }
+    if (!allowedCategories.includes(category)) {
+      return res.status(403).json({ message: `You are not allowed to add ${String(category).toUpperCase()} points` });
     }
     if (points == null || Number(points) === 0 || Number.isNaN(Number(points))) {
       return res.status(400).json({ message: 'points must be a non-zero number' });

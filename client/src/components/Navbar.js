@@ -1,25 +1,42 @@
-// client/src/components/Navbar.js
-import React, { useMemo, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { NavLink, useLocation, useMatch, useNavigate, useResolvedPath } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const baseLinkStyle = {
-  padding: "6px 10px",
-  borderRadius: 16,
-  textDecoration: "none",
-  fontWeight: 600,
-  whiteSpace: "nowrap",
-};
-const linkStyle = ({ isActive }) => ({
-  ...baseLinkStyle,
-  color: isActive ? "#6d2c2c" : "#222",
-  background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
-});
+
+function getRoles(user) {
+  return Array.isArray(user?.role) ? user.role : (user?.role ? [user.role] : []);
+}
+
+function isAlumniUser(user) {
+  return getRoles(user).some(role => String(role).toLowerCase() === "alumni");
+}
+
+function canAccessPointsOverview(user) {
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  return positionKeys.has("PRESIDENT")
+    || positionKeys.has("VP_STANDARDS")
+    || positionKeys.has("VP_FINANCE");
+}
+
+function canAccessLedger(user) {
+  return getRoles(user).some(role => String(role).toLowerCase() === "exec");
+}
+
+function canAccessApprovals(user) {
+  const roles = getRoles(user).map((role) => String(role).toLowerCase());
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  return roles.includes("webmaster")
+    || roles.includes("webdev")
+    || positionKeys.has("WEBMASTER")
+    || positionKeys.has("WEBDEV");
+}
 
 function isOfficerLevel(user) {
   if (!user) return false;
   if (user.isOfficer || user.isExec || user.isWebmaster) return true;
-  const roles = Array.isArray(user.role) ? user.role : (user.role ? [user.role] : []);
+  const roles = getRoles(user);
   return roles.some(r =>
     r === "officer" ||
     r === "exec" ||
@@ -28,100 +45,33 @@ function isOfficerLevel(user) {
   );
 }
 
-/** Hover dropdown; clicking the trigger navigates to /feeds/chapter */
-function AnnouncementsMenu({ showOfficerFeed }) {
-  const [open, setOpen] = useState(false);
+function NavMenuLink({ to, children, end, onClick }) {
+  const resolved = useResolvedPath(to);
+  const isActive = useMatch({ path: resolved.pathname, end: end ?? to === "/" });
 
   return (
-    <div
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      style={{ position: "relative" }}
+    <NavLink
+      to={to}
+      onClick={onClick}
+      className={`site-nav-pill ${isActive ? "site-nav-pill-active" : ""}`}
     >
-      {/* Trigger navigates to Chapter Announcements */}
-      <NavLink
-        to="/feeds/chapter"
-        style={{
-          ...baseLinkStyle,
-          color: "#222",
-          background: open ? "rgba(109,44,44,0.12)" : "transparent",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-        }}
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        Announcements ▾
-      </NavLink>
-
-      {open && (
-        <div
-          role="menu"
-          style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            right: 0,
-            minWidth: 220,
-            background: "#fff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 12,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-            padding: 6,
-            zIndex: 1000,
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <NavLink
-              to="/feeds/chapter"
-              style={({ isActive }) => ({
-                ...baseLinkStyle,
-                display: "block",
-                color: isActive ? "#6d2c2c" : "#222",
-                background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
-                borderRadius: 10,
-              })}
-            >
-              Chapter Announcements
-            </NavLink>
-
-            <NavLink
-              to="/feeds/penguins"
-              style={({ isActive }) => ({
-                ...baseLinkStyle,
-                display: "block",
-                color: isActive ? "#6d2c2c" : "#222",
-                background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
-                borderRadius: 10,
-              })}
-            >
-              Penguin Parties
-            </NavLink>
-
-            {showOfficerFeed && (
-              <NavLink
-                to="/feeds/officers"
-                style={({ isActive }) => ({
-                  ...baseLinkStyle,
-                  display: "block",
-                  color: isActive ? "#6d2c2c" : "#222",
-                  background: isActive ? "rgba(109,44,44,0.12)" : "transparent",
-                  borderRadius: 10,
-                })}
-              >
-                Officer Feed
-              </NavLink>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+      {children}
+    </NavLink>
   );
 }
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [isCompactNav, setIsCompactNav] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 980 : false));
+  const profileMenuRef = useRef(null);
+  const isAlumni = isAlumniUser(user);
+  const canSeePointsOverview = canAccessPointsOverview(user);
+  const canSeeLedger = canAccessLedger(user);
+  const canSeeApprovals = canAccessApprovals(user);
 
   const publicLinks = useMemo(
     () => [
@@ -129,23 +79,26 @@ export default function Navbar() {
       { to: "/leadership", label: "Leadership" },
       { to: "/recruitment", label: "Recruitment" },
       { to: "/alumni", label: "Alumni" },
-      { to: "/partners", label: "Partners" },
-      { to: "/contact", label: "Contact Us" },
+      { to: "/contact", label: "Contact us" },
     ],
     []
   );
 
-  // Removed /announcements here; dropdown replaces it
   const memberLinks = useMemo(
-    () => [
-      { to: "/dashboard", label: "Dashboard" },
-      { to: "/events", label: "Events" },
-      { to: "/calendar", label: "Calendar" },
-      { to: "/points", label: "Points" },
-      { to: "/ledger", label: "Ledger", officerOnly: true },
-      { to: "/points-overview", label: "Points Overview", officerOnly: true },
-    ],
-    []
+    () => {
+      const links = [
+        { to: "/dashboard", label: "Dashboard" },
+        { to: "/events", label: "Events" },
+        { to: "/calendar", label: "Calendar" },
+      ];
+
+      if (!isAlumni) {
+        links.push({ to: "/points", label: "Points" });
+      }
+
+      return links;
+    },
+    [isAlumni]
   );
 
   const isAdmin = isOfficerLevel(user);
@@ -155,90 +108,291 @@ export default function Navbar() {
     navigate("/", { replace: true });
   };
 
+  const closeMenu = () => setMenuOpen(false);
+
+  const displayName = user
+    ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Admin User"
+    : "";
+  const profileImage = user?.profilePicUrl || "/avatar-placeholder.svg";
+
+  useEffect(() => {
+    const onDocumentClick = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onDocumentClick);
+    return () => document.removeEventListener("mousedown", onDocumentClick);
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => setIsCompactNav(window.innerWidth <= 980);
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setProfileMenuOpen(false);
+  }, [location.pathname]);
+
+  const compactAccountMeta = (Array.isArray(user?.role) ? user.role.join(', ') : user?.role || 'Member').toLowerCase();
   return (
-    <div
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-        background: "#fff",
-        borderBottom: "1px solid #e5e7eb",
-      }}
-    >
-      <nav
-        style={{
-          width: "100%",
-          padding: "10px 12px 10px 0",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "nowrap",
-          whiteSpace: "nowrap",
-          overflow: "visible",
-        }}
-      >
-        {/* LEFT: brand + public links */}
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-          <NavLink to="/" style={{ ...baseLinkStyle, fontSize: 18, color: "#222" }}>
-            <span style={{ color: "#6d2c2c", fontWeight: 800 }}>ΦΣΡ</span>{" "}
-            <span style={{ opacity: 0.7 }}>Phi Sigma Rho</span>
+    <header className="site-navbar">
+      <nav className="site-nav">
+        {/* Logo - always on the far left */}
+          <NavLink 
+            to="/" 
+            className="site-brand"
+            style={{ gap: "16px" }}
+          >
+            <span className="site-brand-mark">ΦΣΡ</span>
+            <span className="site-brand-copy">
+              <span>Phi Sigma Rho</span>
+              <span>Tau Chapter • UF</span>
+            </span>
           </NavLink>
 
-          {publicLinks.map((l) => (
-            <NavLink key={l.to} to={l.to} style={linkStyle}>
-              {l.label}
-            </NavLink>
-          ))}
-        </div>
+        {/* Public links - only shown when NOT signed in */}
+        {!user && !isCompactNav && (
+          <div className="site-nav-links">
+            {publicLinks.map((link) => (
+              <NavMenuLink key={link.to} to={link.to}>
+                {link.label}
+              </NavMenuLink>
+            ))}
+          </div>
+        )}
 
-        {/* RIGHT: member links + dropdown + admin + greeting + logout */}
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+        <div className="site-nav-actions">
           {!user ? (
             <>
-              <NavLink to="/login" style={linkStyle}>Sign In</NavLink>
-              <NavLink to="/signup" style={linkStyle}>Sign Up</NavLink>
+              {!isCompactNav && <NavMenuLink to="/login">Sign In</NavMenuLink>}
+              {!isCompactNav && <NavMenuLink to="/signup">Sign Up</NavMenuLink>}
+              {isCompactNav && (
+                <button
+                  className={`hamburger-menu-toggle ${menuOpen ? "active" : ""}`}
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  aria-label="Toggle menu"
+                >
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </button>
+              )}
             </>
           ) : (
             <>
-              {memberLinks.map((l) => (
-                (!l.officerOnly || isAdmin) && (
-                  <NavLink key={l.to} to={l.to} style={linkStyle}>
-                    {l.label}
-                  </NavLink>
-                )
-              ))}
-
-              <AnnouncementsMenu showOfficerFeed={isAdmin} />
-
-              {isAdmin && (
-                <>
-                  <NavLink to="/admin/approvals" style={linkStyle}>Approvals</NavLink>
-                  <NavLink to="/admin/users" style={linkStyle}>Users</NavLink>
-                </>
+              {!isCompactNav && (
+                <div className="site-nav-links">
+                  {memberLinks.map((link) => (
+                    <NavMenuLink key={link.to} to={link.to}>
+                      {link.label}
+                    </NavMenuLink>
+                  ))}
+                  <NavMenuLink to="/feeds/chapter">Feeds</NavMenuLink>
+                  <NavMenuLink to="/bylaws">Bylaws</NavMenuLink>
+                </div>
               )}
 
-              <span style={{ fontWeight: 600, color: "#6d2c2c" }}>
-                Hi,&nbsp;{user.firstName || "Sister"}
-              </span>
               <button
-                onClick={onLogout}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: 10,
-                  border: "1px solid #e5e7eb",
-                  background: "#6d2c2c",
-                  color: "#fff",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
+                className={`hamburger-menu-toggle ${menuOpen ? "active" : ""}`}
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-label="Toggle menu"
               >
-                Log out
+                <span></span>
+                <span></span>
+                <span></span>
               </button>
+
+              {!isCompactNav && (
+                <div className="profile-menu" ref={profileMenuRef}>
+                  <button
+                      type="button"
+                      className={`profile-menu-trigger ${profileMenuOpen ? "active" : ""}`}
+                      onClick={() => setProfileMenuOpen((open) => !open)}
+                      aria-haspopup="menu"
+                      aria-expanded={profileMenuOpen}
+                      style={{ marginLeft: "-35px", marginRight: "12px", display: "flex", alignItems: "center", gap: "8px" }}
+                    >
+                    <img
+                      className="profile-avatar"
+                      src={profileImage}
+                      alt={`${displayName || 'User'} avatar`}
+                    />
+                    <span className="profile-name">{displayName}</span>
+                    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+
+                  {profileMenuOpen && (
+                    <div className="profile-menu-dropdown" role="menu">
+                      <NavLink
+                        to="/profile"
+                        className="profile-menu-link"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        Profile settings
+                      </NavLink>
+                      <button
+                        type="button"
+                        className="profile-menu-item"
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          onLogout();
+                        }}
+                      >
+                        Log out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
       </nav>
-    </div>
+        {menuOpen && (
+          <div className="hamburger-menu-dropdown">
+            {user && isCompactNav && (
+              <>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "12px 14px",
+                  background: "#ffffff",
+                  border: "1px solid #f0e1e3",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 12px rgba(107, 76, 82, 0.05)",
+                  marginBottom: "6px"
+                }}>
+                  <img
+                    src={profileImage}
+                    alt={`${displayName || 'User'} avatar`}
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      border: "2px solid #f6e4e7",
+                      flexShrink: 0
+                    }}
+                  />
+                  <div style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    minWidth: 0,
+                    textAlign: "left"
+                  }}>
+                    <div style={{
+                      fontWeight: 700,
+                      fontSize: "0.95rem",
+                      color: "#5a2229",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      lineHeight: "1.2"
+                    }}>
+                      {displayName}
+                    </div>
+                    <div style={{
+                      fontSize: "0.7rem",
+                      color: "#94757b",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                      marginTop: "3px",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis"
+                    }}>
+                      {compactAccountMeta}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Profile settings link for mobile view */}
+                <NavMenuLink to="/profile" onClick={closeMenu}>
+                  Profile settings
+                </NavMenuLink>
+
+                <div className="hamburger-section-divider"></div>
+
+                {/* Member Pages Section for Mobile */}
+                {memberLinks.map((link) => (
+                  <NavMenuLink key={link.to} to={link.to} onClick={closeMenu}>
+                    {link.label}
+                  </NavMenuLink>
+                ))}
+                <NavMenuLink to="/feeds/chapter" onClick={closeMenu}>
+                  Feeds
+                </NavMenuLink>
+                <NavMenuLink to="/bylaws" onClick={closeMenu}>
+                  Bylaws
+                </NavMenuLink>
+              </>
+            )}
+
+            {/* Separate Admin Pages Section */}
+            {user && (canSeeApprovals || canSeeLedger || canSeePointsOverview || isAdmin) && (
+              <>
+                <div className="hamburger-section-divider"></div>
+                {canSeeApprovals && (
+                  <NavMenuLink to="/admin/approvals" onClick={closeMenu}>
+                    Approvals
+                  </NavMenuLink>
+                )}
+                {isAdmin && (
+                  <NavMenuLink to="/admin/users" onClick={closeMenu}>
+                    User management
+                  </NavMenuLink>
+                )}
+                {canSeeLedger && (
+                  <NavMenuLink to="/ledger" onClick={closeMenu}>
+                    Ledger
+                  </NavMenuLink>
+                )}
+                {canSeePointsOverview && (
+                  <NavMenuLink to="/points-overview" onClick={closeMenu}>
+                    Points overview
+                  </NavMenuLink>
+                )}
+              </>
+            )}
+
+            {/* FRONT-FACING PAGES SECTION */}
+            <div className="hamburger-section-divider"></div>
+            {publicLinks.map((link) => (
+              <NavMenuLink key={link.to} to={link.to} onClick={closeMenu}>
+                {link.label}
+              </NavMenuLink>
+            ))}
+
+            {/* Authentication actions */}
+            <div className="hamburger-section-divider"></div>
+            {!user ? (
+              <>
+                <NavMenuLink to="/login" onClick={closeMenu}>Sign In</NavMenuLink>
+                <NavMenuLink to="/signup" onClick={closeMenu}>Sign Up</NavMenuLink>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="hamburger-menu-item-button"
+                onClick={() => {
+                  closeMenu();
+                  onLogout();
+                }}
+              >
+                Log out
+              </button>
+            )}
+          </div>
+        )}
+    </header>
   );
 }

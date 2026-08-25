@@ -71,26 +71,6 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
 
 ---
 
-## 🟡 In Progress / Needs Validation
-
-### **Testing & Validation**
-- Cross-role and cross-status testing:
-  - pnm
-  - candidate
-  - candOfficer
-  - member
-  - alumni
-  - officer
-  - exec
-  - webmaster
-  - webdev
-- Verify correct access based on role for:
-  - Event management
-  - Ledger
-  - Points pages (Master points vs regular member points page)
-  - Requirements eligibility
-
----
 ## TO DO 
 ## 🔴 P0 – Highest Priority (Decision Needed ASAP)
 
@@ -112,14 +92,9 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
 - Announcement notifications:
   - Email on publish
   - Optional SMS blast
-  - Audience selection by:
-    - Role
-    - Member status
-    - Position
   - Optional scheduled send time
 - **Events and reminder notifications**:
   - Need to get list of mandatory events
-  - Add mandatory event designation option for event creators
   - Event creators can opt-in to automated reminders
   - Reminder types:
     - Email reminder **1 week before** event
@@ -128,45 +103,8 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
   - Per-event on/off toggles
   - Server-side scheduling for the automated reminder
   - maybe allow officer to send additional notifs or announcement blasts specific to that event
- 
-### **UI **
-  - LIterally every page
-  - Dashboard (weekly events + points circles)
-  - Member Points page
-  - Admin Points Overview page
 
----
-
-## 🟢 P2 – Medium Priority
-
-### **User Account Enhancements**
-- Password reset flow
-- Profile settings page:
-  - Edit email
-  - Edit phone number
-  - Avatar/profile photo upload
-
-### **Calendar**
-- Dedicated calendar page
-- Embedded Google Calendar for chapter events
-
-### **Public Website**
-- Finish and polish all public-facing pages:
-  - Home
-  - Leadership
-  - Recruitment
-  - Alumni
-  - Partners
-  - Contact
-
----
-
-## 🔵 P3 – Nice to Have / Later
-
-### **Expanded Feeds & Channels**
-- Allow exec/officer-level users to:
-  - Create new announcement channels
-  - Add/remove members from channels
+## 🔵 P2 – Nice to Have / Later
 
 ### **Before Deployment**
 - Full regression testing after UI and notifications implemented
@@ -177,10 +115,3 @@ This backlog tracks **completed work**, **in-progress validation**, and **upcomi
  
 ### **Post-Deployment**
 - Start working on mobile application
-
----
-
-## 📝 Notes
-- The **ledger is the only source of truth** for points
-- Requirements are computed dynamically — no stored flags
-- SMS notifs and choosing a provider are the immediate next step

@@ -1,0 +1,300 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --home-blush: #fff6f8;
+  --home-rose: #efd2d8;
+  --home-dusty: #d7a7b1;
+  --home-maroon: #6f2434;
+  --home-maroon-deep: #43121d;
+  --home-copy: #31161e;
+  --home-copy-soft: rgba(49, 22, 30, 0.72);
+  --home-border: rgba(111, 36, 52, 0.12);
+  --home-shadow: 0 30px 80px rgba(84, 28, 42, 0.12);
+}
+
+/* ========================================
+   ALUMNAE PAGE TYPOGRAPHY & BASE
+   ======================================== */
+.alumnae-page {
+  position: relative;
+  color: var(--home-copy);
+  background: 
+    radial-gradient(circle at top left, rgba(239, 210, 216, 0.92), transparent 28%),
+    radial-gradient(circle at 80% 16%, rgba(111, 36, 52, 0.1), transparent 18%),
+    linear-gradient(180deg, #fffbfc 0%, #fff6f7 100%);
+  font-family: 'Manrope', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Alumnae Section Headings (Serif) */
+.alumnae-page h1, 
+.alumnae-page h2, 
+.alumnae-page h3, 
+.alumnae-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  color: var(--home-maroon-deep);
+}
+
+/* Alumnae Body Copy */
+.alumnae-page p, 
+.alumnae-page span, 
+.alumnae-page a, 
+.alumnae-page li {
+  font-family: 'Manrope', sans-serif;
+}
+
+/* ========================================
+   ALUMNAE HERO SECTION
+   ======================================== */
+.alumnae-hero {
+  position: relative;
+  padding: clamp(3rem, 6vw, 5rem) clamp(1.2rem, 4vw, 3rem);
+  width: min(1320px, 100%);
+  margin: 0 auto;
+}
+
+.alumnae-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(111, 36, 52, 0.1);
+  border-radius: 999px;
+  padding: 0.52rem 0.9rem;
+  margin-bottom: 1rem;
+  background: rgba(255, 255, 255, 0.66);
+  backdrop-filter: blur(20px);
+  color: var(--home-maroon);
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.alumnae-kicker:hover {
+  transform: scale(1.03);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.alumnae-hero h1 {
+  margin: 0 0 1.25rem;
+  font-size: clamp(3.5rem, 7vw, 6.5rem);
+  line-height: 0.95;
+}
+
+.alumnae-hero-description {
+  max-width: 40rem;
+  margin: 0;
+  color: var(--home-copy-soft);
+  font-size: clamp(1.04rem, 1.8vw, 1.22rem);
+  line-height: 1.75;
+}
+
+/* ========================================
+   ALUMNAE CARDS & DIRECTORY GRID
+   ======================================== */
+.alumnae-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  width: min(1320px, 100%);
+  margin: 3rem auto;
+  padding: 0 clamp(1.2rem, 4vw, 3rem);
+}
+
+.alumnae-card {
+  border: 1px solid var(--home-border);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(22px);
+  box-shadow: var(--home-shadow);
+  padding: 2rem;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.3s ease;
+}
+
+.alumnae-card:hover {
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 0 35px 75px rgba(91, 37, 50, 0.18);
+  border-color: rgba(111, 36, 52, 0.3);
+}
+
+.alumnae-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.alumnae-card .alumnae-class-year {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: var(--home-maroon);
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.alumnae-card p {
+  margin: 0;
+  color: var(--home-copy-soft);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+/* ========================================
+   MOBILE RESPONSIVE LAYOUT OVERRIDES
+   ======================================== */
+@media screen and (max-width: 968px) {
+  /* Target the hero grid and stack items vertically */
+  .home-hero-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2.5rem !important;
+  }
+
+  /* Force the text copy area to appear first */
+  .home-hero-copy {
+    order: 1 !important;
+    width: 100% !important;
+  }
+
+  /* Force the picture card to appear under the text and buttons and make it bigger */
+  .home-hero-editorial {
+    order: 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    transform: none !important;
+  }
+
+  /* Expand the picture container size for mobile view */
+  .home-hero-editorial .home-editorial-card {
+    padding: 1.5rem !important;
+    width: 100% !important;
+  }
+
+  /* Adjust typography scaling nicely for mobile screens */
+  .home-hero-title {
+    font-size: clamp(2.8rem, 9vw, 4rem) !important;
+  }
+}
+
+/* ========================================
+   MOBILE TWEAKS (CENTER BUTTON & LEFT ALIGN)
+   ======================================== */
+@media screen and (max-width: 968px) {
+  /* Left-justify the text and description copy */
+  .home-hero-copy,
+  .home-hero-title,
+  .home-hero-description {
+    text-align: left !important;
+  }
+
+  /* Add padding below the sparkle tag */
+  .home-hero-kicker {
+    margin-bottom: 2rem !important;
+  }
+
+  /* Center the button container */
+  .home-hero-actions {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+}
+
+/* ========================================
+   MOBILE RESPONSIVE OVERRIDES (HOME PAGE)
+   ======================================== */
+@media screen and (max-width: 1080px) {
+  /* Stack the hero grid vertically */
+  .home-hero-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2.5rem !important;
+  }
+
+  /* Force text copy to appear first */
+  .home-hero-copy {
+    order: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    text-align: left !important;
+  }
+
+  /* Left-align text content */
+  .home-hero-title,
+  .home-hero-description {
+    text-align: left !important;
+  }
+
+  /* Add padding below the sparkle badge */
+  .home-hero-kicker {
+    margin-bottom: 2rem !important;
+  }
+
+  /* Center the button actions container */
+  .home-hero-actions {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  /* Force the picture card to appear under the text and buttons, making it larger */
+  .home-hero-editorial {
+    order: 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    transform: none !important;
+  }
+
+  /* Expand the editorial card layout for mobile viewing */
+  .home-editorial-card {
+    padding: 1.5rem !important;
+    width: 100% !important;
+  }
+}
+
+/* ========================================
+   MOBILE BUTTON & BADGE FIXES (HOME PAGE)
+   ======================================== */
+@media screen and (max-width: 1080px) {
+  /* Stack the buttons vertically and center them */
+  .home-hero-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    gap: 1rem !important;
+  }
+
+  /* Make sure both buttons fit nicely when stacked */
+  .home-primary-cta, 
+  .home-secondary-link {
+    width: 100% !important;
+    max-width: 280px !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  /* Center the stat badges row */
+  .home-badge-row {
+    justify-content: center !important;
+  }
+}
+
+/* ========================================
+   RESTORE MOBILE SCROLL ANIMATIONS
+   ======================================== */
+@media screen and (max-width: 1080px) {
+  /* Ensure motion elements are allowed to fade/slide in on scroll for mobile */
+  .home-landing [style*="opacity"] {
+    will-change: opacity, transform;
+  }
+}

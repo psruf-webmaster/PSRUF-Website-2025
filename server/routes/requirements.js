@@ -3,10 +3,9 @@ const mongoose = require('mongoose');
 const router = express.Router();
 const PointsLedger = require('../models/PointsLedger');
 const User = require('../models/User');
-
-const OFFICER_OVERVIEW_ROLES = ['exec', 'webmaster', 'webdev'];
-const POINT_CATEGORIES = ['phi', 'sigma', 'rho', 'tau'];
-const MIN_PER_BUCKET = 50;
+const { EXEC } = require('../constants/positions');
+const { buildRequirements } = require('../utils/pointRequirements');
+const { sanitizeMemberStatuses } = require('../constants/memberOptions');
 
 async function getUser(req) {
   if (req.user) return req.user;
@@ -22,30 +21,11 @@ async function getUser(req) {
 }
 
 function isOverviewAllowed(user) {
-  const roles = Array.isArray(user?.role) ? user.role : (user?.role ? [user.role] : []);
-  return roles.some(r => OFFICER_OVERVIEW_ROLES.includes(r));
-}
-
-function computeAny(catTotals) {
-  const extra = POINT_CATEGORIES.reduce((sum, cat) => sum + Math.max(0, (catTotals[cat] || 0) - MIN_PER_BUCKET), 0);
-  return extra;
-}
-
-function buildBuckets(catTotals) {
-  const buckets = {};
-  POINT_CATEGORIES.forEach(cat => {
-    const have = catTotals[cat] || 0;
-    const need = Math.max(0, MIN_PER_BUCKET - have);
-    buckets[cat] = { have, need, met: need === 0 };
-  });
-  const anyHave = computeAny(catTotals);
-  const anyNeed = Math.max(0, MIN_PER_BUCKET - anyHave);
-  const metAll = POINT_CATEGORIES.every(cat => buckets[cat].met) && anyNeed === 0;
-  return {
-    buckets,
-    any: { have: anyHave, need: anyNeed, met: anyNeed === 0 },
-    metAll,
-  };
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  return positionKeys.has(EXEC.PRESIDENT)
+    || positionKeys.has(EXEC.VP_STANDARDS)
+    || positionKeys.has(EXEC.VP_FINANCE);
 }
 
 // GET /api/requirements/active/self
@@ -61,7 +41,7 @@ router.get('/active/self', async (req, res) => {
     const catTotals = {};
     totalsAgg.forEach(row => { catTotals[row._id] = row.points; });
     const total = Object.values(catTotals).reduce((a, b) => a + b, 0);
-    const reqs = buildBuckets(catTotals);
+    const reqs = buildRequirements(catTotals, user.scholarship, user.memberStatus);
 
     return res.json({
       userId: user._id,
@@ -74,9 +54,11 @@ router.get('/active/self', async (req, res) => {
       },
       any: reqs.any,
       requirements: {
-        minPerCategory: MIN_PER_BUCKET,
+        minPerCategory: reqs.minPerCategory,
         buckets: reqs.buckets,
         metAll: reqs.metAll,
+        totalRequired: reqs.totalRequired,
+        rule: reqs.rule,
       }
     });
   } catch (err) {
@@ -106,7 +88,7 @@ router.get('/active/overview', async (req, res) => {
     const skip = (page - 1) * limit;
 
     const users = await User.find(matchUsers)
-      .select('firstName lastName memberStatus role')
+      .select('firstName lastName memberStatus role scholarship positions')
       .skip(skip)
       .limit(limit);
     const userIds = users.map(u => u._id);
@@ -133,15 +115,21 @@ router.get('/active/overview', async (req, res) => {
         tau: cat.tau || 0,
         total: l.grandTotal || 0,
       };
-      const reqs = buildBuckets(cat);
+      const reqs = buildRequirements(cat, u.scholarship, u.memberStatus);
       return {
         userId: u._id,
         firstName: u.firstName || '',
         lastName: u.lastName || '',
-        memberStatus: u.memberStatus || [],
+        memberStatus: sanitizeMemberStatuses(u.memberStatus),
         totals: { ...totals, any: reqs.any.have },
         any: reqs.any,
-        requirements: { buckets: reqs.buckets, metAll: reqs.metAll, minPerCategory: MIN_PER_BUCKET },
+        requirements: {
+          buckets: reqs.buckets,
+          metAll: reqs.metAll,
+          minPerCategory: reqs.minPerCategory,
+          totalRequired: reqs.totalRequired,
+          rule: reqs.rule,
+        },
       };
     });
 

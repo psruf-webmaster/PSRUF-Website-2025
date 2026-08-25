@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: psruf-website-2026
+    env: node
+    rootDir: server
+    buildCommand: npm install && npm run build:client
+    startCommand: npm start
