@@ -193,6 +193,7 @@ export default function Navbar() {
                     </NavMenuLink>
                   ))}
                   <NavMenuLink to="/feeds/chapter">Feeds</NavMenuLink>
+                  <NavMenuLink to="/bylaws">Bylaws</NavMenuLink>
                 </div>
               )}
 
@@ -329,6 +330,9 @@ export default function Navbar() {
                 ))}
                 <NavMenuLink to="/feeds/chapter" onClick={closeMenu}>
                   Feeds
+                </NavMenuLink>
+                <NavMenuLink to="/bylaws" onClick={closeMenu}>
+                  Bylaws
                 </NavMenuLink>
               </>
             )}

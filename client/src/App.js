@@ -1,4 +1,3 @@
-// client/src/App.js
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import {
@@ -31,7 +30,7 @@ import ProfileSettings from './pages/ProfileSettings';
 import Dashboard from './account pages/Dashboard';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
-import Announcements from './pages/Announcements';
+import Bylaws from './pages/Bylaws';
 import Points from './pages/Points';
 import PointsOverview from './pages/PointsOverview';
 import Ledger from './pages/Ledger';
@@ -226,7 +225,7 @@ function AppContent() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:eventId" element={<EventDetail />} />
-            <Route path="/announcements" element={<Announcements />} />
+            <Route path="/bylaws" element={<Bylaws />} />
             <Route element={<PointsAccessRoute />}>
               <Route path="/points" element={<Points />} />
             </Route>
