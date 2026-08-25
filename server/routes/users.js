@@ -9,7 +9,7 @@ const { sanitizeMemberStatuses } = require('../constants/memberOptions');
 
 const fileFilter = (_req, file, cb) => {
   const allowedMimeTypes = [
-    'image/jpeg', 'image/png', 'image/gif', 'image/webp'
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
   ];
   if (allowedMimeTypes.includes(file.mimetype) || file.mimetype.startsWith('image/')) {
     cb(null, true);
