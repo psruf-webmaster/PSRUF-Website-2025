@@ -113,6 +113,9 @@ export default function ProfileSettings() {
     try {
       const payload = new FormData();
       
+      // Append userId explicitly so multer/FormData requests authenticate reliably
+      payload.append('userId', user?.id || user?._id || '');
+
       Object.entries(form).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
           payload.append(key, typeof value === 'string' ? value.trim() : value);
