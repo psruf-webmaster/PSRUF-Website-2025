@@ -857,7 +857,7 @@ export default function AdminUsers() {
                           {tab ===
                             "pending" && (
                             <a
-                              href="/admin/#/approvals"
+                              href="/#/admin/approvals"
                               style={
                                 styles.inlineActionLink
                               }
