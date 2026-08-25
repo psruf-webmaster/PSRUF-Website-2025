@@ -6,6 +6,7 @@ const User = require('../models/User');
 const Post = require('../models/Post');
 const { POSITIONS } = require('../constants/positions');
 const { MEMBER_STATUS_ENUM } = require('../constants/memberOptions');
+const { normalizeAssetUrl } = require('../utils/assetUrls');
 
 const ROLE_ENUM = [
   'pending', 'pnm', 'candidate', 'candOfficer', 'member',
@@ -357,7 +358,7 @@ router.get('/:id/members', async (req, res) => {
       lastName: u.lastName,
       role: u.role,
       memberStatus: u.memberStatus,
-      profilePicUrl: u.profilePicUrl || '',
+      profilePicUrl: normalizeAssetUrl(u.profilePicUrl),
     }));
     return res.json(members);
   } catch (err) {

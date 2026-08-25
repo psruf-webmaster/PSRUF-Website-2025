@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const { storage, getCloudinaryFileUrl } = require('../utils/cloudinaryConfig');
 const { sanitizeMemberStatuses } = require('../constants/memberOptions');
+const { normalizeAssetUrl } = require('../utils/assetUrls');
 
 const fileFilter = (_req, file, cb) => {
   const allowedMimeTypes = [
@@ -68,7 +69,7 @@ function toSafeUser(user) {
     ufEmail: user.ufEmail,
     major: user.major,
     year: user.year,
-    profilePicUrl: user.profilePicUrl || '',
+    profilePicUrl: normalizeAssetUrl(user.profilePicUrl),
     role: user.role || [],
     memberStatus: sanitizeMemberStatuses(user.memberStatus),
     positions: user.positions || [],
