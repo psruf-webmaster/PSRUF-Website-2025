@@ -19,13 +19,12 @@ const fileFilter = (_req, file, cb) => {
   }
 };
 
-const profileUploadMiddleware = multer({
-  storage,
+// Combine storage, fileFilter, and limits into one instance:
+const profileUpload = multer({
+  storage, // your CloudinaryStorage instance
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
-});
-
-const profileUpload = profileUploadMiddleware.single('profilePhoto');
+}).single('profilePhoto'); // <-- Attach .single() here!
 
 const handleProfileUpload = (req, res, next) => {
   profileUpload(req, res, (err) => {
