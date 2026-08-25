@@ -4,27 +4,41 @@ const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { storage, getCloudinaryFileUrl } = require('../utils/cloudinaryConfig');
 const { sanitizeMemberStatuses } = require('../constants/memberOptions');
 
-const uploadsDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+const fileFilter = (_req, file, cb) => {
+  const allowedMimeTypes = [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp'
+  ];
+  if (allowedMimeTypes.includes(file.mimetype) || file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid profile photo file type. Only images are allowed.'), false);
+  }
+};
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const safeName = String(file.originalname || 'profile').replace(/[^a-zA-Z0-9._-]/g, '_');
-    cb(null, `${Date.now()}-${safeName}`);
-  },
-});
-
-const upload = multer({
+const profileUploadMiddleware = multer({
   storage,
+  fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
+
+const profileUpload = profileUploadMiddleware.single('profilePhoto');
+
+const handleProfileUpload = (req, res, next) => {
+  profileUpload(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'Profile photo too large. Maximum size is 5MB.' });
+      }
+      return res.status(400).json({ message: `Upload error: ${err.message}` });
+    } else if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });
+};
 
 async function getUser(req) {
   if (req.user) return req.user;
@@ -109,7 +123,7 @@ router.get('/me', async (req, res) => {
   }
 });
 
-router.patch('/me', upload.single('profilePhoto'), async (req, res) => {
+router.patch('/me', handleProfileUpload, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -164,7 +178,7 @@ router.patch('/me', upload.single('profilePhoto'), async (req, res) => {
       }
     }
 
-    const uploadedFile = req.file ? `/uploads/${req.file.filename}` : null;
+    const uploadedFile = getCloudinaryFileUrl(req.file);
 
     if (typeof firstName === 'string') user.firstName = firstName.trim();
     if (typeof lastName === 'string') user.lastName = lastName.trim();

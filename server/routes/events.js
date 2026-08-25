@@ -5,8 +5,7 @@ const Event = require('../models/Event');
 const User = require('../models/User');
 const PointsLedger = require('../models/PointsLedger');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { storage, getCloudinaryFileUrl } = require('../utils/cloudinaryConfig');
 
 const ROLE_CREATE = ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer'];
 const POINT_CATEGORIES = ['phi', 'sigma', 'rho', 'tau'];
@@ -14,28 +13,45 @@ const ATTENDANCE_STATUSES = ['present', 'absent', 'excused'];
 const COHOST_ROLES = ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer'];
 const RECURRENCE_FREQUENCIES = ['none', 'daily', 'weekly', 'biweekly', 'monthly'];
 
-const uploadsDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const safeName = String(file.originalname || 'event-image').replace(/[^a-zA-Z0-9._-]/g, '_');
-    cb(null, `${Date.now()}-${safeName}`);
-  },
-});
+const fileFilter = (_req, file, cb) => {
+  const allowedMimeTypes = [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'application/pdf', 'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain', 'application/octet-stream'
+  ];
+  if (allowedMimeTypes.includes(file.mimetype) || file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type'), false);
+  }
+};
 
-const upload = multer({
+const eventUploadMiddleware = multer({
   storage,
+  fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-const eventUpload = upload.fields([
+const rawEventUpload = eventUploadMiddleware.fields([
   { name: 'image', maxCount: 1 },
   { name: 'attachments', maxCount: 10 },
 ]);
+
+const eventUpload = (req, res, next) => {
+  rawEventUpload(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'File too large. Maximum size is 5MB.' });
+      }
+      return res.status(400).json({ message: `Upload error: ${err.message}` });
+    } else if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });
+};
 
 // Helpers
 async function getUser(req) {
@@ -93,10 +109,10 @@ function getUploadedFiles(req) {
 function normalizeAttachments(files = []) {
   return files.map(file => ({
     name: String(file.originalname || file.filename || 'attachment'),
-    url: `/uploads/${file.filename}`,
+    url: getCloudinaryFileUrl(file),
     mimeType: String(file.mimetype || ''),
     size: Number(file.size || 0),
-  }));
+  })).filter(file => file.url);
 }
 
 function normalizeShifts(value) {
@@ -186,7 +202,7 @@ function normalizeEventPayload(body = {}, uploaded = {}) {
     startAt: body.startAt,
     endAt: body.endAt,
     location: body.location,
-    imageUrl: uploaded.image ? `/uploads/${uploaded.image.filename}` : (body.imageUrl || ''),
+    imageUrl: getCloudinaryFileUrl(uploaded.image) || (body.imageUrl || ''),
     attachments: [...existingAttachments, ...uploadedAttachments],
     isMandatory: parseBoolean(body.isMandatory, false),
     shiftBasedRegistration: parseBoolean(body.shiftBasedRegistration, false),
@@ -234,14 +250,12 @@ function eventVisibleToUser(event, user) {
 
   const rolesAllowed = normalizeStrings(event.visibility?.rolesAllowed);
 
-  // candOfficer: can see candidate-visible events or events they created
   if (isCandOfficer(user)) {
     const created = String(event.createdBy || '') === String(user._id || '');
     const candidateVisible = rolesAllowed.includes('candidate');
     return created || candidateVisible;
   }
 
-  // candidates/members/alumni/pnm require explicit role allow + optional memberStatus allow
   const roleHits = ['candidate', 'member', 'alumni', 'pnm'].some(role => (
     userHasRole(user, role) && rolesAllowed.includes(role)
   ));
@@ -644,7 +658,7 @@ router.patch('/:id', eventUpload, async (req, res) => {
     }
 
     const uploaded = getUploadedFiles(req);
-  const applyToSeries = parseBoolean(req.body?.applyToSeries, false);
+    const applyToSeries = parseBoolean(req.body?.applyToSeries, false);
     const has = (key) => Object.prototype.hasOwnProperty.call(req.body || {}, key);
     const visibilityInput = parseMaybeJson(req.body?.visibility, req.body?.visibility || {});
     const pointsInput = parseMaybeJson(req.body?.points, req.body?.points || {});
@@ -667,7 +681,7 @@ router.patch('/:id', eventUpload, async (req, res) => {
       startAt: has('startAt') ? req.body?.startAt : event.startAt,
       endAt: has('endAt') ? req.body?.endAt : event.endAt,
       location: has('location') ? req.body?.location : event.location,
-      imageUrl: uploaded.image ? `/uploads/${uploaded.image.filename}` : (has('imageUrl') ? req.body?.imageUrl : event.imageUrl),
+      imageUrl: getCloudinaryFileUrl(uploaded.image) || (has('imageUrl') ? req.body?.imageUrl : event.imageUrl),
       attachments: has('attachments') || uploaded.attachments.length
         ? [...preservedAttachments, ...normalizeAttachments(uploaded.attachments)]
         : (event.attachments || []),
@@ -722,7 +736,6 @@ router.patch('/:id', eventUpload, async (req, res) => {
 });
 
 // GET /api/events/public/pnm
-// Public homepage feed for upcoming PNM/recruitment events
 router.get('/public/pnm', async (req, res) => {
   try {
     const now = new Date();
@@ -879,7 +892,6 @@ router.post('/:id/rsvp', async (req, res) => {
       }
     }
 
-    // capacity check for "going"
     if (status === 'going' && event.capacityMax) {
       const goingCount = (event.rsvps || []).filter(r => r.status === 'going' && String(r.user) !== String(user._id)).length;
       if (goingCount + 1 > event.capacityMax) {
@@ -987,7 +999,6 @@ router.put('/:id/attendance', async (req, res) => {
     event.attendance = Array.from(map.values());
     await event.save();
 
-    // upsert ledger entries for attendance
     const ops = [];
     if (!POINT_CATEGORIES.includes(event.points?.category)) {
       console.warn('Skipping ledger upsert: invalid category', event.points?.category);

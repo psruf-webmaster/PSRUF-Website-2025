@@ -2,31 +2,13 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const Post = require('../models/Post');
 const User = require('../models/User');
 const { sendSmsBlastToRecipients } = require('../services/smsBlast');
 const { resolveRecipientPhones } = require('../services/audienceResolver');
 const { canUserSendSms } = require('../utils/smsPermissions');
 const Channel = require('../models/Channel');
-
-const uploadsDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const safeName = String(file.originalname || 'feed-upload').replace(/[^a-zA-Z0-9._-]/g, '_');
-    cb(null, `${Date.now()}-${safeName}`);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-});
+const { upload, getCloudinaryFileUrl } = require('../utils/cloudinaryConfig');
 
 function bad(res, code, message) {
   return res.status(code).json({ message });
@@ -333,7 +315,7 @@ router.patch('/:feed/read-state', async (req, res) => {
   }
 });
 
-// ---------- Create post (optional text blast) ----------
+// ---------- Create post (optional text blast & Cloudinary uploads) ----------
 router.post('/:feed/posts', upload.array('attachments', 10), async (req, res) => {
   try {
     const user = await getUser(req);
@@ -364,12 +346,14 @@ router.post('/:feed/posts', upload.array('attachments', 10), async (req, res) =>
     if (channel && channel.isArchived) return bad(res, 400, 'Channel is archived; posting is locked');
 
     const uploadedFiles = Array.isArray(req.files) ? req.files : [];
-    const generatedAttachments = uploadedFiles.map((file, index) => ({
-      id: `${file.filename}-${index}`,
-      name: file.originalname,
-      type: file.mimetype || 'application/octet-stream',
-      url: `/uploads/${file.filename}`,
-    }));
+    const generatedAttachments = uploadedFiles
+      .map((file, index) => ({
+        id: `${Date.now()}-${index}`,
+        name: file.originalname,
+        type: file.mimetype || 'application/octet-stream',
+        url: getCloudinaryFileUrl(file),
+      }))
+      .filter(file => file.url);
 
     const existingAttachments = Array.isArray(parsedAttachments)
       ? parsedAttachments.flatMap(item => {
