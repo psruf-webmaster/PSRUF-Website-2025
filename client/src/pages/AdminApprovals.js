@@ -26,9 +26,7 @@ const POSITION_OPTIONS = [
   "PHILANTHROPY", "STEM_CHAIR",
   "PROFESSIONAL_DEV",
   "MEM_ED", "RECRUITMENT_BOARD",
-  // optionally allow execs as positions
-  "PRESIDENT", "VP_STANDARDS", "VP_COMMUNICATIONS", "VP_FINANCE",
-  "VP_SOCIAL", "VP_SERVICE", "VP_SCHOLARSHIP", "VP_MEMBERSHIP",
+  "SPONSORSHIP_CHAIR",
 ];
 
 function canAccessAdminUsers(user) {

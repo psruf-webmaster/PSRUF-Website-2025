@@ -126,7 +126,7 @@ export default function Alumni() {
                 whileHover={{ scale: 1.04, x: 4 }}
                 whileTap={{ scale: 0.97 }}
                 className="home-primary-cta" 
-                href="'mailto:psrufalumnae@gmail.com"
+                href="mailto:psrufalumnae@gmail.com"
               >
                 Stay in Touch <ArrowRight size={18} />
               </motion.a>
