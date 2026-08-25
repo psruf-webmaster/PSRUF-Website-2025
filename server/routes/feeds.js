@@ -68,10 +68,10 @@ function builtinMembershipMatch(feed, userLike) {
 
   if (!isApprovedUser(userLike)) return false;
 
-  if (feed === 'chapterAnnouncements') return statuses.includes('active');
-  if (feed === 'alumniFeed') return roles.some(role => ['member', 'alumni', 'officer', 'exec', 'webmaster', 'webdev'].includes(role));
+  if (feed === 'chapterAnnouncements') return statuses.includes('active') || statuses.includes('inactive') || statuses.includes('seniorStatus') || statuses.includes('earlyAlumni');
+  if (feed === 'alumniFeed') return statuses.includes('active') || statuses.includes('inactive') || statuses.includes('seniorStatus') || statuses.includes('earlyAlumni') || statuses.includes('co-op') || statuses.includes('probation');
   if (feed === 'penguinParties') return true;
-  if (feed === 'officerFeed') return roles.some(role => ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer'].includes(role));
+  if (feed === 'officerFeed') return roles.some(role => ['officer', 'exec', 'webmaster', 'web,dev', 'candOfficer'].includes(role));
   return null;
 }
 

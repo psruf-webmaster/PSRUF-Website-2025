@@ -94,7 +94,7 @@ function hasRole(user, role) {
 }
 
 function isCreatorRole(user) {
-  return ["officer", "exec", "webmaster", "webdev", "candofficer"].some((role) => hasRole(user, role));
+  return ["officer", "exec", "webmaster", "candofficer"].some((role) => hasRole(user, role));
 }
 
 function canRsvp(user) {
