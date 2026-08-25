@@ -556,6 +556,7 @@ function CreateEventModal({ open, onClose, onCreated, user }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 18, scale: 0.98 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
+            style={{ overflowY: "auto", maxHeight: "90vh" }}
           >
             <div className="events-modal-header">
               <div>
@@ -924,6 +925,7 @@ function ManageEventModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
+            style={{ overflowY: "auto", maxHeight: "90vh" }}
           >
             <div className="events-modal-header">
               <div>
