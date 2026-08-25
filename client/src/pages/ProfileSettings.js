@@ -113,7 +113,6 @@ export default function ProfileSettings() {
     try {
       const payload = new FormData();
       
-      // Cleanly append form entries with proper trimming
       Object.entries(form).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
           payload.append(key, typeof value === 'string' ? value.trim() : value);
@@ -160,7 +159,7 @@ export default function ProfileSettings() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user?.id || '',
+          'x-user-id': user?.id || user?._id || '',
         },
         body: JSON.stringify(passwordForm),
       });
