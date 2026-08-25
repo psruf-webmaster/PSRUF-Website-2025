@@ -112,8 +112,17 @@ export default function ProfileSettings() {
 
     try {
       const payload = new FormData();
-      Object.entries(form).forEach(([key, value]) => payload.append(key, value));
-      if (selectedPhoto) payload.append('profilePhoto', selectedPhoto);
+      
+      // Cleanly append form entries with proper trimming
+      Object.entries(form).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          payload.append(key, typeof value === 'string' ? value.trim() : value);
+        }
+      });
+      
+      if (selectedPhoto) {
+        payload.append('profilePhoto', selectedPhoto);
+      }
 
       const response = await fetch('/api/users/me', {
         method: 'PATCH',
