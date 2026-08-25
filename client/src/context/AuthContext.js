@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { normalizeUserAssets } from "../lib/assetUrls";
 
 const AuthCtx = createContext(null);
 const USER_REFRESH_INTERVAL_MS = 60 * 1000;
@@ -15,7 +16,7 @@ export const useAuth = () => useContext(AuthCtx);
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("psr_user")) || null;
+      return normalizeUserAssets(JSON.parse(localStorage.getItem("psr_user")) || null);
     } catch {
       return null;
     }
@@ -35,8 +36,9 @@ export default function AuthProvider({ children }) {
       return;
     }
 
-    setUser(nextUser);
-    localStorage.setItem("psr_user", JSON.stringify(nextUser));
+    const normalizedUser = normalizeUserAssets(nextUser);
+    setUser(normalizedUser);
+    localStorage.setItem("psr_user", JSON.stringify(normalizedUser));
   }, []);
 
   /*

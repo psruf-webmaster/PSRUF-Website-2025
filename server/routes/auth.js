@@ -4,6 +4,7 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 const { sanitizeMemberStatuses } = require('../constants/memberOptions');
+const { normalizeAssetUrl } = require('../utils/assetUrls');
 
 function toSafeUser(user) {
   return {
@@ -23,7 +24,7 @@ function toSafeUser(user) {
     year: user.year,
     birthday: user.birthday,
 
-    profilePicUrl: user.profilePicUrl || '',
+    profilePicUrl: normalizeAssetUrl(user.profilePicUrl),
 
     role: user.role || [],
     memberStatus: sanitizeMemberStatuses(user.memberStatus),
