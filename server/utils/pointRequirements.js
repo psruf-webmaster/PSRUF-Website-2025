@@ -65,7 +65,7 @@ function buildRequirements(catTotals = {}, scholarship, memberStatus) {
     return buildNoRequirement(catTotals, normalizedScholarship);
   }
 
-  if (statuses.includes('inactive') || statuses.includes('seniorStatus')) {
+  if (statuses.includes('inactive') || statuses.includes('seniorStatus') || statuses.includes('earlyAlumni')) {
     return buildAnywhereRequirement(catTotals, normalizedScholarship, 50);
   }
 
