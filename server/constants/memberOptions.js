@@ -1,7 +1,7 @@
 const MEMBER_STATUS_ENUM = [
   'active',
   'inactive',
-  'probation',
+  'earlyAlumni',
   'seniorStatus',
   'co-op',
   'dropped',
@@ -13,7 +13,7 @@ const DEFAULT_SCHOLARSHIP = 0;
 const MEMBER_STATUS_ALIASES = {
   active: 'active',
   inactive: 'inactive',
-  probation: 'probation',
+  earlyalumni: 'earlyAlumni',
   senior: 'seniorStatus',
   seniorstatus: 'seniorStatus',
   coop: 'co-op',

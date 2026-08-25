@@ -23,7 +23,7 @@ const ROLE_OPTIONS = [
 const MEMBER_STATUS_OPTIONS = [
   "active",
   "inactive",
-  "probation",
+  "earlyAlumni",
   "seniorStatus",
   "co-op",
   "dropped",

@@ -7,7 +7,7 @@ const ROLE_OPTIONS = [
 ];
 
 const MEMBER_STATUS_OPTIONS = [
-  "active", "inactive", "probation", "seniorStatus",
+  "active", "inactive", "earlyAlumni", "seniorStatus",
   "co-op", "dropped",
 ];
 const SCHOLARSHIP_OPTIONS = [0, 25, 50, 75, 100];

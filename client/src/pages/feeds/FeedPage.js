@@ -16,7 +16,7 @@ const ROLE_OPTIONS = [
   'alumni', 'officer', 'exec', 'webmaster', 'webdev',
 ];
 const MEMBER_STATUS_OPTIONS = [
-  'active', 'inactive', 'probation', 'seniorStatus',
+  'active', 'inactive', 'earlyAlumni', 'seniorStatus',
   'co-op', 'dropped',
 ];
 const SMS_ALLOWED_POSITION_KEYS = ['VP_COMMUNICATIONS', 'WEBMASTER'];
