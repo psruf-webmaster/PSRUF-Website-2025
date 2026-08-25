@@ -42,6 +42,8 @@ const handleProfileUpload = (req, res, next) => {
 
 async function getUser(req) {
   if (req.user) return req.user;
+  
+  // 1. Check Authorization Bearer header
   const auth = req.header('authorization') || '';
   if (auth.toLowerCase().startsWith('bearer ')) {
     const id = auth.slice(7).trim();
@@ -50,11 +52,20 @@ async function getUser(req) {
       if (u) return u;
     }
   }
+  
+  // 2. Check x-user-id header
   const xUser = req.header('x-user-id');
   if (xUser && mongoose.Types.ObjectId.isValid(xUser)) {
     const u = await User.findById(xUser);
     if (u) return u;
   }
+
+  // 3. Fallback: Check body.userId (populated by multer for multipart/form-data requests)
+  if (req.body && req.body.userId && mongoose.Types.ObjectId.isValid(req.body.userId)) {
+    const u = await User.findById(req.body.userId);
+    if (u) return u;
+  }
+
   return null;
 }
 
