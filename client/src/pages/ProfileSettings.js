@@ -159,7 +159,7 @@ export default function ProfileSettings() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user?.id || user?._id || '',
+          Authorization: `Bearer ${user?.id || user?._id || ''}`,
         },
         body: JSON.stringify(passwordForm),
       });
