@@ -256,6 +256,75 @@ function ChatAvatar({ src, name, size, fontSize, style = {} }) {
   );
 }
 
+function ConfirmDialog({ open, title, message, confirmLabel = 'Confirm', onConfirm, onCancel }) {
+  if (!open) return null;
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0, 0, 0, 0.4)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: 16,
+    }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        style={{
+          background: '#fff',
+          borderRadius: 16,
+          padding: 24,
+          maxWidth: 400,
+          width: '100%',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          border: '1px solid rgba(109,44,44,0.1)',
+        }}
+      >
+        <h3 style={{ margin: '0 0 8px 0', color: '#3b2327', fontSize: 18 }}>{title}</h3>
+        <p style={{ margin: '0 0 20px 0', color: '#666', fontSize: 14, lineHeight: 1.5 }}>{message}</p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(109,44,44,0.2)',
+              color: '#6d2c2c',
+              padding: '8px 16px',
+              borderRadius: 8,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            style={{
+              background: '#b91c1c',
+              border: 'none',
+              color: '#fff',
+              padding: '8px 16px',
+              borderRadius: 8,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 function HoverActionButton({ label, icon, onClick, active = false, danger = false, popover = null, children }) {
   return (
     <div
@@ -513,9 +582,9 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const currentUserAvatar = getCurrentUserAvatar(user);
-  const canSendSms = Array.isArray(user?.positions)
+  const canSendSms = canBlast || (Array.isArray(user?.positions)
     ? user.positions.some(p => SMS_ALLOWED_POSITION_KEYS.includes(p?.key))
-    : false;
+    : false);
 
   useEffect(() => {
     return () => {
@@ -1262,7 +1331,7 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
   );
 }
 
-export default function FeedPage({ feed }) {
+export default function FeedPage({ feed, canBlast = false }) {
   const { user } = useAuth();
   const { isNarrow, isPhone } = useViewportFlags();
   const [posts, setPosts] = useState([]);
