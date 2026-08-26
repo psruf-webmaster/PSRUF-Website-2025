@@ -526,10 +526,10 @@ router.patch('/posts/:id/comments/:commentId', async (req, res) => {
 
     const comment = post.comments.id(commentId);
     if (!comment) return bad(res, 404, 'Comment not found');
-    if (!canModifyComment(user, comment)) return bad(res, 403, 'You can only edit your own replies');
+    if (!canModifyComment(user, comment)) return bad(res, 403, 'You can only edit your own comments'); // Fixed error message mismatch
 
     const nextText = String(req.body?.text || '').trim();
-    if (!nextText) return bad(res, 400, 'Reply text required');
+    if (!nextText) return bad(res, 400, 'Comment text required'); // Fixed error message mismatch
 
     comment.text = nextText;
     await post.save();
@@ -555,7 +555,7 @@ router.delete('/posts/:id/comments/:commentId', async (req, res) => {
 
     const comment = post.comments.id(commentId);
     if (!comment) return bad(res, 404, 'Comment not found');
-    if (!canModifyComment(user, comment)) return bad(res, 403, 'You can only delete your own replies');
+    if (!canModifyComment(user, comment)) return bad(res, 403, 'You can only delete your own comments'); // Fixed error message mismatch
 
     post.comments.pull(commentId);
     await post.save();
