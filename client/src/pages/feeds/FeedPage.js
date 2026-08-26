@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { io } from 'socket.io-client'; // Added socket.io-client import
 import { useAuth } from '../../context/AuthContext';
+
+// Initialize socket connection point for real-time synchronization
+const socket = io('http://localhost:3001');
 
 const FEED_TITLES = {
   chapterAnnouncements: 'Chapter Announcements',
@@ -1397,6 +1401,21 @@ export default function FeedPage({ feed, canBlast = false }) {
 
   const channelHasPosts = (c) => Number(c?.postCount || 0) > 0 || c?.hasPosts === true;
   const isExecCreator = (c) => isExecUser && String(c.createdByUserId || '') === String(userId || '');
+
+  // Real-time synchronization hook integrated into feeds
+  useEffect(() => {
+    socket.on('refresh_data', (data) => {
+      console.log(`Received update for: ${data.collection}`);
+      
+      if (data.collection === 'members') loadMembers();
+      if (data.collection === 'channels') loadChannels();
+      if (data.collection === 'roles' || data.collection === 'posts' || data.collection === feed) load();
+    });
+
+    return () => {
+      socket.off('refresh_data');
+    };
+  }, [feed, currentChannel?._id, userId]);
 
   useEffect(() => {
     try {
