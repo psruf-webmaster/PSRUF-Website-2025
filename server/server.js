@@ -1,31 +1,46 @@
 // server/server.js
 const express = require('express');
+const http = require('http'); // Required for Socket.io
+const { Server } = require('socket.io'); // Required for Socket.io
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
+
 const app = express();
+const server = http.createServer(app); // Create HTTP server from Express app
+const io = new Server(server, {
+  cors: {
+    origin: ['http://localhost:3000', 'https://psruf-website-2026.onrender.com'],
+    credentials: true,
+  }
+});
+
 // --- SMTP sanity check (optional) ---
 const { transporter } = require('./utils/email');
 transporter.verify()
   .then(() => console.log('✅ SMTP connection OK'))
   .catch(err => console.error('❌ SMTP error:', err.message));
+
 // --- Middleware ---
 app.use(express.json({ limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/sms', require('./routes/sms'));
+
 // Configure CORS for your frontend origin(s)
 app.use(cors({
   origin: ['http://localhost:3000', 'https://psruf-website-2026.onrender.com'], // add prod domain here later
   credentials: true,
 }));
+
 app.use('/api', (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
     return res.status(503).json({ message: 'Database is not ready yet. Please try again in a moment.' });
   }
   next();
 });
+
 // --- Routes ---
 const authRoutes  = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
@@ -35,6 +50,7 @@ const eventsRouter = require('./routes/events');
 const usersRouter = require('./routes/users');
 const ledgerRouter = require('./routes/ledger');
 const requirementsRouter = require('./routes/requirements');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/feeds', feedsRouter);
@@ -54,6 +70,7 @@ if (hasClientBuild) {
 } else {
   console.warn('⚠️ Client build not found; SPA routes will return 404 until the client is built.');
 }
+
 // Basic health checks
 app.get('/api/hello', (req, res) => res.json({ message: 'Hello from the backend!' }));
 
@@ -71,16 +88,48 @@ if (hasClientBuild) {
 } else {
   app.get('/', (req, res) => res.send('API is running...'));
 }
-// --- MongoDB + Start server ---
+
+// --- MongoDB + Start server with Change Streams ---
 async function startServer() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ MongoDB connected');
+
+    // Handle Socket.io client connections
+    io.on('connection', (socket) => {
+      console.log('A client connected:', socket.id);
+      socket.on('disconnect', () => {
+        console.log('A client disconnected:', socket.id);
+      });
+    });
+
+    // Watch your specific collections for real-time changes
+    // (Note: Ensure your MongoDB deployment is a Replica Set, which Atlas is by default)
+    const collectionsToWatch = ['users', 'channels', 'roles']; // match your actual collection names in DB
+    
+    collectionsToWatch.forEach((colName) => {
+      try {
+        const collection = mongoose.connection.db.collection(colName);
+        const changeStream = collection.watch();
+
+        changeStream.on('change', (next) => {
+          console.log(`🔄 Change detected in collection [${colName}]:`, next.operationType);
+          // Broadcast to all connected frontend clients instantly
+          io.emit('refresh_data', { collection: colName, action: next.operationType });
+        });
+      } catch (err) {
+        console.error(`⚠️ Could not set up change stream for ${colName}:`, err.message);
+      }
+    });
+
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    // Note: We use server.listen instead of app.listen to support Socket.io
+    server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
   } catch (err) {
     console.error('❌ MongoDB connection error:', err);
     process.exit(1);
   }
 }
+
 startServer();
