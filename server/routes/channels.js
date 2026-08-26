@@ -270,28 +270,62 @@ router.patch('/:id/archive', async (req, res) => {
   }
 });
 
-// Update rules (includeRoles/memberStatuses)
-router.patch('/:id/rules', async (req, res) => {
-  try {
-    const user = await getUser(req);
-    if (!user) return res.status(401).json({ message: 'User required' });
+  // Update rules (includeRoles/memberStatuses)
+  router.patch('/:id/rules', async (req, res) => {
+    try {
+      const user = await getUser(req);
 
-    const channel = await Channel.findById(req.params.id);
-    if (!channel) return res.status(404).json({ message: 'Not found' });
-    if (!canManageMembers(user, channel)) return res.status(403).json({ message: 'Not allowed' });
+      if (!user) {
+        return res.status(401).json({ message: 'User required' });
+      }
 
-    const includeRoles = normalizeArray(req.body?.includeRoles).filter(r => ROLE_ENUM.includes(r));
-    const includeMemberStatuses = normalizeArray(req.body?.includeMemberStatuses).filter(s => MEMBER_STATUS_ENUM.includes(s));
+      const channel = await Channel.findById(req.params.id);
 
-    channel.includeRoles = includeRoles;
-    channel.includeMemberStatuses = includeMemberStatuses;
-    await channel.save();
-    return res.json(channel);
-  } catch (err) {
-    console.error('channel rules error:', err);
-    return res.status(500).json({ message: 'Server error' });
-  }
-});
+      if (!channel) {
+        return res.status(404).json({ message: 'Not found' });
+      }
+
+      if (!canManageMembers(user, channel)) {
+        return res.status(403).json({ message: 'Not allowed' });
+      }
+
+      const requestedRoles = normalizeArray(req.body?.includeRoles);
+      const requestedStatuses = normalizeArray(req.body?.includeMemberStatuses);
+
+      const invalidRoles = requestedRoles.filter(
+        role => !ROLE_ENUM.includes(role)
+      );
+
+      const invalidStatuses = requestedStatuses.filter(
+        status => !MEMBER_STATUS_ENUM.includes(status)
+      );
+
+      if (invalidRoles.length > 0 || invalidStatuses.length > 0) {
+        return res.status(400).json({
+          message: 'Invalid channel rules',
+          invalidRoles,
+          invalidStatuses,
+          allowedRoles: ROLE_ENUM,
+          allowedMemberStatuses: MEMBER_STATUS_ENUM,
+        });
+      }
+
+      channel.includeRoles = requestedRoles;
+      channel.includeMemberStatuses = requestedStatuses;
+
+      await channel.save();
+
+      return res.json({
+        ...channel.toObject(),
+        message: 'Rules updated successfully',
+      });
+    } catch (err) {
+      console.error('channel rules error:', err);
+      return res.status(500).json({
+        message: 'Server error',
+      });
+    }
+  });
 
 // Add/remove manual members
 router.post('/:id/manual-members', async (req, res) => {
