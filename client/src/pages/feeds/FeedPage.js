@@ -372,27 +372,6 @@ function getPostMedia(post) {
   return fallback;
 }
 
-function ConfirmDialog({ open, title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', onConfirm, onCancel }) {
-  if (!open) return null;
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(26, 12, 15, 0.52)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 1200 }}>
-      <div style={{ width: 'min(100%, 480px)', borderRadius: 22, background: 'linear-gradient(180deg, #2f1d20, #24171a)', color: '#fff7fa', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 20px 50px rgba(24,10,13,0.34)', padding: '20px 22px 18px' }}>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12, color: '#f8d9df' }}>{title}</div>
-        <div style={{ fontSize: 15, lineHeight: 1.4, color: '#fff3f6' }}>{message}</div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
-          <button type="button" onClick={onCancel} style={{ border: 'none', borderRadius: 999, background: 'rgba(148,55,60,0.9)', color: '#fff6f8', fontWeight: 700, padding: '10px 20px', cursor: 'pointer', fontSize: 13 }}>
-            {cancelLabel}
-          </button>
-          <button type="button" onClick={onConfirm} style={{ border: '2px solid rgba(68,36,42,0.9)', borderRadius: 999, background: '#f2aab5', color: '#4a2328', fontWeight: 800, padding: '9px 22px', cursor: 'pointer', fontSize: 13, boxShadow: 'inset 0 0 0 1px rgba(255,236,240,0.78)' }}>
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function buildReactionState(items) {
   const result = {};
   (Array.isArray(items) ? items : []).forEach(item => {
@@ -437,9 +416,40 @@ function CommentThreadItem({
   };
 
   return (
-    <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (!isCompact) setActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 5 : 7, alignItems: 'flex-start', marginTop: isReply ? 6 : 0, marginLeft: isReply ? (isCompact ? 6 : 18) : 0, width: '100%', boxSizing: 'border-box' }}>
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setShowReactions(false);
+        if (!isCompact) setActionsOpen(false);
+      }}
+      style={{
+        display: 'flex',
+        gap: isCompact ? 5 : 7,
+        alignItems: 'flex-start',
+        marginTop: isReply ? 6 : 0,
+        marginLeft: isReply ? (isCompact ? 6 : 18) : 0,
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
       <ChatAvatar src={entryAvatar} name={entryName} size={isReply ? 22 : 26} fontSize={isReply ? 8 : 9} />
-      <div onClick={() => { if (isCompact) setActionsOpen(prev => !prev); }} style={{ flex: 1, minWidth: 0, background: isReply ? 'rgba(255,255,255,0.76)' : '#faf8f9', border: '1px solid rgba(109,44,44,0.08)', borderRadius: 11, padding: isCompact ? '6px 8px' : '7px 9px', boxShadow: '0 4px 12px rgba(109,44,44,0.04)', position: 'relative', cursor: isCompact ? 'pointer' : 'default' }}>
+      <div
+        onClick={() => {
+          if (isCompact) setActionsOpen(prev => !prev);
+        }}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          background: isReply ? 'rgba(255,255,255,0.76)' : '#faf8f9',
+          border: '1px solid rgba(109,44,44,0.08)',
+          borderRadius: 11,
+          padding: isCompact ? '6px 8px' : '7px 9px',
+          boxShadow: '0 4px 12px rgba(109,44,44,0.04)',
+          position: 'relative',
+          cursor: isCompact ? 'pointer' : 'default',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap', paddingRight: actionRowVisible && !isCompact ? 100 : 0 }}>
           <strong style={{ color: '#6d2c2c', fontSize: isReply ? 11 : 12 }}>{entryName}</strong>
           <span style={{ color: '#8a6a71', fontSize: 10 }}>{entryTime}</span>
@@ -768,16 +778,12 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
       {composerState && (
         <div style={{ display: 'flex', flexDirection: isCompact ? 'column' : 'row', alignItems: isCompact ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8, padding: '8px 10px', borderRadius: 12, background: 'rgba(251,242,246,0.96)', border: '1px solid rgba(109,44,44,0.1)', color: '#6d2c2c' }}>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{composerState.type === 'edit' ? 'Editing message' : 'Replying to message'}</div>
-            style={{
-                    height: 'auto',
-                    minHeight: 0,
-                    maxHeight: 'none',
-                    overflow: 'visible',
-                    padding: isPhone ? '0 8px 8px' : '0 0 12px',
-                    boxSizing: 'border-box',
-                    width: '100%'
-                  }}
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              {composerState.type === 'edit' ? 'Editing message' : 'Replying to message'}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#4f2f32' }}>
+              {composerState.authorName} • {composerState.timeLabel}
+            </div>
           </div>
           <button type="button" onClick={resetComposer} style={{ border: 'none', background: 'transparent', color: '#6d2c2c', cursor: 'pointer', fontWeight: 700, fontSize: 16, lineHeight: 1 }}>
             ×
@@ -1078,7 +1084,29 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
   };
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (isCompact) setMessageActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 6 : 10, alignItems: 'flex-start', padding: isGrouped ? (isCompact ? '0 2px 4px' : '0 8px 6px') : (isCompact ? '0 2px 8px' : '0 8px 10px'), borderBottom: 'none', marginBottom: 0, justifyContent: 'center', width: '100%', boxSizing: 'border-box' }}>
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setShowReactions(false);
+        if (isCompact) setMessageActionsOpen(false);
+      }}
+      style={{
+        display: 'flex',
+        gap: isCompact ? 6 : 10,
+        alignItems: 'flex-start',
+        padding: isGrouped ? (isCompact ? '0 2px 4px' : '0 8px 6px') : (isCompact ? '0 2px 8px' : '0 8px 10px'),
+        borderBottom: 'none',
+        marginBottom: 0,
+        justifyContent: 'center',
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
       <div style={{ width: '100%', minWidth: 0, display: 'flex', gap: isCompact ? 6 : 10, alignItems: 'flex-start', position: 'relative', boxSizing: 'border-box' }}>
         {!isGrouped ? (
           <ChatAvatar src={avatarUrl} name={authorName} size={isCompact ? 30 : 36} fontSize={isCompact ? 10 : 12} style={{ boxShadow: '0 6px 12px rgba(109,44,44,0.05)' }} />
@@ -1093,143 +1121,142 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
             </div>
           )}
 
-        {actionRowVisible && (
-          <div onClick={e => e.stopPropagation()}>
-          <HoverActionBar top={isGrouped ? 2 : 16}>
-            <HoverActionButton
-              label="React"
-              icon="react"
-              onClick={() => setShowReactions(prev => !prev)}
-              active={showReactions}
-              popover={showReactions ? (
-                <div style={{ background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(109,44,44,0.12)', borderRadius: 12, boxShadow: '0 12px 24px rgba(109,44,44,0.12)', padding: 6, display: 'flex', gap: 5, backdropFilter: 'blur(18px)' }}>
-                  {reactionOptions.map(emoji => (
-                    <motion.button
-                      key={emoji}
-                      type="button"
-                      whileHover={{ y: -2, scale: 1.08 }}
-                      whileTap={{ scale: 0.95 }}
-                      transition={SPRING_TRANSITION}
-                      onClick={() => triggerReaction(emoji)}
-                      style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(236,144,184,0.08)', borderRadius: 8, width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 15, color: '#6d2c2c' }}
-                      aria-label={`React with ${emoji}`}
-                    >
-                      {emoji}
-                    </motion.button>
-                  ))}
-                </div>
-              ) : null}
-            />
-            
-            <HoverActionButton 
-              label="Reply" 
-              icon="reply" 
-              onClick={() => { onReplyRequest && onReplyRequest(post); setMessageActionsOpen(false); }} 
-            />
-            
-            {isCurrentUserPost && (
-              <HoverActionButton 
-                label="Edit" 
-                icon="edit" 
-                onClick={() => { onEditRequest && onEditRequest(post); setMessageActionsOpen(false); }} 
-              />
-            )}
-            
-            {isCurrentUserPost && (
-              <HoverActionButton 
-                label="Delete" 
-                icon="delete" 
-                danger 
-                onClick={() => onDeleteRequest && onDeleteRequest(post)} 
-              />
-            )}
-          </HoverActionBar>
-          </div>
-        )}
-
-        <div onClick={() => setMessageActionsOpen(prev => !prev)} style={{ ...bubbleStyle, cursor: 'pointer', padding: compactGroupedMessage ? (isCompact ? '6px 8px' : bubbleStyle.padding) : (isCompact ? '8px 10px' : bubbleStyle.padding) }}>
-          <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: compactGroupedMessage ? 1.3 : 1.45, fontSize: isCompact ? 13 : 14 }}>{post.content}</div>
-
-          {media.length > 0 && (
-            <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
-              {media.map(item => {
-                if (!item.url) return null;
-                if (item.type === 'video' || /\.(mp4|webm|ogg|mov)$/i.test(item.url) || item.url.includes('video')) {
-                  return <video key={item.id} src={item.url} controls style={{ width: '100%', maxHeight: isCompact ? 180 : 240, borderRadius: 8, background: '#0f172a' }} />;
-                }
-                return <img key={item.id} src={item.url} alt={item.name || 'Attached content'} style={{ width: '100%', maxHeight: isCompact ? 200 : 260, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(148,163,184,0.18)' }} />;
-              })}
+          {actionRowVisible && (
+            <div onClick={e => e.stopPropagation()}>
+              <HoverActionBar top={isGrouped ? 2 : 16}>
+                <HoverActionButton
+                  label="React"
+                  icon="react"
+                  onClick={() => setShowReactions(prev => !prev)}
+                  active={showReactions}
+                  popover={showReactions ? (
+                    <div style={{ background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(109,44,44,0.12)', borderRadius: 12, boxShadow: '0 12px 24px rgba(109,44,44,0.12)', padding: 6, display: 'flex', gap: 5, backdropFilter: 'blur(18px)' }}>
+                      {reactionOptions.map(emoji => (
+                        <motion.button
+                          key={emoji}
+                          type="button"
+                          whileHover={{ y: -2, scale: 1.08 }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={SPRING_TRANSITION}
+                          onClick={() => triggerReaction(emoji)}
+                          style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(236,144,184,0.08)', borderRadius: 8, width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 15, color: '#6d2c2c' }}
+                          aria-label={`React with ${emoji}`}
+                        >
+                          {emoji}
+                        </motion.button>
+                      ))}
+                    </div>
+                  ) : null}
+                />
+                
+                <HoverActionButton 
+                  label="Reply" 
+                  icon="reply" 
+                  onClick={() => { onReplyRequest && onReplyRequest(post); setMessageActionsOpen(false); }} 
+                />
+                
+                {isCurrentUserPost && (
+                  <HoverActionButton 
+                    label="Edit" 
+                    icon="edit" 
+                    onClick={() => { onEditRequest && onEditRequest(post); setMessageActionsOpen(false); }} 
+                  />
+                )}
+                
+                {isCurrentUserPost && (
+                  <HoverActionButton 
+                    label="Delete" 
+                    icon="delete" 
+                    danger 
+                    onClick={() => onDeleteRequest && onDeleteRequest(post)} 
+                  />
+                )}
+              </HoverActionBar>
             </div>
           )}
 
-          {post.sendTextBlast && <div style={{ fontSize: 10, color: '#a5b4fc', marginTop: 6 }}>📢 Sent as text</div>}
-          {post.smsResult && (
-            <div style={{ fontSize: 10, color: post.smsResult.failed > 0 ? '#fca5a5' : '#bdc7ff', marginTop: 5 }}>
-              {post.smsResult.error
-                ? 'SMS skipped: Not authorized'
-                : (post.smsResult.sent != null
-                  ? `Sent as text to ${post.smsResult.sent || 0} recipient${(post.smsResult.sent || 0) === 1 ? '' : 's'}`
-                  : 'SMS failed')}
+          <div onClick={() => setMessageActionsOpen(prev => !prev)} style={{ ...bubbleStyle, cursor: 'pointer', padding: compactGroupedMessage ? (isCompact ? '6px 8px' : bubbleStyle.padding) : (isCompact ? '8px 10px' : bubbleStyle.padding) }}>
+            <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: compactGroupedMessage ? 1.3 : 1.45, fontSize: isCompact ? 13 : 14 }}>{post.content}</div>
+
+            {media.length > 0 && (
+              <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+                {media.map(item => {
+                  if (!item.url) return null;
+                  if (item.type === 'video' || /\.(mp4|webm|ogg|mov)$/i.test(item.url) || item.url.includes('video')) {
+                    return <video key={item.id} src={item.url} controls style={{ width: '100%', maxHeight: isCompact ? 180 : 240, borderRadius: 8, background: '#0f172a' }} />;
+                  }
+                  return <img key={item.id} src={item.url} alt={item.name || 'Attached content'} style={{ width: '100%', maxHeight: isCompact ? 200 : 260, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(148,163,184,0.18)' }} />;
+                })}
+              </div>
+            )}
+
+            {post.sendTextBlast && <div style={{ fontSize: 10, color: '#a5b4fc', marginTop: 6 }}>📢 Sent as text</div>}
+            {post.smsResult && (
+              <div style={{ fontSize: 10, color: post.smsResult.failed > 0 ? '#fca5a5' : '#bdc7ff', marginTop: 5 }}>
+                {post.smsResult.error
+                  ? 'SMS skipped: Not authorized'
+                  : (post.smsResult.sent != null
+                    ? `Sent as text to ${post.smsResult.sent || 0} recipient${(post.smsResult.sent || 0) === 1 ? '' : 's'}`
+                    : 'SMS failed')}
+              </div>
+            )}
+          </div>
+
+          {reactionSummary.length > 0 && (
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 5, marginLeft: 2, alignItems: 'center', justifyContent: 'flex-start', width: '100%' }}>
+              {reactionSummary.map(emoji => (
+                <motion.button
+                  key={emoji}
+                  type="button"
+                  whileHover={{ y: -2, scale: 1.08 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={SPRING_TRANSITION}
+                  onClick={() => triggerReaction(emoji)}
+                  style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(255,255,255,0.7)', color: emoji === '❤️' ? '#6d2c2c' : userReactions[emoji] ? '#6d2c2c' : '#5a3034', borderRadius: 999, padding: '1px 6px', fontSize: 10, cursor: 'pointer', lineHeight: 1.1, fontWeight: userReactions[emoji] ? 700 : 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}
+                >
+                  {emoji} {reactions[emoji] || 0}
+                </motion.button>
+              ))}
+            </div>
+          )}
+
+          {post.comments?.length > 0 && (
+            <div style={{ marginTop: 8, display: 'grid', gap: 6, paddingLeft: isCompact ? 0 : 3, width: '100%', boxSizing: 'border-box' }}>
+              {post.comments.map(comment => (
+                <div key={comment._id || `${comment.name}-${comment.createdAt}-${comment.text}`} style={{ width: '100%', boxSizing: 'border-box' }}>
+                  <CommentThreadItem
+                    item={comment}
+                    post={post}
+                    commentId={comment._id}
+                    currentUserId={user?._id || user?.id}
+                    onReplyRequest={onThreadReplyRequest}
+                    onEditRequest={onEditCommentRequest}
+                    onDeleteRequest={onDeleteCommentRequest}
+                    isCompact={isCompact}
+                  />
+                  {Array.isArray(comment.replies) && comment.replies.length > 0 && (
+                    <div style={{ marginTop: 5, display: 'grid', gap: 5, width: '100%', boxSizing: 'border-box' }}>
+                      {comment.replies.map(reply => (
+                        <CommentThreadItem
+                          key={reply._id || `${reply.name}-${reply.createdAt}-${reply.text}`}
+                          item={reply}
+                          post={post}
+                          commentId={comment._id}
+                          currentUserId={user?._id || user?.id}
+                          onReplyRequest={onThreadReplyRequest}
+                          onEditRequest={onEditCommentRequest}
+                          onDeleteRequest={onDeleteCommentRequest}
+                          isReply
+                          isCompact={isCompact}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
-
-        {reactionSummary.length > 0 && (
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 5, marginLeft: 2, alignItems: 'center', justifyContent: 'flex-start', width: '100%' }}>
-            {reactionSummary.map(emoji => (
-              <motion.button
-                key={emoji}
-                type="button"
-                whileHover={{ y: -2, scale: 1.08 }}
-                whileTap={{ scale: 0.95 }}
-                transition={SPRING_TRANSITION}
-                onClick={() => triggerReaction(emoji)}
-                style={{ border: '1px solid rgba(109,44,44,0.08)', background: 'rgba(255,255,255,0.7)', color: emoji === '❤️' ? '#6d2c2c' : userReactions[emoji] ? '#6d2c2c' : '#5a3034', borderRadius: 999, padding: '1px 6px', fontSize: 10, cursor: 'pointer', lineHeight: 1.1, fontWeight: userReactions[emoji] ? 700 : 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}
-              >
-                {emoji} {reactions[emoji] || 0}
-              </motion.button>
-            ))}
-          </div>
-        )}
-
-        {post.comments?.length > 0 && (
-          <div style={{ marginTop: 8, display: 'grid', gap: 6, paddingLeft: isCompact ? 0 : 3, width: '100%', boxSizing: 'border-box' }}>
-            {post.comments.map(comment => (
-              <div key={comment._id || `${comment.name}-${comment.createdAt}-${comment.text}`} style={{ width: '100%', boxSizing: 'border-box' }}>
-                <CommentThreadItem
-                  item={comment}
-                  post={post}
-                  commentId={comment._id}
-                  currentUserId={user?._id || user?.id}
-                  onReplyRequest={onThreadReplyRequest}
-                  onEditRequest={onEditCommentRequest}
-                  onDeleteRequest={onDeleteCommentRequest}
-                  isCompact={isCompact}
-                />
-                {Array.isArray(comment.replies) && comment.replies.length > 0 && (
-                  <div style={{ marginTop: 5, display: 'grid', gap: 5, width: '100%', boxSizing: 'border-box' }}>
-                    {comment.replies.map(reply => (
-                      <CommentThreadItem
-                        key={reply._id || `${reply.name}-${reply.createdAt}-${reply.text}`}
-                        item={reply}
-                        post={post}
-                        commentId={comment._id}
-                        currentUserId={user?._id || user?.id}
-                        onReplyRequest={onThreadReplyRequest}
-                        onEditRequest={onEditCommentRequest}
-                        onDeleteRequest={onDeleteCommentRequest}
-                        isReply
-                        isCompact={isCompact}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-      </div>
       </div>
     </motion.div>
   );
@@ -1289,34 +1316,18 @@ export default function FeedPage({ feed }) {
     ? !!user
     : isOfficerLevel(user);
 
-  const canBlast = user?.permissions?.includes('sms.send') === true;
   const roles = Array.isArray(user?.role) ? user.role : (user?.role ? [user.role] : []);
   const hasPosition = (key) => Array.isArray(user?.positions) && user.positions.some(p => p?.key === key);
   const isWebTeamUser = roles.includes('webmaster') || roles.includes('webdev') || hasPosition('WEBMASTER') || hasPosition('WEBDEV');
   const isExecUser = roles.includes('exec');
   const canCreateChannels = isExecUser || isWebTeamUser;
-  const canOverrideSlug = isWebTeamUser;
   const canOpenManage = canCreateChannels || hasPosition('MEM_ED');
   const userId = user?._id || user?.id;
   const currentChannel = channels.find(c => c.slug === feed);
   const isArchived = currentChannel?.isArchived === true;
 
-  const canArchiveChannel = (c) => {
-    const isCreatorExec = isExecUser && String(c.createdByUserId || '') === String(userId || '');
-    const isMemEdCandidateChannel = Array.isArray(user?.positions) && user.positions.some(p => p?.key === 'MEM_ED') && String(c.slug || '').startsWith('candidates-');
-    return isWebTeamUser || isCreatorExec || isMemEdCandidateChannel;
-  };
-  const isExecCreator = (c) => isExecUser && String(c.createdByUserId || '') === String(userId || '');
   const channelHasPosts = (c) => Number(c?.postCount || 0) > 0 || c?.hasPosts === true;
-  const canDeleteChannel = (c) => {
-    if (isWebTeamUser) return true;
-    if (isExecCreator(c)) return !channelHasPosts(c);
-    return false;
-  };
-  const canManageMembersChannel = (c) => {
-    const isMemEdCandidateChannel = Array.isArray(user?.positions) && user.positions.some(p => p?.key === 'MEM_ED') && String(c.slug || '').startsWith('candidates-');
-    return isWebTeamUser || isExecUser || isMemEdCandidateChannel;
-  };
+  const isExecCreator = (c) => isExecUser && String(c.createdByUserId || '') === String(userId || '');
 
   useEffect(() => {
     try {
@@ -1577,48 +1588,6 @@ export default function FeedPage({ feed }) {
   }, [createName, slugTouched, slugManualEdit]);
 
   const selectedChannel = channels.find(c => c._id === selectedChannelId);
-  const manageSectionStyle = {
-    marginTop: 10,
-    border: '1px solid rgba(109,44,44,0.1)',
-    borderRadius: 18,
-    padding: 12,
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.92), rgba(251,242,246,0.92))',
-    boxShadow: '0 8px 20px rgba(109,44,44,0.05)',
-    boxSizing: 'border-box',
-  };
-  const manageInputStyle = {
-    width: '100%',
-    borderRadius: 12,
-    border: '1px solid rgba(109,44,44,0.14)',
-    background: 'rgba(255,255,255,0.92)',
-    padding: '9px 12px',
-    color: '#402126',
-    outline: 'none',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
-    boxSizing: 'border-box',
-    fontSize: 13,
-  };
-  const managePillButtonStyle = {
-    border: '1px solid rgba(109,44,44,0.14)',
-    background: 'rgba(255,255,255,0.84)',
-    color: '#6d2c2c',
-    borderRadius: 999,
-    padding: '8px 12px',
-    cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: 12,
-  };
-  const managePrimaryButtonStyle = {
-    border: 'none',
-    background: 'linear-gradient(135deg,#6d2c2c,#e7a0ba)',
-    color: '#fff',
-    borderRadius: 999,
-    padding: '9px 16px',
-    cursor: 'pointer',
-    fontWeight: 800,
-    boxShadow: '0 6px 16px rgba(109,44,44,0.15)',
-    fontSize: 12,
-  };
 
   useEffect(() => {
     if (!selectedChannel) return;
@@ -1628,114 +1597,6 @@ export default function FeedPage({ feed }) {
     setSelectedExcludedUserId('');
     loadSelectedChannelMembers(selectedChannel._id);
   }, [selectedChannel?._id]);
-
-  const createChannel = async () => {
-    const safeSlug = slugify(createSlug || createName);
-    if (!createName.trim() || !safeSlug || !userId) return;
-    setManageMsg('');
-    const res = await fetch('/api/channels', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
-      body: JSON.stringify({
-        name: createName.trim(),
-        slug: safeSlug,
-        includeRoles: ruleRoles,
-        includeMemberStatuses: ruleStatuses,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) return setManageMsg(data.message || 'Create failed');
-    setCreateName('');
-    setCreateSlug('');
-    setSlugTouched(false);
-    setSlugManualEdit(false);
-    setRuleRoles([]);
-    setRuleStatuses([]);
-    setSelectedChannelId(data?._id || '');
-    setManageMsg('Channel created');
-    await loadChannels();
-  };
-
-  const archiveToggle = async (channel) => {
-    if (!userId) return;
-    const res = await fetch(`/api/channels/${channel._id}/archive`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
-      body: JSON.stringify({ isArchived: !channel.isArchived }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) return setManageMsg(data.message || 'Archive update failed');
-    setManageMsg(channel.isArchived ? 'Channel unarchived' : 'Channel archived');
-    await loadChannels();
-  };
-
-  const deleteChannel = async (channel) => {
-    if (!userId) return;
-    if (isWebTeamUser && channelHasPosts(channel)) {
-      const confirmed = window.confirm('This will permanently remove the channel and its posts may become orphaned unless handled. Continue?');
-      if (!confirmed) return;
-    }
-    const res = await fetch(`/api/channels/${channel._id}`, {
-      method: 'DELETE',
-      headers: { 'x-user-id': userId },
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) return setManageMsg(data.message || 'Delete failed');
-    setManageMsg('Channel deleted');
-    await loadChannels();
-  };
-
-  const saveRules = async () => {
-    if (!selectedChannel?._id || !userId) return;
-    const res = await fetch(`/api/channels/${selectedChannel._id}/rules`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
-      body: JSON.stringify({ includeRoles: ruleRoles, includeMemberStatuses: ruleStatuses }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) return setManageMsg(data.message || 'Rules update failed');
-    setManageMsg('Rules updated');
-  };
-
-  const mutateMembers = async (type, addIds = [], removeIds = []) => {
-    if (!selectedChannel?._id || !userId) return;
-    const res = await fetch(`/api/channels/${selectedChannel._id}/${type}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
-      body: JSON.stringify({ add: addIds, remove: removeIds }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) return setManageMsg(data.message || 'Membership update failed');
-    setManageMsg('Membership updated');
-    await loadChannels();
-    await loadSelectedChannelMembers(selectedChannel?._id);
-  };
-
-  const addSpecificMember = async () => {
-    if (!selectedManualUserId) return;
-    await mutateMembers('excluded-members', [], [selectedManualUserId]);
-    await mutateMembers('manual-members', [selectedManualUserId], []);
-    setManageMsg('Member added to channel');
-  };
-
-  const removeSpecificMember = async (memberId = selectedExcludedUserId) => {
-    if (!memberId) return;
-    await mutateMembers('manual-members', [], [memberId]);
-    await mutateMembers('excluded-members', [memberId], []);
-    setManageMsg('Member removed from channel');
-  };
-
-  const restoreExcludedMember = async () => {
-    if (!selectedExcludedUserId) return;
-    await mutateMembers('excluded-members', [], [selectedExcludedUserId]);
-    setManageMsg('Member restored to rule-based access');
-  };
-
-  const rawSlug = String(createSlug || '').trim();
-  const sanitizedSlug = slugify(rawSlug);
-  const slugValid = rawSlug.length > 0
-    && rawSlug === sanitizedSlug
-    && /^[a-z][a-zA-Z0-9]*$/.test(rawSlug);
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }} style={{ height: isNarrow ? 'auto' : 'calc(100vh - 84px)', minHeight: 0, maxHeight: isNarrow ? 'none' : 'calc(100vh - 84px)', overflow: isNarrow ? 'visible' : 'hidden', paddingBottom: isNarrow ? 8 : 12, boxSizing: 'border-box', width: '100%' }}>
@@ -1813,225 +1674,62 @@ export default function FeedPage({ feed }) {
           </div>
 
           {showMembersPanel && (
-              <motion.aside initial={{ opacity: 0, x: isNarrow ? 0 : 10, y: isNarrow ? 6 : 0 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }} style={{ background: 'linear-gradient(180deg, rgba(250,240,244,0.98), rgba(247,233,239,0.98))', padding: '10px 10px', minHeight: 0, display: 'flex', flexDirection: 'column', borderTop: isNarrow ? '1px solid rgba(109,44,44,0.09)' : 'none', boxSizing: 'border-box' }}>
-              <div style={{ color: '#3b2327', fontWeight: 800, marginBottom: 6, fontSize: 12 }}>Members</div>
-              <div className="psr-chat-scrollbar" style={{ overflowY: isNarrow ? 'visible' : 'auto', minHeight: 0, paddingRight: 2, maxHeight: isNarrow ? 'none' : '100%', boxSizing: 'border-box' }}>
-              {members.length === 0 ? (
-                <div style={{ color: '#7b5d63', fontSize: 11 }}>No members yet.</div>
-              ) : (
-                <div style={{ display: 'grid', gap: 6 }}>
-                  {members.map(member => {
-                    const memberName = `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Member';
-                    const memberAvatar = member.profilePicUrl || member.avatar || '';
-                    return (
-                      <div key={member._id || memberName} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#e2e8f0', padding: '1px 0' }}>
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', overflow: 'hidden', background: '#fbf2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#6d2c2c', border: '1px solid rgba(109,44,44,0.1)', flexShrink: 0 }}>
-                          {memberAvatar ? <img src={memberAvatar} alt={memberName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} /> : getInitials(memberName)}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#3b2327', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{memberName}</div>
+            <motion.aside
+              initial={{ opacity: 0, x: isNarrow ? 0 : 10, y: isNarrow ? 6 : 0 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              style={{
+                background: 'linear-gradient(180deg, rgba(250,248,249,0.95), rgba(243,228,235,0.95))',
+                padding: '12px 10px',
+                overflowY: 'auto',
+                boxSizing: 'border-box',
+                borderLeft: isNarrow ? 'none' : '1px solid rgba(109,44,44,0.08)',
+              }}
+            >
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#6d2c2c', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                Channel Members ({members.length})
+              </div>
+              <div style={{ display: 'grid', gap: 6 }}>
+                {members.map(member => (
+                  <div key={member._id || member.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px', borderRadius: 8, background: 'rgba(255,255,255,0.8)' }}>
+                    <ChatAvatar src={getUserAvatarUrl(member)} name={`${member.firstName || ''} ${member.lastName || ''}`} size={24} fontSize={9} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#4f2f32', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {member.firstName} {member.lastName}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.aside>
           )}
         </div>
 
-        <div style={{ position: isNarrow ? 'static' : 'sticky', bottom: 0, borderTop: '1px solid rgba(109,44,44,0.09)', background: 'rgba(250,240,244,0.96)', padding: isPhone ? '8px 8px 10px' : '10px 14px 14px', zIndex: 2, boxSizing: 'border-box', width: '100%' }}>
-          <CreatePost feed={feed} canPost={canPost} canBlast={canBlast} onPosted={load} postingLocked={isArchived} composerState={composerState} onClearComposerState={() => setComposerState(null)} onError={(text) => setUiMessage({ type: 'error', text })} isCompact={isNarrow} isPhone={isPhone} />
+        <div style={{ padding: isPhone ? '8px 10px' : '10px 14px', borderTop: '1px solid rgba(109,44,44,0.09)', background: 'linear-gradient(180deg, rgba(243,222,232,0.58), rgba(255,255,255,0.84))' }}>
+          <CreatePost
+            feed={feed}
+            canPost={canPost && !isArchived}
+            canBlast={canBlast}
+            onPosted={load}
+            postingLocked={isArchived}
+            composerState={composerState}
+            onClearComposerState={() => setComposerState(null)}
+            onError={msg => setUiMessage({ type: 'error', text: msg })}
+            isCompact={isNarrow}
+            isPhone={isPhone}
+          />
         </div>
+
       </motion.div>
 
       <ConfirmDialog
         open={Boolean(pendingDeleteTarget)}
         title={pendingDeleteTarget?.type === 'reply' ? 'Delete Reply' : pendingDeleteTarget?.type === 'comment' ? 'Delete Comment' : 'Delete Message'}
-        message={pendingDeleteTarget?.type === 'reply' ? 'Delete this reply?' : pendingDeleteTarget?.type === 'comment' ? 'Delete this comment?' : 'Delete this message?'}
+        message={pendingDeleteTarget?.type === 'reply' ? 'Are you sure you want to delete this reply?' : pendingDeleteTarget?.type === 'comment' ? 'Are you sure you want to delete this comment?' : 'Are you sure you want to delete this message?'}
         confirmLabel="Delete"
-        cancelLabel="Cancel"
         onConfirm={confirmDeletePost}
         onCancel={() => setPendingDeleteTarget(null)}
       />
-
-      {manageOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(34,16,19,0.35)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: isPhone ? 'flex-end' : 'center', justifyContent: 'center', zIndex: 1000, padding: isPhone ? 0 : 12 }}>
-          <div className="psr-chat-scrollbar" style={{ background: 'linear-gradient(180deg, rgba(255,251,252,0.98), rgba(248,232,238,0.98))', borderRadius: isPhone ? '16px 16px 0 0' : 20, padding: isPhone ? 12 : 16, width: isPhone ? '100%' : '90%', maxWidth: 900, maxHeight: isPhone ? '90dvh' : '88vh', overflowY: 'auto', border: '1px solid rgba(109,44,44,0.12)', boxShadow: '0 25px 50px rgba(109,44,44,0.16)', boxSizing: 'border-box' }}>
-            <div style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', justifyContent: 'space-between', alignItems: isPhone ? 'stretch' : 'center', gap: 8 }}>
-              <div>
-                <h3 style={{ margin: 0, color: '#4a2328', fontSize: isPhone ? 18 : 22 }}>Manage Channels</h3>
-                <div style={{ color: '#8a6a71', fontSize: 11, marginTop: 1 }}>Create channels, tune membership rules, and manage access.</div>
-              </div>
-              <button onClick={() => setManageOpen(false)} style={{ ...managePillButtonStyle, width: isPhone ? '100%' : 'auto' }}>Close</button>
-            </div>
-            {manageMsg && <div style={{ marginTop: 8, fontSize: 11, color: '#6d2c2c', background: 'rgba(255,255,255,0.78)', border: '1px solid rgba(109,44,44,0.08)', padding: '6px 8px', borderRadius: 10, boxSizing: 'border-box' }}>{manageMsg}</div>}
-
-            {canCreateChannels && (
-              <div style={manageSectionStyle}>
-                <div style={{ fontWeight: 800, marginBottom: 6, color: '#5a3034', fontSize: 15 }}>Create Channel</div>
-                <div style={{ display: 'grid', gap: 6, boxSizing: 'border-box' }}>
-                  <input placeholder="Name" value={createName} onChange={e => setCreateName(e.target.value)} style={manageInputStyle} />
-                  <div style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', gap: 6, alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
-                    <input
-                      placeholder="slug"
-                      value={createSlug}
-                      readOnly={!slugManualEdit}
-                      onChange={e => {
-                        setSlugTouched(true);
-                        setCreateSlug(e.target.value);
-                      }}
-                      style={{ ...manageInputStyle, flex: 1, background: slugManualEdit ? 'rgba(255,255,255,0.96)' : 'rgba(248,245,246,0.88)' }}
-                    />
-                    {canOverrideSlug && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSlugManualEdit(prev => {
-                            const next = !prev;
-                            if (!next) {
-                              setCreateSlug(slugify(createName));
-                            }
-                            return next;
-                          });
-                        }}
-                        style={{ ...managePillButtonStyle, width: isPhone ? '100%' : 'auto', fontSize: 11, whiteSpace: 'nowrap' }}
-                      >
-                        {slugManualEdit ? 'Lock slug' : 'Edit slug'}
-                      </button>
-                    )}
-                  </div>
-                  {!rawSlug && <div style={{ fontSize: 10, color: '#b91c1c' }}>Slug is required.</div>}
-                  {!!rawSlug && !slugValid && (
-                    <div style={{ fontSize: 10, color: '#b91c1c' }}>
-                      Use letters/numbers only, no spaces or special characters.
-                    </div>
-                  )}
-                  <button onClick={createChannel} disabled={!createName.trim() || !slugValid} style={{ ...managePrimaryButtonStyle, opacity: !createName.trim() || !slugValid ? 0.55 : 1, width: isPhone ? '100%' : 'auto' }}>
-                    Create
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div style={manageSectionStyle}>
-              <div style={{ fontWeight: 800, marginBottom: 6, color: '#5a3034', fontSize: 15 }}>Channels</div>
-              {channels.map(c => (
-                <div key={c._id} style={{ padding: '8px 0', borderBottom: '1px solid rgba(109,44,44,0.08)', display: 'flex', flexDirection: isPhone ? 'column' : 'row', justifyContent: 'space-between', alignItems: isPhone ? 'stretch' : 'center', gap: 8, boxSizing: 'border-box' }}>
-                  <div>
-                    <div style={{ color: '#4a2328', fontWeight: 700, fontSize: 13 }}>{c.name} <span style={{ color: '#7a6670', fontWeight: 500, fontSize: 11 }}>({c.slug})</span></div>
-                    <div style={{ fontSize: 10, color: c.isArchived ? '#b91c1c' : '#166534' }}>{c.isArchived ? 'Archived' : 'Active'}</div>
-                    {isExecCreator(c) && channelHasPosts(c) && !isWebTeamUser && (
-                      <div style={{ fontSize: 10, color: '#666' }}>Channels with posts must be archived.</div>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                    {canArchiveChannel(c) && <button onClick={() => archiveToggle(c)} style={{ ...managePillButtonStyle, fontSize: 10, padding: '5px 8px' }}>{c.isArchived ? 'Unarchive' : 'Archive'}</button>}
-                    {canDeleteChannel(c) && <button onClick={() => deleteChannel(c)} style={{ ...managePillButtonStyle, fontSize: 10, padding: '5px 8px' }}>Delete</button>}
-                    {canManageMembersChannel(c) && <button onClick={() => setSelectedChannelId(c._id)} style={{ ...managePillButtonStyle, fontSize: 10, padding: '5px 8px' }}>Edit Members</button>}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {selectedChannel && canManageMembersChannel(selectedChannel) && (
-              <div style={manageSectionStyle}>
-                <div style={{ fontWeight: 800, marginBottom: 5, color: '#5a3034', fontSize: 15 }}>Edit Members: {selectedChannel.name}</div>
-                <div style={{ fontSize: 10, color: '#76616a', marginBottom: 6 }}>
-                  Excluded members are always removed even if included by role/status.
-                </div>
-                <div style={{ marginBottom: 6 }}>
-                  <div style={{ fontSize: 11, marginBottom: 3, color: '#4f2f32', fontWeight: 700 }}>Include Roles</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                    {ROLE_OPTIONS.map(r => (
-                      <label key={r} style={{ fontSize: 10, color: '#5a3034', background: 'rgba(255,255,255,0.72)', padding: '3px 6px', borderRadius: 999, border: '1px solid rgba(109,44,44,0.08)' }}>
-                        <input
-                          type="checkbox"
-                          checked={ruleRoles.includes(r)}
-                          onChange={e => {
-                            if (e.target.checked) setRuleRoles(prev => [...prev, r]);
-                            else setRuleRoles(prev => prev.filter(x => x !== r));
-                          }}
-                        />{' '}
-                        {r}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ marginBottom: 6 }}>
-                  <div style={{ fontSize: 11, marginBottom: 3, color: '#4f2f32', fontWeight: 700 }}>Include Member Statuses</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                    {MEMBER_STATUS_OPTIONS.map(s => (
-                      <label key={s} style={{ fontSize: 10, color: '#5a3034', background: 'rgba(255,255,255,0.72)', padding: '3px 6px', borderRadius: 999, border: '1px solid rgba(109,44,44,0.08)' }}>
-                        <input
-                          type="checkbox"
-                          checked={ruleStatuses.includes(s)}
-                          onChange={e => {
-                            if (e.target.checked) setRuleStatuses(prev => [...prev, s]);
-                            else setRuleStatuses(prev => prev.filter(x => x !== s));
-                          }}
-                        />{' '}
-                        {s}
-                      </label>
-                    ))}
-                  </div>
-                  <div style={{ marginTop: 6 }}>
-                    <button onClick={saveRules} style={{ ...managePrimaryButtonStyle, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>Save Rules</button>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 6 }}>
-                  <div style={{ fontSize: 11, marginBottom: 3, color: '#4f2f32', fontWeight: 700 }}>Add Specific Member</div>
-                  <select value={selectedManualUserId} onChange={e => setSelectedManualUserId(e.target.value)} style={manageInputStyle}>
-                    <option value="">Select user</option>
-                    {approvedUsers.map(u => (
-                      <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>
-                    ))}
-                  </select>
-                  <div style={{ marginTop: 5, display: 'flex', flexDirection: isPhone ? 'column' : 'row', gap: 5 }}>
-                    <button disabled={!selectedManualUserId} onClick={addSpecificMember} style={{ ...managePrimaryButtonStyle, opacity: !selectedManualUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>Add Member</button>
-                    <button disabled={!selectedManualUserId} onClick={() => mutateMembers('manual-members', [], [selectedManualUserId])} style={{ ...managePillButtonStyle, opacity: !selectedManualUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>Remove Manual Override</button>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ fontSize: 11, marginBottom: 3, color: '#4f2f32', fontWeight: 700 }}>Remove or Restore Member</div>
-                  <select value={selectedExcludedUserId} onChange={e => setSelectedExcludedUserId(e.target.value)} style={manageInputStyle}>
-                    <option value="">Select user</option>
-                    {approvedUsers.map(u => (
-                      <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>
-                    ))}
-                  </select>
-                  <div style={{ marginTop: 5, display: 'flex', flexDirection: isPhone ? 'column' : 'row', gap: 5 }}>
-                    <button disabled={!selectedExcludedUserId} onClick={() => removeSpecificMember()} style={{ ...managePrimaryButtonStyle, opacity: !selectedExcludedUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>Remove Member</button>
-                    <button disabled={!selectedExcludedUserId} onClick={restoreExcludedMember} style={{ ...managePillButtonStyle, opacity: !selectedExcludedUserId ? 0.55 : 1, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>Restore Member</button>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 11, marginBottom: 5, fontWeight: 700, color: '#4f2f32' }}>Current Channel Members</div>
-                  <div className="psr-chat-scrollbar" style={{ display: 'grid', gap: 5, maxHeight: 150, overflowY: 'auto', paddingRight: 3, boxSizing: 'border-box' }}>
-                    {selectedChannelMembers.map(member => {
-                      const memberName = `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Member';
-                      return (
-                        <div key={member._id} style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', alignItems: isPhone ? 'stretch' : 'center', justifyContent: 'space-between', gap: 6, border: '1px solid #f1e5e8', borderRadius: 10, padding: '6px 8px', background: 'rgba(255,255,255,0.78)', boxSizing: 'border-box' }}>
-                          <div>
-                            <div style={{ fontWeight: 700, color: '#4a2328', fontSize: 12 }}>{memberName}</div>
-                            <div style={{ fontSize: 10, color: '#6b6570' }}>{Array.isArray(member.role) ? member.role.join(', ') : ''}</div>
-                          </div>
-                          <button type="button" onClick={() => removeSpecificMember(member._id)} style={{ ...managePillButtonStyle, width: isPhone ? '100%' : 'auto', fontSize: 10, padding: '4px 8px' }}>
-                            Remove
-                          </button>
-                        </div>
-                      );
-                    })}
-                    {selectedChannelMembers.length === 0 && <div style={{ fontSize: 10, color: '#6b6570' }}>No members resolved for this channel yet.</div>}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 }
