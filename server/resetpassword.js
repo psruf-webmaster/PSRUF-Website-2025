@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const User = require('./models/User'); 
 
+// run dis node -r dotenv/config resetpassword.js //
+
 async function resetPassword() {
     try {
         await mongoose.connect(process.env.MONGO_URI);
