@@ -77,7 +77,10 @@ function canAccessPointsOverview(user) {
 }
 
 function canAccessLedger(user) {
-  return getRoles(user).includes('exec');
+  if (!user) return false;
+  if (getRoles(user).includes('exec')) return true;
+  const positions = Array.isArray(user.positions) ? user.positions : [];
+  return positions.some(position => ['PRESIDENT', 'VP_STANDARDS'].includes(position?.key));
 }
 
 function canAccessApprovals(user) {

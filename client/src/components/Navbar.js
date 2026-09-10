@@ -20,7 +20,9 @@ function canAccessPointsOverview(user) {
 }
 
 function canAccessLedger(user) {
-  return getRoles(user).some(role => String(role).toLowerCase() === "exec");
+  if (getRoles(user).some(role => String(role).toLowerCase() === "exec")) return true;
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  return positions.some(position => ["PRESIDENT", "VP_STANDARDS"].includes(position?.key));
 }
 
 function canAccessApprovals(user) {

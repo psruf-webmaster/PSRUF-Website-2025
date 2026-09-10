@@ -27,10 +27,13 @@ function getAllowedManualCategories(user) {
   if (!user) return [];
 
   const positions = Array.isArray(user?.positions) ? user.positions : [];
-  // Convert all position keys to uppercase and handle both string structures or object properties
-  const positionKeys = new Set(
-    positions.map(p => String(p?.key || p).toUpperCase()).filter(Boolean)
-  );
+  const positionKeys = new Set();
+  positions.forEach(position => {
+    const key = String(position?.key || position || '').trim().toUpperCase();
+    if (!key) return;
+    positionKeys.add(key.replace(/\s+/g, '_'));
+    positionKeys.add(key.replace(/[^A-Z0-9]/g, ''));
+  });
 
   const allowed = [];
   if (positionKeys.has("VP_SOCIAL") || positionKeys.has("VPSOCIAL")) allowed.push("phi");
@@ -45,8 +48,16 @@ function getAllowedManualCategories(user) {
 
 function useOfficer(user) {
   const roles = normalizeRoleList(user).map((role) => String(role).toLowerCase());
-  // Allow exec or officer roles so standards officers aren't blocked at the door
-  return roles.includes("exec") || roles.includes("officer") || roles.includes("webmaster") || roles.includes("webdev");
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  const positionKeys = new Set();
+  positions.forEach(position => {
+    const key = String(position?.key || position || '').trim().toUpperCase();
+    if (!key) return;
+    positionKeys.add(key.replace(/\s+/g, '_'));
+    positionKeys.add(key.replace(/[^A-Z0-9]/g, ''));
+  });
+  const hasLedgerPosition = positionKeys.has("PRESIDENT") || positionKeys.has("VP_STANDARDS") || positionKeys.has("VPSTANDARDS");
+  return hasLedgerPosition || roles.includes("exec") || roles.includes("officer") || roles.includes("webmaster") || roles.includes("webdev");
 }
 
 export default function Ledger() {

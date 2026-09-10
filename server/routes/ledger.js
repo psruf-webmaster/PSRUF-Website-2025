@@ -17,7 +17,7 @@ const MANUAL_CATEGORY_BY_EXEC = {
   [EXEC.VP_SERVICE]: 'rho',
   [EXEC.VP_FINANCE]: 'tau',
   [EXEC.PRESIDENT]: ['phi', 'sigma', 'rho', 'tau'],
-  [EXEC.VP_STANDARDS]: ['phi', 'sigma', 'rho', 'tau'],
+  [EXEC.VP_STANDARDS]: 'sigma',
 };
 
 async function getUser(req) {
@@ -45,15 +45,33 @@ function isExecUser(user) {
   return roles.some(role => String(role).toLowerCase() === 'exec');
 }
 
+function getPositionKeys(user) {
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  const keys = new Set();
+  positions.forEach(position => {
+    const key = String(position?.key || position || '').trim().toUpperCase();
+    if (!key) return;
+    keys.add(key.replace(/\s+/g, '_'));
+    keys.add(key.replace(/[^A-Z0-9]/g, ''));
+  });
+  return keys;
+}
+
+function canAccessLedger(user) {
+  if (isExecUser(user)) return true;
+  const positionKeys = getPositionKeys(user);
+  return positionKeys.has(EXEC.PRESIDENT) || positionKeys.has(EXEC.VP_STANDARDS);
+}
+
 function getAllowedManualCategories(user) {
   if (!user) return [];
 
-  const positions = Array.isArray(user.positions) ? user.positions : [];
-  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  const positionKeys = getPositionKeys(user);
 
   const allowed = new Set();
   Object.entries(MANUAL_CATEGORY_BY_EXEC).forEach(([positionKey, category]) => {
-    if (positionKeys.has(positionKey)) {
+    const compactPositionKey = positionKey.replace(/[^A-Z0-9]/g, '');
+    if (positionKeys.has(positionKey) || positionKeys.has(compactPositionKey)) {
       allowed.add(category);
     }
   });
@@ -62,8 +80,7 @@ function getAllowedManualCategories(user) {
 }
 
 function isPointsOverviewAllowed(user) {
-  const positions = Array.isArray(user?.positions) ? user.positions : [];
-  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  const positionKeys = getPositionKeys(user);
   return positionKeys.has(EXEC.PRESIDENT)
     || positionKeys.has(EXEC.VP_STANDARDS)
     || positionKeys.has(EXEC.VP_FINANCE);
@@ -178,7 +195,7 @@ router.get('/summary/self', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const user = await getUser(req);
-    if (!isExecUser(user)) return res.status(403).json({ message: 'Not allowed' });
+    if (!canAccessLedger(user)) return res.status(403).json({ message: 'Not allowed' });
 
     const match = {};
     if (req.query.userId && mongoose.Types.ObjectId.isValid(req.query.userId)) {
