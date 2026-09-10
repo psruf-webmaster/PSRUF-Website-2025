@@ -34,6 +34,8 @@ function getAllowedManualCategories(user) {
   if (positionKeys.has("VP_SCHOLARSHIP")) allowed.push("sigma");
   if (positionKeys.has("VP_SERVICE")) allowed.push("rho");
   if (positionKeys.has("VP_FINANCE")) allowed.push("tau");
+  if (positionKeys.has("PRESIDENT")) allowed.push("phi", "sigma", "rho", "tau");
+  if (positionKeys.has("VP_STANDARDS")) allowed.push("phi", "sigma", "rho", "tau");
   return allowed;
 }
 
