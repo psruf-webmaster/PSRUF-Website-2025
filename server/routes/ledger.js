@@ -72,7 +72,8 @@ function getAllowedManualCategories(user) {
   Object.entries(MANUAL_CATEGORY_BY_EXEC).forEach(([positionKey, category]) => {
     const compactPositionKey = positionKey.replace(/[^A-Z0-9]/g, '');
     if (positionKeys.has(positionKey) || positionKeys.has(compactPositionKey)) {
-      allowed.add(category);
+      const categories = Array.isArray(category) ? category : [category];
+      categories.forEach(allowedCategory => allowed.add(allowedCategory));
     }
   });
 
