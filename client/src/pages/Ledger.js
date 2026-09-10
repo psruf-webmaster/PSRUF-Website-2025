@@ -27,21 +27,26 @@ function getAllowedManualCategories(user) {
   if (!user) return [];
 
   const positions = Array.isArray(user?.positions) ? user.positions : [];
-  const positionKeys = new Set(positions.map(position => position?.key).filter(Boolean));
+  // Convert all position keys to uppercase and handle both string structures or object properties
+  const positionKeys = new Set(
+    positions.map(p => String(p?.key || p).toUpperCase()).filter(Boolean)
+  );
 
   const allowed = [];
-  if (positionKeys.has("VP_SOCIAL")) allowed.push("phi");
-  if (positionKeys.has("VP_SCHOLARSHIP")) allowed.push("sigma");
-  if (positionKeys.has("VP_SERVICE")) allowed.push("rho");
-  if (positionKeys.has("VP_FINANCE")) allowed.push("tau");
-  if (positionKeys.has("PRESIDENT")) allowed.push("phi", "sigma", "rho", "tau");
-  if (positionKeys.has("VP_STANDARDS")) allowed.push("phi", "sigma", "rho", "tau");
-  return allowed;
+  if (positionKeys.has("VP_SOCIAL") || positionKeys.has("VPSOCIAL")) allowed.push("phi");
+  if (positionKeys.has("VP_SCHOLARSHIP") || positionKeys.has("VPSCHOLARSHIP")) allowed.push("sigma");
+  if (positionKeys.has("VP_SERVICE") || positionKeys.has("VPSERVICE")) allowed.push("rho");
+  if (positionKeys.has("VP_FINANCE") || positionKeys.has("VPFINANCE")) allowed.push("tau");
+  if (positionKeys.has("PRESIDENT") || positionKeys.has("VP_STANDARDS") || positionKeys.has("VPSTANDARDS")) {
+    allowed.push("phi", "sigma", "rho", "tau");
+  }
+  return [...new Set(allowed)];
 }
 
 function useOfficer(user) {
   const roles = normalizeRoleList(user).map((role) => String(role).toLowerCase());
-  return roles.includes("exec");
+  // Allow exec or officer roles so standards officers aren't blocked at the door
+  return roles.includes("exec") || roles.includes("officer") || roles.includes("webmaster") || roles.includes("webdev");
 }
 
 export default function Ledger() {
