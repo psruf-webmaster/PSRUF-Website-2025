@@ -17,7 +17,7 @@ const MANUAL_CATEGORY_BY_EXEC = {
   [EXEC.VP_SERVICE]: 'rho',
   [EXEC.VP_FINANCE]: 'tau',
   [EXEC.PRESIDENT]: ['phi', 'sigma', 'rho', 'tau'],
-  [EXEC.VP_STANDARDS]: 'sigma',
+  [EXEC.VP_STANDARDS]: ['phi', 'sigma', 'rho', 'tau'],
 };
 
 async function getUser(req) {
