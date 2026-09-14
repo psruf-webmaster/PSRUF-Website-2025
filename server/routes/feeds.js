@@ -54,8 +54,6 @@ async function canUserViewFeed(user, feed) {
   if (!user) return false;
 
   const channel = await findChannelByFeed(feed);
-  if (hasAnyRole(user, ['exec', 'webmaster', 'webdev'])) return true;
-
   if (channel) {
     return canUserAccessChannel(channel, user);
   }
