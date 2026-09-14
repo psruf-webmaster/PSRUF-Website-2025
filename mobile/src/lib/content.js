@@ -1,0 +1,107 @@
+export const recruitmentMajors = [
+  'Aerospace Engineering',
+  'Agricultural & Biological Engineering',
+  'Astronomy',
+  'Biomedical Engineering',
+  'Computer Science',
+  'Chemical Engineering',
+  'Civil Engineering',
+  'Computer Engineering',
+  'Data Science',
+  'Digital Arts and Sciences',
+  'Electrical Engineering',
+  'Environmental Engineering',
+  'Geomatics',
+  'Industrial & Systems Engineering',
+  'Materials Science and Engineering',
+  'Mechanical Engineering',
+  'Physics',
+  'Nuclear Engineering',
+  'Nuclear and Radiological Sciences',
+  'Undecided Engineering',
+];
+
+export const signupMajors = [
+  'Aerospace Engineering',
+  'Agricultural & Biological Engineering',
+  'Astronomy',
+  'Biomedical Engineering',
+  'Chemical Engineering',
+  'Civil Engineering',
+  'Computer Engineering',
+  'Computer Science',
+  'Data Science',
+  'Digital Arts and Sciences',
+  'Electrical Engineering',
+  'Environmental Engineering',
+  'Geomatics',
+  'Industrial & Systems Engineering',
+  'Materials Science & Engineering',
+  'Mechanical Engineering',
+  'Nuclear & Radiological Sciences',
+  'Nuclear Engineering',
+  'Undecided STEM',
+];
+
+export const signupYears = [
+  { value: '1', label: '1st Year' },
+  { value: '2', label: '2nd Year' },
+  { value: '3', label: '3rd Year' },
+  { value: '4', label: '4th Year' },
+  { value: '5', label: '5th Year' },
+  { value: 'Alumni', label: 'Alumni' },
+];
+
+export const leadershipTerms = {
+  '2024-2025': [
+    { name: 'Katie Samel', title: 'President', email: 'psruf.president@gmail.com', linkedin: 'https://www.linkedin.com/in/katie-samel/' },
+    { name: 'Vivian Lowe', title: 'VP Standards', email: 'psruf.vpstandards@gmail.com', linkedin: 'https://www.linkedin.com/in/vivianlowe/' },
+    { name: 'Truly Thomas', title: 'VP Finance', email: 'psruf.vpfinance@gmail.com', linkedin: 'https://www.linkedin.com/in/truly-thomas-mechanicalengineering-chineselanguageandculture/' },
+    { name: 'Jaiden Martin', title: 'VP Communications & Records', email: 'psruf.vpcr@gmail.com', linkedin: 'https://www.linkedin.com/in/jaiden-martin/' },
+    { name: 'Andrea Ortiz', title: 'VP Service', email: 'psruf.vpservice@gmail.com', linkedin: 'https://www.linkedin.com/in/andrea-ortiz-engineering/' },
+    { name: 'Maria McDonald', title: 'VP Scholarship', email: 'psruf.vpscholarship@gmail.com', linkedin: 'https://www.linkedin.com/in/maria-mcdonald21/' },
+    { name: 'Janelle Whiteside', title: 'VP Social', email: 'psruf.vpsocial@gmail.com', linkedin: 'https://www.linkedin.com/in/janelle-whiteside-199846251/' },
+    { name: 'Annie Stocks Natalias', title: 'VP Membership', email: 'psruf.vpmembership@gmail.com', linkedin: 'https://www.linkedin.com/in/astocksnatalias/' },
+    { name: 'Nandika Regatti', title: 'Webmaster', email: 'psruf.webmaster@gmail.com', linkedin: 'https://www.linkedin.com/in/nanre/' },
+  ],
+  '2025-2026': [
+    { name: 'Maria McDonald', title: 'President', email: 'psruf.president@gmail.com', linkedin: 'https://www.linkedin.com/in/maria-mcdonald21/' },
+    { name: 'Lianna Larson', title: 'VP Standards', email: 'psruf.vpstandards@gmail.com', linkedin: 'https://www.linkedin.com/in/lianna-larson/' },
+    { name: 'Kalista Oberes', title: 'VP Finance', email: 'psruf.vpfinance@gmail.com', linkedin: 'https://www.linkedin.com/in/kalista-oberes/' },
+    { name: 'Olivia Huewe', title: 'VP Communications & Records', email: 'psruf.vpcr@gmail.com', linkedin: 'https://www.linkedin.com/in/olivia-huewe/' },
+    { name: 'Tori LaRose', title: 'VP Service', email: 'psruf.vpservice@gmail.com', linkedin: 'https://www.linkedin.com/in/tori-larose/' },
+    { name: 'Melissa Marino', title: 'VP Scholarship', email: 'psruf.vpscholarship@gmail.com', linkedin: 'https://www.linkedin.com/in/melissamarinoprofile/' },
+    { name: 'Kali Schuchhardt', title: 'VP Social', email: 'psruf.vpsocial@gmail.com', linkedin: 'https://www.linkedin.com/in/kalischuchhardt984/' },
+    { name: 'Kaitlyn Kapalka', title: 'VP Membership', email: 'psruf.vpmembership@gmail.com', linkedin: 'https://www.linkedin.com/in/kaitlynkapalka/' },
+    { name: 'Isabella Goodwin', title: 'Webmaster', email: 'psruf.webmaster@gmail.com', linkedin: 'https://www.linkedin.com/in/isabellagoodwin970/' },
+  ],
+  '2026-2027': [
+    { name: 'Melissa Marino', title: 'President', email: 'psruf.president@gmail.com', linkedin: 'https://www.linkedin.com/in/melissamarinoprofile/' },
+    { name: 'Natalie Rhoads', title: 'VP Standards', email: 'psruf.vpstandards@gmail.com', linkedin: 'https://www.linkedin.com/in/natalie-rhoads/' },
+    { name: 'Elle Burkhalter', title: 'VP Finance', email: 'psruf.vpfinance@gmail.com', linkedin: 'https://www.linkedin.com/in/elle-burkhalter-485026337/' },
+    { name: 'Samantha Capas', title: 'VP Communications & Records', email: 'psruf.vpcr@gmail.com', linkedin: 'https://www.linkedin.com/in/samantha-capas-b74269336/' },
+    { name: 'Jennifer Rubin', title: 'VP Service', email: 'psruf.vpservice@gmail.com', linkedin: 'https://www.linkedin.com/in/jennifer-rubin-123456789/' },
+    { name: 'Ava Wood', title: 'VP Scholarship', email: 'psruf.vpscholarship@gmail.com', linkedin: 'https://www.linkedin.com/in/ava-wood-71bb5730b/' },
+    { name: 'Christina Chi', title: 'VP Social', email: 'psruf.vpsocial@gmail.com', linkedin: 'https://www.linkedin.com/in/mei-hsin-chi-b99ba8329/' },
+    { name: 'Jacqueline Salas', title: 'VP Membership', email: 'psruf.vpmembership@gmail.com', linkedin: 'https://www.linkedin.com/in/jacqueline-salas-leblanc-a55b82361/' },
+    { name: 'Kali Schuchhardt', title: 'Webmaster', email: 'psruf.webmaster@gmail.com', linkedin: 'https://linkedin.com/in/kalischuchhardt984/' },
+  ],
+};
+
+export const publicExploreLinks = [
+  { href: '/(public)/leadership', title: 'Leadership', detail: 'Meet the executive board and contact chapter leaders.' },
+  { href: '/(public)/recruitment', title: 'Recruitment', detail: 'Rush timeline, majors, and public recruitment events.' },
+  { href: '/(public)/alumni', title: 'Alumni', detail: 'Stay connected after graduation and explore alumnae support.' },
+  { href: '/(public)/partners', title: 'Partners', detail: 'Community partnerships and collaboration opportunities.' },
+  { href: '/(public)/calendar', title: 'Calendar', detail: 'Open the chapter event calendar and upcoming dates.' },
+  { href: '/(public)/contact', title: 'Contact', detail: 'Email the chapter, membership, or webmaster.' },
+  { href: '/(public)/members', title: 'Members', detail: 'Member access, chapter tools, and private resources.' },
+  { href: '/(public)/signinup', title: 'Get started', detail: 'Choose sign up or sign in with your existing account.' },
+];
+
+export const chapterHighlights = [
+  { label: 'Active members', value: '60+' },
+  { label: 'Average GPA', value: '3.6' },
+  { label: 'Founded', value: '1984' },
+  { label: 'UF chapter', value: 'Tau' },
+];

@@ -2,6 +2,8 @@ import { MotiView } from 'moti';
 import { Link } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { AppScreen, Card } from '../../src/components/AppScreen';
+import { LinkCard } from '../../src/components/MobileUI';
+import { chapterHighlights, publicExploreLinks } from '../../src/lib/content';
 
 const features = [
   {
@@ -39,9 +41,23 @@ export default function WelcomeScreen() {
                 <Text className="text-sm font-semibold text-white">Member login</Text>
               </Pressable>
             </Link>
+            <Link href="/(auth)/signup" asChild>
+              <Pressable className="rounded-full border border-line bg-card px-5 py-3">
+                <Text className="text-sm font-semibold text-ink">Apply now</Text>
+              </Pressable>
+            </Link>
           </View>
         </View>
       </MotiView>
+
+      <View className="flex-row flex-wrap gap-3">
+        {chapterHighlights.map((item) => (
+          <View key={item.label} className="min-w-[140px] flex-1 rounded-[24px] border border-line bg-[#f3e2d6] p-4">
+            <Text className="text-xs font-semibold uppercase tracking-[2px] text-accent">{item.label}</Text>
+            <Text className="mt-2 text-2xl font-semibold text-ink">{item.value}</Text>
+          </View>
+        ))}
+      </View>
 
       {features.map((feature, index) => (
         <MotiView
@@ -56,6 +72,13 @@ export default function WelcomeScreen() {
           </Card>
         </MotiView>
       ))}
+
+      <View className="gap-3">
+        <Text className="text-2xl font-semibold text-ink">Explore the chapter</Text>
+        {publicExploreLinks.map((item) => (
+          <LinkCard key={item.href} href={item.href} title={item.title} detail={item.detail} />
+        ))}
+      </View>
     </AppScreen>
   );
 }

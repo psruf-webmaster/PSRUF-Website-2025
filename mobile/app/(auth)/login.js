@@ -80,6 +80,12 @@ export default function LoginScreen() {
             <Text className="text-center text-base font-semibold text-ink">Back to overview</Text>
           </Pressable>
         </Link>
+
+        <Link href="/(auth)/signup" asChild>
+          <Pressable className="rounded-full border border-line px-5 py-4">
+            <Text className="text-center text-base font-semibold text-ink">Need an account? Sign up</Text>
+          </Pressable>
+        </Link>
       </Card>
     </AppScreen>
   );
