@@ -99,7 +99,10 @@ function canRsvp(user) {
 function isManager(user, event) { 
   if (!user || !event) return false; 
   const userId = user._id || user.id; 
+  if (isCreatorRole(user) || hasRole(user, "officer")) return true;
   if (userId && (event.createdBy === userId || String(event.createdBy) === String(userId))) return true; 
+  const coHosts = Array.isArray(event.coHosts) ? event.coHosts : [];
+  if (coHosts.some((entry) => String(entry?._id || entry?.id || entry) === String(userId))) return true;
   return false; 
 } 
  
@@ -144,13 +147,25 @@ function toDateTimeLocalValue(dateValue) {
   return `${yyyy}-${mm}-${dd}T${hh}:${min}`; 
 } 
  
-function computePoints(event) { 
+function computeDurationPoints(startAt, endAt, defaultRate) {
+  const durationMs = Math.max(0, new Date(endAt).getTime() - new Date(startAt).getTime());
+  const hours = durationMs / (1000 * 60 * 60);
+  return Math.ceil(hours * defaultRate);
+}
+
+function computePoints(event, shiftId) { 
   const override = event?.points?.overrideTotalPoints; 
   if (override != null) return override; 
   const defaultRate = event?.points?.defaultRatePerHour || 0; 
-  const durationMs = Math.max(0, new Date(event?.endAt).getTime() - new Date(event?.startAt).getTime()); 
-  const hours = durationMs / (1000 * 60 * 60); 
-  return Math.ceil(hours * defaultRate); 
+
+  if (event?.shiftBasedRegistration && shiftId) {
+    const shift = (event?.shifts || []).find((entry) => String(entry.shiftId) === String(shiftId));
+    if (shift?.startAt && shift?.endAt) {
+      return computeDurationPoints(shift.startAt, shift.endAt, defaultRate);
+    }
+  }
+
+  return computeDurationPoints(event?.startAt, event?.endAt, defaultRate); 
 } 
  
 function getEventImage(event) { 
@@ -285,7 +300,7 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
   const hasActiveRsvp = currentRsvp === "going" || currentRsvp === "maybe"; 
   const totalGoing = event.totalGoing ?? (event.rsvps?.filter((rsvp) => rsvp.status === "going").length || 0); 
   const totalMaybe = event.totalMaybe ?? (event.rsvps?.filter((rsvp) => rsvp.status === "maybe").length || 0); 
-  const estimatedPoints = computePoints(event); 
+  const estimatedPoints = computePoints(event, event.shiftBasedRegistration ? (selectedShiftId || currentShiftId) : undefined); 
   const selectedShift = event.shifts?.find((shift) => String(shift.shiftId) === String(selectedShiftId)); 
  
   return ( 
@@ -1459,6 +1474,30 @@ function ManageEventModal({
  
   const handleDetailsSubmit = async (event) => { 
     event.preventDefault(); 
+
+    if (!title.trim()) return;
+
+    const startDate = new Date(startAt);
+    const endDate = new Date(endAt);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
+      return;
+    }
+
+    if (shiftBasedRegistration) {
+      for (let index = 0; index < shifts.length; index += 1) {
+        const shift = shifts[index];
+        const shiftStart = new Date(shift.startAt);
+        const shiftEnd = new Date(shift.endAt);
+        if (!shift.label?.trim() || Number.isNaN(shiftStart.getTime()) || Number.isNaN(shiftEnd.getTime()) || shiftEnd <= shiftStart) {
+          return;
+        }
+      }
+    }
+
+    if (recurrenceFrequency !== "none" && !recurrenceEndDate) {
+      return;
+    }
+
     const payload = { 
       title, 
       description, 
@@ -1475,7 +1514,7 @@ function ManageEventModal({
       })), 
       recurrence: { 
         frequency: recurrenceFrequency, 
-        endDate: recurrenceEndDate ? new Date(recurrenceEndDate).toISOString() : "", 
+        endDate: recurrenceFrequency !== "none" && recurrenceEndDate ? new Date(recurrenceEndDate).toISOString() : "", 
       }, 
       applyToSeries, 
       visibility: { 

@@ -345,16 +345,28 @@ function isEventCreator(event, user) {
 }
 
 function canManageEventDetails(event, user) {
-  return isEventCreator(event, user);
+  return canManageEvent(event, user);
 }
 
-function computePoints(eventDoc) {
+function computeDurationPoints(startAt, endAt, defaultRate) {
+  const durationMs = Math.max(0, new Date(endAt).getTime() - new Date(startAt).getTime());
+  const hours = durationMs / (1000 * 60 * 60);
+  return Math.ceil(hours * defaultRate);
+}
+
+function computePoints(eventDoc, shiftId) {
   const override = eventDoc?.points?.overrideTotalPoints;
   if (override != null) return override;
   const defaultRate = eventDoc?.points?.defaultRatePerHour || 0;
-  const durationMs = Math.max(0, new Date(eventDoc.endAt).getTime() - new Date(eventDoc.startAt).getTime());
-  const hours = durationMs / (1000 * 60 * 60);
-  return Math.ceil(hours * defaultRate);
+
+  if (eventDoc?.shiftBasedRegistration && shiftId) {
+    const shift = (eventDoc.shifts || []).find((entry) => String(entry.shiftId) === String(shiftId));
+    if (shift?.startAt && shift?.endAt) {
+      return computeDurationPoints(shift.startAt, shift.endAt, defaultRate);
+    }
+  }
+
+  return computeDurationPoints(eventDoc.startAt, eventDoc.endAt, defaultRate);
 }
 
 function userMatchesTargeting(userDoc, filters = {}) {
@@ -697,7 +709,7 @@ router.patch('/:id', eventUpload, async (req, res) => {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    if (!isEventCreator(event, user)) {
+    if (!canManageEventDetails(event, user)) {
       return res.status(403).json({ message: 'Not allowed to edit this event' });
     }
 
@@ -1005,7 +1017,7 @@ router.put('/:id/attendance', async (req, res) => {
     if (!canManageEventDetails(event, user)) return res.status(403).json({ message: 'Not allowed' });
 
     const entries = Array.isArray(req.body?.entries) ? req.body.entries : [];
-    const pointsDefault = computePoints(event);
+    const rsvpByUserId = new Map((event.rsvps || []).map((entry) => [String(entry.user), entry]));
 
     const map = new Map((event.attendance || []).map(a => [String(a.user), a]));
 
@@ -1017,7 +1029,8 @@ router.put('/:id/attendance', async (req, res) => {
 
       let points = 0;
       if (status === 'present') {
-        points = entry.pointsAwarded != null ? Number(entry.pointsAwarded) : pointsDefault;
+        const rsvp = rsvpByUserId.get(String(uid));
+        points = entry.pointsAwarded != null ? Number(entry.pointsAwarded) : computePoints(event, rsvp?.shiftId);
       } else {
         points = entry.pointsAwarded != null ? Number(entry.pointsAwarded) : 0;
       }
@@ -1148,7 +1161,7 @@ router.post('/:id/manage-members', async (req, res) => {
 
     const attendanceMap = new Map((event.attendance || []).map((entry) => [String(entry.user), entry]));
     const computedPoints = attendanceStatus === 'present'
-      ? (pointsAwarded != null ? Number(pointsAwarded) : computePoints(event))
+      ? (pointsAwarded != null ? Number(pointsAwarded) : computePoints(event, shiftId))
       : (pointsAwarded != null ? Number(pointsAwarded) : 0);
 
     attendanceMap.set(String(userId), {
