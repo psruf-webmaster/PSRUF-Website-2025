@@ -415,7 +415,7 @@ export default function Dashboard() {
     if (requirementRule === 'anywhere') {
       const required = totalRequired || POINT_MAX;
       const have = c.key === 'any'
-        ? (requirements.any?.have || totalPoints)
+        ? (requirements.any?.have ?? points.any ?? 0)
         : (requirements.buckets?.[c.key]?.have ?? points[c.key] ?? 0);
       const need = c.key === 'any' ? Math.max(0, required - have) : 0;
       const ratio = required > 0 ? Math.max(0, Math.min(100, (have / required) * 100)) : 0;
