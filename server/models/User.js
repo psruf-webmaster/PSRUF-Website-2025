@@ -114,51 +114,6 @@ const userSchema = new mongoose.Schema({
   },
 
   // ============================================================
-  // HISTORICAL POSITIONS
-  // Removed positions are copied here with an endDate.
-  // ============================================================
-  positionsHistory: {
-    type: [PositionSchema],
-    default: [],
-  },
-
-  // ============================================================
-  // ROLE HISTORY
-  // ============================================================
-  roleHistory: [
-    {
-      values: [String],
-      at: {
-        type: Date,
-        default: Date.now,
-      },
-      by: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        default: null,
-      },
-    },
-  ],
-
-  // ============================================================
-  // MEMBER STATUS HISTORY
-  // ============================================================
-  memberStatusHistory: [
-    {
-      values: [String],
-      at: {
-        type: Date,
-        default: Date.now,
-      },
-      by: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        default: null,
-      },
-    },
-  ],
-
-  // ============================================================
   // DERIVED PERMISSIONS
   // ============================================================
   permissions: {

@@ -32,10 +32,6 @@ function toSafeUser(user) {
     // IMPORTANT:
     // This comes directly from MongoDB.
     positions: user.positions || [],
-    positionsHistory: user.positionsHistory || [],
-
-    roleHistory: user.roleHistory || [],
-    memberStatusHistory: user.memberStatusHistory || [],
 
     permissions: user.permissions || [],
 
@@ -164,7 +160,6 @@ router.post('/signup', async (req, res) => {
       memberStatus: ['active'],
 
       positions: [],
-      positionsHistory: [],
 
       permissions: [],
 

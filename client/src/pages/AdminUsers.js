@@ -164,34 +164,6 @@ function Multi({
   );
 }
 
-function Modal({
-  open,
-  onClose,
-  title,
-  children,
-}) {
-  if (!open) return null;
-
-  return (
-    <div style={styles.modalBackdrop}>
-      <div style={styles.modalCard}>
-        <h2 style={styles.modalTitle}>{title}</h2>
-
-        {children}
-
-        <div style={styles.modalActions}>
-          <button
-            onClick={onClose}
-            style={styles.secondaryBtn}
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function AdminUsers() {
   const {
     user,
@@ -222,9 +194,6 @@ export default function AdminUsers() {
 
   const [addPos, setAddPos] = useState({});
   const [removePos, setRemovePos] = useState({});
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalUser, setModalUser] = useState(null);
 
   const isMobile = viewportWidth < 1024;
 
@@ -470,11 +439,6 @@ export default function AdminUsers() {
       console.error(e);
       setMsg("❌ " + e.message);
     }
-  };
-
-  const openHistory = (selectedUser) => {
-    setModalUser(selectedUser);
-    setModalOpen(true);
   };
 
   if (!allowed) {
@@ -836,24 +800,6 @@ export default function AdminUsers() {
                             Save
                           </button>
 
-                          <div
-                            style={
-                              styles.secondaryActionRow
-                            }
-                          >
-                            <button
-                              onClick={() =>
-                                openHistory(u)
-                              }
-                              style={
-                                styles.ghostActionBtn
-                              }
-                              title="View role, status, and position history"
-                            >
-                              History
-                            </button>
-                          </div>
-
                           {tab ===
                             "pending" && (
                             <a
@@ -876,232 +822,6 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* ============================================================
-          HISTORY MODAL
-          ============================================================ */}
-
-      <Modal
-        open={modalOpen}
-        onClose={() =>
-          setModalOpen(false)
-        }
-        title={
-          modalUser
-            ? `${modalUser.firstName} ${modalUser.lastName} — History`
-            : ""
-        }
-      >
-        {!modalUser ? (
-          <p>Loading...</p>
-        ) : (
-          <>
-            <h3
-              style={
-                styles.historyHeading
-              }
-            >
-              Position History
-            </h3>
-
-            {modalUser.positionsHistory
-              ?.length ? (
-              <ul
-                style={
-                  styles.historyList
-                }
-              >
-                {[
-                  ...modalUser.positionsHistory,
-                ]
-                  .sort(
-                    (a, b) =>
-                      new Date(
-                        b.endDate ||
-                          b.startDate ||
-                          0
-                      ) -
-                      new Date(
-                        a.endDate ||
-                          a.startDate ||
-                          0
-                      )
-                  )
-                  .map((p, idx) => (
-                    <li
-                      key={idx}
-                      style={
-                        styles.historyItem
-                      }
-                    >
-                      <strong>
-                        {p.title ||
-                          p.key}
-                      </strong>
-
-                      {p.exec && (
-                        <span>
-                          {" "}
-                          — under{" "}
-                          {p.exec}
-                        </span>
-                      )}
-
-                      <div
-                        style={
-                          styles.historyMeta
-                        }
-                      >
-                        {p.startDate
-                          ? new Date(
-                              p.startDate
-                            ).toLocaleDateString()
-                          : "—"}
-
-                        {" → "}
-
-                        {p.endDate
-                          ? new Date(
-                              p.endDate
-                            ).toLocaleDateString()
-                          : "Present"}
-                      </div>
-                    </li>
-                  ))}
-              </ul>
-            ) : (
-              <p
-                style={
-                  styles.historyEmpty
-                }
-              >
-                No previous positions.
-              </p>
-            )}
-
-            <h3
-              style={
-                styles.historyHeadingSpaced
-              }
-            >
-              Role History
-            </h3>
-
-            {modalUser.roleHistory
-              ?.length ? (
-              <ul
-                style={
-                  styles.historyList
-                }
-              >
-                {[
-                  ...modalUser.roleHistory,
-                ]
-                  .sort(
-                    (a, b) =>
-                      new Date(b.at) -
-                      new Date(a.at)
-                  )
-                  .map((h, idx) => (
-                    <li
-                      key={idx}
-                      style={
-                        styles.historyItem
-                      }
-                    >
-                      <strong>
-                        {(h.values || [])
-                          .join(", ") ||
-                          "—"}
-                      </strong>
-
-                      <div
-                        style={
-                          styles.historyMeta
-                        }
-                      >
-                        {h.at
-                          ? new Date(
-                              h.at
-                            ).toLocaleString()
-                          : ""}
-                      </div>
-                    </li>
-                  ))}
-              </ul>
-            ) : (
-              <p
-                style={
-                  styles.historyEmpty
-                }
-              >
-                No role changes recorded.
-              </p>
-            )}
-
-            <h3
-              style={
-                styles.historyHeadingSpaced
-              }
-            >
-              Member Status History
-            </h3>
-
-            {modalUser
-              .memberStatusHistory
-              ?.length ? (
-              <ul
-                style={
-                  styles.historyList
-                }
-              >
-                {[
-                  ...modalUser.memberStatusHistory,
-                ]
-                  .sort(
-                    (a, b) =>
-                      new Date(b.at) -
-                      new Date(a.at)
-                  )
-                  .map((h, idx) => (
-                    <li
-                      key={idx}
-                      style={
-                        styles.historyItem
-                      }
-                    >
-                      <strong>
-                        {(h.values || [])
-                          .join(", ") ||
-                          "—"}
-                      </strong>
-
-                      <div
-                        style={
-                          styles.historyMeta
-                        }
-                      >
-                        {h.at
-                          ? new Date(
-                              h.at
-                            ).toLocaleString()
-                          : ""}
-                      </div>
-                    </li>
-                  ))}
-              </ul>
-            ) : (
-              <p
-                style={
-                  styles.historyEmpty
-                }
-              >
-                No member-status changes
-                recorded.
-              </p>
-            )}
-          </>
-        )}
-      </Modal>
     </div>
   );
 }
@@ -1293,7 +1013,7 @@ const styles = {
 
   multiHeader: {
     padding: "16px 12px",
-    width: "16%",
+    width: "11%",
     fontSize: 12,
     fontWeight: 700,
     letterSpacing: "0.05em",
@@ -1304,7 +1024,7 @@ const styles = {
 
   multiWideHeader: {
     padding: "16px 12px",
-    width: "18%",
+    width: "12%",
     fontSize: 12,
     fontWeight: 700,
     letterSpacing: "0.05em",
@@ -1315,7 +1035,7 @@ const styles = {
 
   positionsHeader: {
     padding: "16px 12px",
-    width: "13%",
+    width: "15%",
     fontSize: 12,
     fontWeight: 700,
     letterSpacing: "0.05em",
@@ -1466,29 +1186,6 @@ const styles = {
       "0 10px 18px rgba(111, 34, 50, 0.16)",
   },
 
-  secondaryActionRow: {
-    display: "flex",
-    justifyContent: "center",
-    width: "100%",
-  },
-
-  ghostActionBtn: {
-    width: "100%",
-    minHeight: 40,
-    padding: "10px 10px",
-    borderRadius: 12,
-    border:
-      "1px dashed rgba(111, 34, 50, 0.22)",
-    background: "#ffffff",
-    cursor: "pointer",
-    color: PALETTE.burgundy,
-    fontWeight: 700,
-    fontSize: 13,
-    lineHeight: 1.1,
-    whiteSpace: "nowrap",
-    textAlign: "center",
-  },
-
   secondaryBtn: {
     padding: "10px 12px",
     borderRadius: 12,
@@ -1523,49 +1220,6 @@ const styles = {
     color: PALETTE.ink,
     fontSize: 12,
   }),
-
-  modalBackdrop: {
-    position: "fixed",
-    inset: 0,
-    background:
-      "rgba(67, 37, 52, 0.28)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-    padding: 12,
-  },
-
-  modalCard: {
-    background: "#ffffff",
-    borderRadius: 22,
-    padding: 20,
-    width: "100%",
-    maxWidth: 640,
-    maxHeight: "90vh",
-    overflowY: "auto",
-    boxShadow: PALETTE.shadow,
-    border: `1px solid ${PALETTE.line}`,
-  },
-
-  modalTitle: {
-    marginTop: 0,
-    marginBottom: 12,
-    color: PALETTE.burgundy,
-  },
-
-  modalActions: {
-    textAlign: "right",
-    marginTop: 16,
-  },
-
-  historyHeading: {
-    margin: "8px 0",
-  },
-
-  historyHeadingSpaced: {
-    margin: "16px 0 8px",
-  },
 
   historyList: {
     margin: "0",
