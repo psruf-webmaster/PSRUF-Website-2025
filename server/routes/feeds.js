@@ -9,16 +9,30 @@ const { resolveRecipientPhones } = require('../services/audienceResolver');
 const { canUserSendSms } = require('../utils/smsPermissions');
 const Channel = require('../models/Channel');
 const { upload, getCloudinaryFileUrl } = require('../utils/cloudinaryConfig');
+const {
+  builtinMembershipMatch,
+  canUserAccessChannel,
+  getRoles,
+  getStatuses,
+  isBuiltinSlug,
+} = require('../utils/channelAccess');
 
 function bad(res, code, message) {
   return res.status(code).json({ message });
 }
 
-// TEMP auth: infer user from header "x-user-id"
 async function getUser(req) {
+  const auth = req.header('authorization') || '';
+  if (auth.toLowerCase().startsWith('bearer ')) {
+    const bearerId = auth.slice(7).trim();
+    if (mongoose.Types.ObjectId.isValid(bearerId)) {
+      const bearerUser = await User.findById(bearerId);
+      if (bearerUser) return bearerUser;
+    }
+  }
+
   const id = req.header('x-user-id');
-  if (!id) return null;
-  if (!mongoose.Types.ObjectId.isValid(id)) return null;
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) return null;
   return await User.findById(id);
 }
 
@@ -32,31 +46,6 @@ function hasAnyRole(user, wanted) {
   return wanted.some(w => lower.includes(w));
 }
 
-function getRoles(userLike) {
-  return Array.isArray(userLike?.role) ? userLike.role : (userLike?.role ? [userLike.role] : []);
-}
-
-function getStatuses(userLike) {
-  return Array.isArray(userLike?.memberStatus) ? userLike.memberStatus : (userLike?.memberStatus ? [userLike.memberStatus] : []);
-}
-
-function isApprovedUser(userLike) {
-  return userLike?.isApproved === true;
-}
-
-function builtinMembershipMatch(feed, userLike) {
-  const roles = getRoles(userLike);
-  const statuses = getStatuses(userLike);
-
-  if (!isApprovedUser(userLike)) return false;
-
-  if (feed === 'chapterAnnouncements') return statuses.includes('active') || statuses.includes('inactive') || statuses.includes('seniorStatus') || statuses.includes('earlyAlumni');
-  if (feed === 'alumniFeed') return statuses.includes('active') || statuses.includes('inactive') || statuses.includes('seniorStatus') || statuses.includes('earlyAlumni') || statuses.includes('co-op');
-  if (feed === 'penguinParties') return true;
-  if (feed === 'officerFeed') return roles.some(role => ['officer', 'exec', 'webmaster', 'web,dev', 'candOfficer'].includes(role));
-  return null;
-}
-
 async function findChannelByFeed(feed) {
   return Channel.findOne({ slug: feed });
 }
@@ -64,22 +53,18 @@ async function findChannelByFeed(feed) {
 async function canUserViewFeed(user, feed) {
   if (!user) return false;
 
-  const builtinMatch = builtinMembershipMatch(feed, user);
-  if (builtinMatch != null) return builtinMatch;
-
   const channel = await findChannelByFeed(feed);
-  if (!channel) return false;
   if (hasAnyRole(user, ['exec', 'webmaster', 'webdev'])) return true;
 
-  const roles = getRoles(user);
-  const statuses = getStatuses(user);
-  const manualIds = new Set((channel.manualMembers || []).map(id => String(id)));
-  const excludedIds = new Set((channel.excludedMembers || []).map(id => String(id)));
-  const isManual = manualIds.has(String(user._id || ''));
-  const roleHit = (channel.includeRoles || []).length === 0 || roles.some(role => (channel.includeRoles || []).includes(role));
-  const statusHit = (channel.includeMemberStatuses || []).length === 0 || statuses.some(status => (channel.includeMemberStatuses || []).includes(status));
-  const allowed = isApprovedUser(user) && (isManual || (roleHit && statusHit));
-  return allowed && !excludedIds.has(String(user._id || ''));
+  if (channel) {
+    return canUserAccessChannel(channel, user);
+  }
+
+  if (isBuiltinSlug(feed)) {
+    return builtinMembershipMatch(feed, user) === true;
+  }
+
+  return false;
 }
 
 async function canUserPostToFeed(user, feed) {
@@ -237,6 +222,30 @@ function hydratePostWithCurrentProfiles(postDoc, usersById) {
   });
 
   return post;
+}
+
+async function buildLivePostPayload(postDoc) {
+  const authorIds = new Set();
+  if (postDoc?.authorId) authorIds.add(String(postDoc.authorId));
+
+  (Array.isArray(postDoc?.comments) ? postDoc.comments : []).forEach((comment) => {
+    if (comment?.userId) authorIds.add(String(comment.userId));
+    (Array.isArray(comment?.replies) ? comment.replies : []).forEach((reply) => {
+      if (reply?.userId) authorIds.add(String(reply.userId));
+    });
+  });
+
+  const users = authorIds.size
+    ? await User.find({ _id: { $in: Array.from(authorIds) } }).select('firstName lastName profilePicUrl role')
+    : [];
+  const usersById = new Map(users.map((item) => [String(item._id), item]));
+  return hydratePostWithCurrentProfiles(postDoc, usersById);
+}
+
+function emitFeedSocketEvent(req, feed, eventName, payload) {
+  const io = req.app.get('io');
+  if (!io) return;
+  io.to(`feed:${feed}`).emit(eventName, payload);
 }
 
 // ---------- List posts (newest first) ----------
@@ -401,6 +410,9 @@ router.post('/:feed/posts', upload.array('attachments', 10), async (req, res) =>
         : undefined,
     });
 
+      const livePost = await buildLivePostPayload(post);
+      emitFeedSocketEvent(req, feed, 'post:created', livePost);
+
     let smsResult;
     const shouldSendSms = sendAsTextNormalized === true;
 
@@ -437,9 +449,9 @@ router.post('/:feed/posts', upload.array('attachments', 10), async (req, res) =>
     }
 
     if (smsResult) {
-      return res.status(201).json({ ...post.toObject(), sendAsText: sendAsTextNormalized, smsResult });
+      return res.status(201).json({ ...livePost, sendAsText: sendAsTextNormalized, smsResult });
     }
-    return res.status(201).json({ ...post.toObject(), sendAsText: sendAsTextNormalized });
+    return res.status(201).json({ ...livePost, sendAsText: sendAsTextNormalized });
   } catch (e) {
     console.error('Create post error:', e);
     return bad(res, 500, `Server error: ${e.message}`);
@@ -469,7 +481,9 @@ router.post('/posts/:id/comments', async (req, res) => {
       text: String(text).trim(),
     });
     await post.save();
-    return res.json(post);
+    const livePost = await buildLivePostPayload(post);
+    emitFeedSocketEvent(req, post.feed, 'post:updated', livePost);
+    return res.json(livePost);
   } catch (e) {
     console.error('Add comment error:', e);
     return bad(res, 500, `Server error: ${e.message}`);
@@ -504,7 +518,9 @@ router.post('/posts/:id/comments/:commentId/replies', async (req, res) => {
       replyToName: String(replyToName || '').trim(),
     });
     await post.save();
-    return res.json(post);
+    const livePost = await buildLivePostPayload(post);
+    emitFeedSocketEvent(req, post.feed, 'post:updated', livePost);
+    return res.json(livePost);
   } catch (e) {
     console.error('Add reply error:', e);
     return bad(res, 500, `Server error: ${e.message}`);
@@ -533,7 +549,9 @@ router.patch('/posts/:id/comments/:commentId', async (req, res) => {
 
     comment.text = nextText;
     await post.save();
-    return res.json(post);
+    const livePost = await buildLivePostPayload(post);
+    emitFeedSocketEvent(req, post.feed, 'post:updated', livePost);
+    return res.json(livePost);
   } catch (e) {
     console.error('Edit comment error:', e);
     return bad(res, 500, `Server error: ${e.message}`);
@@ -559,7 +577,9 @@ router.delete('/posts/:id/comments/:commentId', async (req, res) => {
 
     post.comments.pull(commentId);
     await post.save();
-    return res.json(post);
+    const livePost = await buildLivePostPayload(post);
+    emitFeedSocketEvent(req, post.feed, 'post:updated', livePost);
+    return res.json(livePost);
   } catch (e) {
     console.error('Delete comment error:', e);
     return bad(res, 500, `Server error: ${e.message}`);
@@ -591,7 +611,9 @@ router.patch('/posts/:id/comments/:commentId/replies/:replyId', async (req, res)
 
     reply.text = nextText;
     await post.save();
-    return res.json(post);
+    const livePost = await buildLivePostPayload(post);
+    emitFeedSocketEvent(req, post.feed, 'post:updated', livePost);
+    return res.json(livePost);
   } catch (e) {
     console.error('Edit reply error:', e);
     return bad(res, 500, `Server error: ${e.message}`);
@@ -620,7 +642,9 @@ router.delete('/posts/:id/comments/:commentId/replies/:replyId', async (req, res
 
     comment.replies.pull(replyId);
     await post.save();
-    return res.json(post);
+    const livePost = await buildLivePostPayload(post);
+    emitFeedSocketEvent(req, post.feed, 'post:updated', livePost);
+    return res.json(livePost);
   } catch (e) {
     console.error('Delete reply error:', e);
     return bad(res, 500, `Server error: ${e.message}`);
@@ -644,7 +668,9 @@ router.patch('/posts/:id', async (req, res) => {
 
     post.content = nextContent;
     await post.save();
-    return res.json(post);
+    const livePost = await buildLivePostPayload(post);
+    emitFeedSocketEvent(req, post.feed, 'post:updated', livePost);
+    return res.json(livePost);
   } catch (e) {
     console.error('Edit post error:', e);
     return bad(res, 500, `Server error: ${e.message}`);
@@ -663,6 +689,7 @@ router.delete('/posts/:id', async (req, res) => {
     if (!post) return bad(res, 404, 'Post not found');
     if (!canModifyPost(user, post)) return bad(res, 403, 'You can only delete your own messages');
 
+    emitFeedSocketEvent(req, post.feed, 'post:deleted', { id: String(post._id), feed: post.feed });
     await Post.deleteOne({ _id: post._id });
     return res.json({ ok: true, id: String(post._id) });
   } catch (e) {

@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
 const Channel = require('../models/Channel');
 const User = require('../models/User');
 const { dedupeIds } = require('../utils/recipients');
 const { MEMBER_STATUS_ENUM, sanitizeMemberStatuses } = require('../constants/memberOptions');
+const { resolveEffectiveMembers } = require('../utils/channelAccess');
 
 const ROLE_ENUM = [
   'pending', 'pnm', 'candidate', 'candOfficer', 'member',
@@ -11,23 +11,6 @@ const ROLE_ENUM = [
 function normalizeArray(val) {
   if (!val) return [];
   return Array.isArray(val) ? val : [val];
-}
-
-function resolveEffectiveMembers(channel, users) {
-  const manual = new Set((channel.manualMembers || []).map(id => String(id)));
-  const excluded = new Set((channel.excludedMembers || []).map(id => String(id)));
-
-  const fromRules = users.filter(u => {
-    const roles = Array.isArray(u.role) ? u.role : (u.role ? [u.role] : []);
-    const statuses = sanitizeMemberStatuses(u.memberStatus);
-    const roleHit = (channel.includeRoles || []).length === 0 || roles.some(r => (channel.includeRoles || []).includes(r));
-    const statusHit = (channel.includeMemberStatuses || []).length === 0 || statuses.some(s => (channel.includeMemberStatuses || []).includes(s));
-    return roleHit && statusHit;
-  }).map(u => String(u._id));
-
-  const effective = new Set([...manual, ...fromRules]);
-  excluded.forEach(id => effective.delete(id));
-  return [...effective];
 }
 
 function toRecipient(u) {
@@ -48,7 +31,7 @@ async function resolveChannelRecipients({ channelSlug, channelId }) {
   const users = await User.find({
     isApproved: true,
     phoneNumber: { $exists: true, $ne: '' },
-  }).select('_id firstName lastName role memberStatus phoneNumber');
+  }).select('_id firstName lastName role memberStatus phoneNumber isApproved');
 
   const ids = resolveEffectiveMembers(channel, users);
   const deduped = new Set(ids);
