@@ -299,6 +299,37 @@ function getDateRange(viewParam) {
   return null;
 }
 
+function getSpecialEventQuery(viewParam, user) {
+  const view = String(viewParam || '').toLowerCase();
+
+  if (view === 'rsvpd') {
+    return {
+      query: {
+        rsvps: {
+          $elemMatch: {
+            user: user._id,
+            status: { $in: ['going', 'maybe'] },
+          },
+        },
+      },
+      sort: { startAt: 1 },
+    };
+  }
+
+  if (view === 'created') {
+    if (!canCreate(user)) {
+      return { error: { status: 403, message: 'Not allowed to view created events' } };
+    }
+
+    return {
+      query: { createdBy: user._id },
+      sort: { startAt: 1 },
+    };
+  }
+
+  return null;
+}
+
 function canManageEvent(event, user) {
   if (!user || !event) return false;
   if (isOfficerLevel(user)) return true;
@@ -441,14 +472,27 @@ function applySeriesTemplate(targetEvent, templatePayload, sourceEventId) {
   };
 }
 
-// GET /api/events?view=week|month|nextMonth|allUpcoming|past
+// GET /api/events?view=week|month|nextMonth|allUpcoming|past|rsvpd|created
 router.get('/', async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
 
+    const special = getSpecialEventQuery(req.query.view, user);
+    if (special?.error) {
+      return res.status(special.error.status).json({ message: special.error.message });
+    }
+    if (special) {
+      const events = await Event.find(special.query).sort(special.sort);
+      const enriched = events.map(e => ({
+        ...e.toObject(),
+        ...summarizeRsvps(e, user),
+      }));
+      return res.json(enriched);
+    }
+
     const range = getDateRange(req.query.view);
-    if (!range) return res.status(400).json({ message: 'Invalid view. Use week|month|nextMonth|allUpcoming|past.' });
+    if (!range) return res.status(400).json({ message: 'Invalid view. Use week|month|nextMonth|allUpcoming|past|rsvpd|created.' });
 
     const query = {};
     if (range.mode === 'future') {
