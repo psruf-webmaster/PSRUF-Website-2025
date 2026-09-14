@@ -272,18 +272,15 @@ router.patch('/users/:id/roles-status', requireAdminUsersAccess, async (req, res
       return res.status(400).json({ message: 'Invalid scholarship tier.' });
     }
 
-    const now = new Date();
-    const updateOps = { $set: {}, $push: {} };
+    const updateOps = { $set: {} };
 
     if (role) {
       updateOps.$set.role = role;
-      updateOps.$push.roleHistory = { values: role, at: now, by: null }; // add req.user?._id when auth lands
     }
 
     if (memberStatus) {
       const sanitizedStatuses = sanitizeMemberStatuses(memberStatus);
       updateOps.$set.memberStatus = sanitizedStatuses;
-      updateOps.$push.memberStatusHistory = { values: sanitizedStatuses, at: now, by: null };
     }
 
     if (scholarship != null) {
@@ -297,9 +294,8 @@ router.patch('/users/:id/roles-status', requireAdminUsersAccess, async (req, res
       updateOps.$set.permissions = derivePermissions({ roles: role, positions });
     }
 
-    // prune empty operators (Mongo dislikes empty $push/$set)
+    // prune empty operators (Mongo dislikes empty $set)
     if (Object.keys(updateOps.$set).length === 0) delete updateOps.$set;
-    if (Object.keys(updateOps.$push).length === 0) delete updateOps.$push;
 
     const user = await User.findByIdAndUpdate(req.params.id, updateOps, { new: true })
       .select('-personalPassword');
@@ -346,7 +342,6 @@ router.patch('/users/:id/scholarship', requireAdminUsersAccess, async (req, res)
 /**
  * PATCH /api/admin/users/:id/positions
  * Body: { add?: string[], remove?: string[] }
- * Moves removed positions to positionsHistory with endDate.
  * Adds new positions with startDate = now.
  */
 router.patch('/users/:id/positions', requireAdminUsersAccess, async (req, res) => {
@@ -357,12 +352,9 @@ router.patch('/users/:id/positions', requireAdminUsersAccess, async (req, res) =
 
     const catalog = { ...POSITIONS, ...EXEC_POSITIONS };
 
-    // remove -> move to history with endDate
     const remaining = [];
     (user.positions || []).forEach(p => {
-      if (remove.includes(p.key)) {
-        user.positionsHistory.push({ ...p.toObject(), endDate: new Date() });
-      } else {
+      if (!remove.includes(p.key)) {
         remaining.push(p);
       }
     });
@@ -387,8 +379,7 @@ router.patch('/users/:id/positions', requireAdminUsersAccess, async (req, res) =
     await user.save();
     res.json({
       message: 'Positions updated',
-      positions: user.positions,
-      positionsHistory: user.positionsHistory
+      positions: user.positions
     });
   } catch (err) {
     console.error('Update positions error:', err);
