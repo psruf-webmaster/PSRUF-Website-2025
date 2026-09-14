@@ -61,6 +61,7 @@ function buildAnywhereRequirement(catTotals = {}, scholarship, requiredTotal = B
   const normalizedScholarship = normalizeScholarship(scholarship);
   const scholarshipRequired = getScholarshipRequirement(normalizedScholarship);
   const totalHave = POINT_CATEGORIES.reduce((sum, cat) => sum + (catTotals[cat] || 0), 0);
+  const extraHave = Math.max(0, (catTotals.any || 0));
   const buckets = {};
 
   POINT_CATEGORIES.forEach(cat => {
@@ -87,7 +88,7 @@ function buildAnywhereRequirement(catTotals = {}, scholarship, requiredTotal = B
     scholarship: normalizedScholarship,
     minPerCategory: 0,
     buckets,
-    any: { have: totalHave, need: anyNeed, met: anyNeed === 0 },
+    any: { have: extraHave, need: 0, met: extraHave > 0 },
     scholarshipBucket: {
       required: scholarshipRequired,
       have: scholarshipHave,
