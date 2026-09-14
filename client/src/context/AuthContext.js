@@ -6,8 +6,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { io } from "socket.io-client";
 import { normalizeUserAssets } from "../lib/assetUrls";
+import { createAppSocket } from "../lib/socket";
 
 const AuthCtx = createContext(null);
 const USER_REFRESH_INTERVAL_MS = 60 * 1000;
@@ -182,7 +182,7 @@ export default function AuthProvider({ children }) {
       return undefined;
     }
 
-    const socket = io({ auth: { userId } });
+    const socket = createAppSocket({ auth: { userId } });
 
     socket.on("user:updated", (payload) => {
       if (!payload?.userId || String(payload.userId) === String(userId)) {
