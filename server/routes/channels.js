@@ -142,7 +142,7 @@ router.get('/', async (req, res) => {
     const rows = await Promise.all(channels.map(async (c) => {
       const postCount = await Post.countDocuments({ feed: c.slug });
       const memberIds = resolveEffectiveMembers(c, users);
-      const canView = isExec(user) || isWebTeam(user) || canUserAccessChannel(c, user);
+      const canView = canUserAccessChannel(c, user);
       return {
         _id: c._id,
         name: c.name,
@@ -160,7 +160,7 @@ router.get('/', async (req, res) => {
         canView,
       };
     }));
-    return res.json(rows.filter(row => row.canView || isExec(user) || isWebTeam(user)));
+    return res.json(rows.filter(row => row.canView || canCreate(user)));
   } catch (err) {
     console.error('channels list error:', err);
     return res.status(500).json({ message: 'Server error' });

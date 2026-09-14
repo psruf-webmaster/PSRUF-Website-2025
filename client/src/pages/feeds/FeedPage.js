@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { io } from 'socket.io-client'; // <-- Added Socket.io client import
 
@@ -1246,10 +1247,12 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
 
 export default function FeedPage({ feed }) {
   const { user, refreshUser } = useAuth();
+  const navigate = useNavigate();
   const { isNarrow, isPhone } = useViewportFlags();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState([]);
+  const [channelsLoaded, setChannelsLoaded] = useState(false);
   const [feedReadAt, setFeedReadAt] = useState(null);
   const [uiMessage, setUiMessage] = useState(null);
   const messageListRef = useRef(null);
@@ -1350,11 +1353,13 @@ export default function FeedPage({ feed }) {
   }, [feed, showMembersPanel]);
 
   const loadChannels = useCallback(async () => {
+    setChannelsLoaded(false);
     const headers = userId ? { 'x-user-id': userId } : {};
     const res = await fetch('/api/channels', { headers });
     const data = await res.json().catch(() => []);
     if (!res.ok) {
       setChannels([]);
+      setChannelsLoaded(true);
       setUiMessage({ type: 'error', text: data.message || 'Unable to load channels.' });
       return;
     }
@@ -1364,6 +1369,7 @@ export default function FeedPage({ feed }) {
       const found = list.find(c => c.slug === feed);
       setSelectedChannelId(found?._id || list[0]._id);
     }
+    setChannelsLoaded(true);
   }, [feed, selectedChannelId, userId]);
 
   const load = useCallback(async () => {
@@ -1626,6 +1632,22 @@ export default function FeedPage({ feed }) {
       loadApprovedUsers();
     }
   }, [loadApprovedUsers, userId]);
+
+  useEffect(() => {
+    if (!channelsLoaded || !userId) return;
+
+    const current = channels.find(channel => channel.slug === feed);
+    const fallback = channels.find(channel => channel.canView !== false);
+
+    if (current?.canView === false && fallback && fallback.slug !== feed) {
+      navigate(`/feeds/${fallback.slug}`, { replace: true });
+      return;
+    }
+
+    if (!current && fallback && fallback.slug !== feed) {
+      navigate(`/feeds/${fallback.slug}`, { replace: true });
+    }
+  }, [channels, channelsLoaded, feed, navigate, userId]);
 
   useEffect(() => {
     if (currentChannel?._id && userId) {
