@@ -9,7 +9,8 @@
     "scheme": "psrufmobile",
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "@react-native-community/datetimepicker"
     ],
     "ios": {
       "supportsTablet": true,
