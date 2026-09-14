@@ -1,8 +1,8 @@
 // client/src/components/ChannelsSidebar.js
 import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { io } from "socket.io-client";
 import { useAuth } from "../context/AuthContext";
+import { createAppSocket } from "../lib/socket";
 
 const itemStyle = ({ isActive }) => ({
   display: "flex",
@@ -66,7 +66,7 @@ export default function ChannelsSidebar() {
       return undefined;
     }
 
-    const socket = io({ auth: { userId } });
+    const socket = createAppSocket({ auth: { userId } });
     const reload = () => loadChannels();
 
     socket.on("channels:updated", reload);

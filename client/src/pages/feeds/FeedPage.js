@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { io } from 'socket.io-client'; // <-- Added Socket.io client import
+import { createAppSocket } from '../../lib/socket';
 
 const FEED_TITLES = {
   chapterAnnouncements: 'Chapter Announcements',
@@ -1546,17 +1546,24 @@ export default function FeedPage({ feed }) {
   useEffect(() => {
     if (!userId) return undefined;
 
-    const socket = io({ auth: { userId } });
+    const socket = createAppSocket({ auth: { userId } });
 
     const joinCurrentChannel = () => {
       socket.emit('joinChannel', { slug: feed }, (response) => {
+        if (response?.ok) {
+          setUiMessage(current => current?.text === 'Real-time connection failed for this feed.' ? null : current);
+          return;
+        }
         if (response?.ok === false) {
           setUiMessage({ type: 'error', text: response.message || 'Unable to join this channel.' });
         }
       });
     };
 
-    socket.on('connect', joinCurrentChannel);
+    socket.on('connect', () => {
+      setUiMessage(current => current?.text === 'Real-time connection failed for this feed.' ? null : current);
+      joinCurrentChannel();
+    });
 
     socket.on('channels:updated', () => {
       loadChannels();
@@ -1614,8 +1621,8 @@ export default function FeedPage({ feed }) {
       setUiMessage({ type: 'error', text: payload?.message || 'Unable to join this channel.' });
     });
 
-    socket.on('connect_error', () => {
-      setUiMessage({ type: 'error', text: 'Real-time connection failed for this feed.' });
+    socket.on('connect_error', (error) => {
+      console.warn('Feed realtime connection error:', error?.message || error);
     });
 
     if (socket.connected) {
