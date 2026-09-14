@@ -1,6 +1,7 @@
 // client/src/components/ChannelsSidebar.js
 import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { io } from "socket.io-client";
 import { useAuth } from "../context/AuthContext";
 
 const itemStyle = ({ isActive }) => ({
@@ -22,6 +23,12 @@ export default function ChannelsSidebar() {
   const [loading, setLoading] = useState(true);
   const [isNarrow, setIsNarrow] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 980 : false));
   const userId = user?._id || user?.id;
+  const userScopeKey = useMemo(() => JSON.stringify({
+    role: user?.role || [],
+    memberStatus: user?.memberStatus || [],
+    positions: user?.positions || [],
+    permissions: user?.permissions || [],
+  }), [user?.memberStatus, user?.permissions, user?.positions, user?.role]);
 
   useEffect(() => {
     const handleResize = () => setIsNarrow(window.innerWidth <= 980);
@@ -54,12 +61,27 @@ export default function ChannelsSidebar() {
     };
 
     loadChannels();
-  }, [userId]);
+
+    if (!userId) {
+      return undefined;
+    }
+
+    const socket = io({ auth: { userId } });
+    const reload = () => loadChannels();
+
+    socket.on("channels:updated", reload);
+    socket.on("channel:updated", reload);
+    socket.on("user:updated", reload);
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [userId, userScopeKey]);
 
   const visibleChannels = useMemo(() => {
     const builtInOrder = ['chapterAnnouncements', 'penguinParties', 'alumniFeed', 'officerFeed'];
     const rank = new Map(builtInOrder.map((slug, index) => [slug, index]));
-    return [...channels].sort((a, b) => {
+    return [...channels].filter((channel) => channel?.canView !== false).sort((a, b) => {
       const aRank = rank.has(a.slug) ? rank.get(a.slug) : 100;
       const bRank = rank.has(b.slug) ? rank.get(b.slug) : 100;
       if (aRank !== bRank) return aRank - bRank;

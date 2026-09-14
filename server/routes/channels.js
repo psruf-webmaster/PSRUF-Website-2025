@@ -7,6 +7,12 @@ const Post = require('../models/Post');
 const { POSITIONS } = require('../constants/positions');
 const { MEMBER_STATUS_ENUM } = require('../constants/memberOptions');
 const { normalizeAssetUrl } = require('../utils/assetUrls');
+const {
+  BUILTIN_CHANNELS,
+  canUserAccessChannel,
+  getRoles,
+  resolveEffectiveMembers,
+} = require('../utils/channelAccess');
 
 const ROLE_ENUM = [
   'pending', 'pnm', 'candidate', 'candOfficer', 'member',
@@ -74,114 +80,54 @@ function canDelete(user, channel) {
   return false;
 }
 
-function getRoles(userLike) {
-  return Array.isArray(userLike?.role) ? userLike.role : (userLike?.role ? [userLike.role] : []);
-}
+function emitChannelUpdates(req, channel, { membersChanged = false, deleted = false } = {}) {
+  const io = req.app.get('io');
+  if (!io) return;
 
-function getStatuses(userLike) {
-  return Array.isArray(userLike?.memberStatus) ? userLike.memberStatus : (userLike?.memberStatus ? [userLike.memberStatus] : []);
-}
+  io.emit('channels:updated', {
+    channelId: channel?._id ? String(channel._id) : null,
+    slug: channel?.slug || null,
+    deleted,
+  });
 
-function hasAnyRole(userLike, wanted) {
-  const roles = getRoles(userLike).map(role => String(role).toLowerCase());
-  return wanted.some(role => roles.includes(String(role).toLowerCase()));
-}
-
-function isApprovedUser(userLike) {
-  return userLike?.isApproved === true;
-}
-
-function isBuiltinSlug(slug) {
-  return ['chapterAnnouncements', 'penguinParties', 'officerFeed', 'alumniFeed'].includes(String(slug || ''));
-}
-
-function builtinMembershipMatch(channel, userLike) {
-  const slug = String(channel?.slug || '');
-  const roles = getRoles(userLike);
-  const statuses = getStatuses(userLike);
-
-  if (!isApprovedUser(userLike)) return false;
-
-  if (slug === 'chapterAnnouncements') {
-    return statuses.includes('active');
-  }
-  if (slug === 'alumniFeed') {
-    return roles.some(role => ['member', 'alumni', 'officer', 'exec', 'webmaster', 'webdev'].includes(role));
-  }
-  if (slug === 'penguinParties') {
-    return true;
-  }
-  if (slug === 'officerFeed') {
-    return roles.some(role => ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer'].includes(role));
+  if (channel && !deleted) {
+    io.emit('channel:updated', {
+      _id: channel._id,
+      slug: channel.slug,
+      name: channel.name,
+      isArchived: channel.isArchived,
+      includeRoles: channel.includeRoles || [],
+      includeMemberStatuses: channel.includeMemberStatuses || [],
+    });
   }
 
-  return null;
+  if (membersChanged) {
+    io.emit('channel:members-updated', {
+      channelId: channel?._id ? String(channel._id) : null,
+      slug: channel?.slug || null,
+      deleted,
+    });
+  }
 }
 
 async function ensureBuiltins() {
-  const builtins = [
-    {
-      name: 'Chapter Announcements',
-      slug: 'chapterAnnouncements',
-      includeRoles: ['member', 'officer', 'exec', 'webmaster', 'webdev'],
-      includeMemberStatuses: ['active'],
-    },
-    {
-      name: 'Penguin Parties',
-      slug: 'penguinParties',
-      includeRoles: [],
-      includeMemberStatuses: [],
-    },
-    {
-      name: 'Officer Feed',
-      slug: 'officerFeed',
-      includeRoles: ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer'],
-      includeMemberStatuses: [],
-    },
-    {
-      name: 'Alumni Feed',
-      slug: 'alumniFeed',
-      includeRoles: ['member', 'alumni', 'officer', 'exec', 'webmaster', 'webdev'],
-      includeMemberStatuses: [],
-    },
-  ];
-  for (const c of builtins) {
+  for (const c of BUILTIN_CHANNELS) {
     await Channel.findOneAndUpdate(
       { slug: c.slug },
       {
         $set: {
           name: c.name,
           slug: c.slug,
+        },
+        $setOnInsert: {
+          isArchived: false,
           includeRoles: c.includeRoles,
           includeMemberStatuses: c.includeMemberStatuses,
         },
-        $setOnInsert: { isArchived: false },
       },
       { upsert: true, new: true }
     );
   }
-}
-
-function resolveEffectiveMembers(channel, users) {
-  const manual = new Set((channel.manualMembers || []).map(id => String(id)));
-  const excluded = new Set((channel.excludedMembers || []).map(id => String(id)));
-
-  const fromRules = users.filter(u => {
-    const builtinMatch = builtinMembershipMatch(channel, u);
-    if (builtinMatch != null) return builtinMatch;
-
-    if (!isApprovedUser(u)) return false;
-
-    const roles = getRoles(u);
-    const statuses = getStatuses(u);
-    const roleHit = (channel.includeRoles || []).length === 0 || roles.some(r => (channel.includeRoles || []).includes(r));
-    const statusHit = (channel.includeMemberStatuses || []).length === 0 || statuses.some(s => (channel.includeMemberStatuses || []).includes(s));
-    return roleHit && statusHit;
-  }).map(u => String(u._id));
-
-  const effective = new Set([...manual, ...fromRules]);
-  excluded.forEach(id => effective.delete(id));
-  return [...effective];
 }
 
 // List channels
@@ -196,7 +142,7 @@ router.get('/', async (req, res) => {
     const rows = await Promise.all(channels.map(async (c) => {
       const postCount = await Post.countDocuments({ feed: c.slug });
       const memberIds = resolveEffectiveMembers(c, users);
-      const canView = isExec(user) || isWebTeam(user) || memberIds.includes(String(user._id));
+      const canView = isExec(user) || isWebTeam(user) || canUserAccessChannel(c, user);
       return {
         _id: c._id,
         name: c.name,
@@ -240,6 +186,7 @@ router.post('/', async (req, res) => {
       includeRoles: normalizeArray(includeRoles).filter(r => ROLE_ENUM.includes(r)),
       includeMemberStatuses: normalizeArray(includeMemberStatuses).filter(s => MEMBER_STATUS_ENUM.includes(s)),
     });
+    emitChannelUpdates(req, channel, { membersChanged: true });
     return res.status(201).json(channel);
   } catch (err) {
     console.error('channel create error:', err);
@@ -263,6 +210,7 @@ router.patch('/:id/archive', async (req, res) => {
     const { isArchived } = req.body || {};
     channel.isArchived = !!isArchived;
     await channel.save();
+    emitChannelUpdates(req, channel);
     return res.json(channel);
   } catch (err) {
     console.error('channel archive error:', err);
@@ -314,6 +262,7 @@ router.patch('/:id/archive', async (req, res) => {
       channel.includeMemberStatuses = requestedStatuses;
 
       await channel.save();
+      emitChannelUpdates(req, channel, { membersChanged: true });
 
       return res.json({
         ...channel.toObject(),
@@ -344,6 +293,7 @@ router.post('/:id/manual-members', async (req, res) => {
     remove.forEach(id => set.delete(String(id)));
     channel.manualMembers = Array.from(set);
     await channel.save();
+    emitChannelUpdates(req, channel, { membersChanged: true });
     return res.json({ manualMembers: channel.manualMembers });
   } catch (err) {
     console.error('channel manual members error:', err);
@@ -368,6 +318,7 @@ router.post('/:id/excluded-members', async (req, res) => {
     remove.forEach(id => set.delete(String(id)));
     channel.excludedMembers = Array.from(set);
     await channel.save();
+    emitChannelUpdates(req, channel, { membersChanged: true });
     return res.json({ excludedMembers: channel.excludedMembers });
   } catch (err) {
     console.error('channel excluded members error:', err);
@@ -383,6 +334,10 @@ router.get('/:id/members', async (req, res) => {
 
     const channel = await Channel.findById(req.params.id);
     if (!channel) return res.status(404).json({ message: 'Not found' });
+
+    if (!canManageMembers(user, channel) && !canUserAccessChannel(channel, user)) {
+      return res.status(403).json({ message: 'Not allowed' });
+    }
 
     const users = await User.find({ isApproved: true }).select('_id firstName lastName role memberStatus isApproved profilePicUrl');
     const ids = resolveEffectiveMembers(channel, users);
@@ -416,6 +371,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(409).json({ message: 'Channel has posts; archive instead.' });
     }
 
+    emitChannelUpdates(req, channel, { membersChanged: true, deleted: true });
     await Channel.deleteOne({ _id: channel._id });
     return res.json({
       message: 'Deleted',

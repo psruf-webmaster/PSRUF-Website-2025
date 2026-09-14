@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
 import { io } from 'socket.io-client'; // <-- Added Socket.io client import
@@ -142,6 +142,23 @@ function applyCurrentProfilesToPosts(items, profilesById) {
         }
       : { ...post, comments: nextComments };
   });
+}
+
+function sortPostsChronologically(items) {
+  return [...(Array.isArray(items) ? items : [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+}
+
+function upsertPost(items, nextPost) {
+  const list = Array.isArray(items) ? items : [];
+  const index = list.findIndex(item => String(item?._id || '') === String(nextPost?._id || ''));
+
+  if (index >= 0) {
+    const nextItems = [...list];
+    nextItems[index] = nextPost;
+    return sortPostsChronologically(nextItems);
+  }
+
+  return sortPostsChronologically([...list, nextPost]);
 }
 
 function shouldGroupAdjacentPosts(previousPost, currentPost) {
@@ -1228,7 +1245,7 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
 }
 
 export default function FeedPage({ feed }) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { isNarrow, isPhone } = useViewportFlags();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1262,7 +1279,14 @@ export default function FeedPage({ feed }) {
   const [ruleRoles, setRuleRoles] = useState([]);
   const [ruleStatuses, setRuleStatuses] = useState([]);
   const [manageMsg, setManageMsg] = useState('');
+  const [savingRules, setSavingRules] = useState(false);
   const [composerState, setComposerState] = useState(null);
+  const userScopeKey = useMemo(() => JSON.stringify({
+    role: user?.role || [],
+    memberStatus: user?.memberStatus || [],
+    positions: user?.positions || [],
+    permissions: user?.permissions || [],
+  }), [user?.memberStatus, user?.permissions, user?.positions, user?.role]);
 
   const currentProfilesById = useMemo(() => {
     const byId = new Map();
@@ -1325,7 +1349,7 @@ export default function FeedPage({ feed }) {
     } catch {}
   }, [feed, showMembersPanel]);
 
-  const loadChannels = async () => {
+  const loadChannels = useCallback(async () => {
     const headers = userId ? { 'x-user-id': userId } : {};
     const res = await fetch('/api/channels', { headers });
     const data = await res.json().catch(() => []);
@@ -1340,9 +1364,9 @@ export default function FeedPage({ feed }) {
       const found = list.find(c => c.slug === feed);
       setSelectedChannelId(found?._id || list[0]._id);
     }
-  };
+  }, [feed, selectedChannelId, userId]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     const userId = user?._id || user?.id;
@@ -1359,14 +1383,12 @@ export default function FeedPage({ feed }) {
       setPosts([]);
       return;
     }
-    const ordered = Array.isArray(data)
-      ? [...data].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-      : [];
+    const ordered = sortPostsChronologically(Array.isArray(data) ? data : []);
     setFeedReadAt(readStateRes.ok ? readStateData.lastReadAt || null : null);
     setPosts(ordered);
-  };
+  }, [feed, user]);
 
-  const updateBackendReadState = async (timestamp) => {
+  const updateBackendReadState = useCallback(async (timestamp) => {
     if (!userId || !timestamp) return;
     setFeedReadAt(timestamp);
     await fetch(`/api/feeds/${feed}/read-state`, {
@@ -1377,7 +1399,7 @@ export default function FeedPage({ feed }) {
       },
       body: JSON.stringify({ lastReadAt: timestamp }),
     }).catch(() => {});
-  };
+  }, [feed, userId]);
 
   const requestDeletePost = (post) => {
     setPendingDeleteTarget({ type: 'post', postId: post._id });
@@ -1479,7 +1501,7 @@ export default function FeedPage({ feed }) {
     requestDeleteComment(post, entry);
   };
 
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
     if (!currentChannel?._id || !userId) return;
     const res = await fetch(`/api/channels/${currentChannel._id}/members`, {
       headers: { 'x-user-id': userId },
@@ -1490,16 +1512,16 @@ export default function FeedPage({ feed }) {
       return;
     }
     setMembers(Array.isArray(data) ? data : []);
-  };
+  }, [currentChannel?._id, userId]);
 
-  const loadApprovedUsers = async () => {
+  const loadApprovedUsers = useCallback(async () => {
     if (!userId) return;
     const res = await fetch('/api/users/approved', { headers: { 'x-user-id': userId } });
     const data = await res.json().catch(() => []);
     setApprovedUsers(Array.isArray(data) ? data : []);
-  };
+  }, [userId]);
 
-  const loadSelectedChannelMembers = async (channelId = selectedChannelId) => {
+  const loadSelectedChannelMembers = useCallback(async (channelId = selectedChannelId) => {
     if (!channelId || !userId) return;
     const res = await fetch(`/api/channels/${channelId}/members`, { headers: { 'x-user-id': userId } });
     const data = await res.json().catch(() => []);
@@ -1508,66 +1530,108 @@ export default function FeedPage({ feed }) {
       return;
     }
     setSelectedChannelMembers(Array.isArray(data) ? data : []);
-  };
+  }, [selectedChannelId, userId]);
 
   useEffect(() => {
     load();
     loadChannels();
-  }, [feed, user?._id, user?.id]);
+  }, [feed, load, loadChannels, user?._id, user?.id, userScopeKey]);
 
-  // --- Socket.io Real-Time Integration for Channels, Members, and Roles ---
   useEffect(() => {
-    const socket = io(); // Connects to your backend Socket.io server instance
+    if (!userId) return undefined;
 
-    // Listen for channel changes, creation, deletion, or rule updates
-    socket.on('channelsUpdated', () => {
+    const socket = io({ auth: { userId } });
+
+    const joinCurrentChannel = () => {
+      socket.emit('joinChannel', { slug: feed }, (response) => {
+        if (response?.ok === false) {
+          setUiMessage({ type: 'error', text: response.message || 'Unable to join this channel.' });
+        }
+      });
+    };
+
+    socket.on('connect', joinCurrentChannel);
+
+    socket.on('channels:updated', () => {
       loadChannels();
     });
 
-    socket.on('channelUpdated', (updatedChannel) => {
+    socket.on('channel:updated', (updatedChannel) => {
       loadChannels();
-      if (updatedChannel && updatedChannel._id === currentChannel?._id) {
+      if (updatedChannel && (String(updatedChannel._id || '') === String(currentChannel?._id || '') || updatedChannel.slug === feed)) {
+        loadMembers();
+        if (selectedChannelId && String(selectedChannelId) === String(updatedChannel._id || '')) {
+          loadSelectedChannelMembers(selectedChannelId);
+        }
+      }
+    });
+
+    socket.on('channel:members-updated', (payload) => {
+      const affectsCurrent = payload?.all || !payload?.channelId || String(payload.channelId) === String(currentChannel?._id || '');
+      const affectsSelected = payload?.all || !payload?.channelId || String(payload.channelId) === String(selectedChannelId || '');
+
+      loadChannels();
+      if (affectsCurrent) {
         loadMembers();
       }
-    });
-
-    // Listen for membership updates or role changes
-    socket.on('membersUpdated', () => {
-      loadMembers();
-      if (selectedChannelId) {
+      if (selectedChannelId && affectsSelected) {
         loadSelectedChannelMembers(selectedChannelId);
       }
-      loadApprovedUsers();
     });
 
-    // Listen for new posts / feeds activity updates
-    socket.on('postCreated', (newPost) => {
-      if (newPost && newPost.channelSlug === feed) {
-        load();
+    socket.on('user:updated', (payload) => {
+      if (!payload?.userId || String(payload.userId) === String(userId)) {
+        refreshUser();
       }
+      loadChannels();
+      loadApprovedUsers();
+      if (currentChannel?._id) loadMembers();
+      if (selectedChannelId) loadSelectedChannelMembers(selectedChannelId);
     });
 
-    socket.on('postsUpdated', () => {
-      load();
+    socket.on('post:created', (newPost) => {
+      if (!newPost || newPost.feed !== feed) return;
+      setPosts(prev => upsertPost(prev, newPost));
     });
+
+    socket.on('post:updated', (updatedPost) => {
+      if (!updatedPost || updatedPost.feed !== feed) return;
+      setPosts(prev => upsertPost(prev, updatedPost));
+    });
+
+    socket.on('post:deleted', (payload) => {
+      if (!payload || payload.feed !== feed) return;
+      setPosts(prev => prev.filter(post => String(post?._id || '') !== String(payload.id || '')));
+    });
+
+    socket.on('joinChannel:error', (payload) => {
+      setUiMessage({ type: 'error', text: payload?.message || 'Unable to join this channel.' });
+    });
+
+    socket.on('connect_error', () => {
+      setUiMessage({ type: 'error', text: 'Real-time connection failed for this feed.' });
+    });
+
+    if (socket.connected) {
+      joinCurrentChannel();
+    }
 
     return () => {
       socket.disconnect();
     };
-  }, [feed, currentChannel?._id, selectedChannelId]);
-  // -----------------------------------------------------------------------
+  }, [currentChannel?._id, feed, loadApprovedUsers, loadChannels, loadMembers, loadSelectedChannelMembers, refreshUser, selectedChannelId, userId]);
 
   useEffect(() => {
     if (userId) {
       loadApprovedUsers();
     }
-  }, [userId]);
+  }, [loadApprovedUsers, userId]);
 
   useEffect(() => {
     if (currentChannel?._id && userId) {
       loadMembers();
     }
-  }, [currentChannel?._id, userId, feed]);
+  }, [currentChannel?._id, feed, loadMembers, userId]);
 
   useEffect(() => {
     initialScrollDoneRef.current = false;
@@ -1594,7 +1658,7 @@ export default function FeedPage({ feed }) {
     }
 
     initialScrollDoneRef.current = true;
-  }, [displayPosts, feed, feedReadAt, loading, userId]);
+  }, [displayPosts, feed, feedReadAt, loading, updateBackendReadState, userId]);
 
   useEffect(() => {
     setComposerState(null);
@@ -1604,7 +1668,7 @@ export default function FeedPage({ feed }) {
     if (manageOpen) {
       loadChannels();
     }
-  }, [manageOpen]);
+  }, [loadChannels, manageOpen]);
 
   useEffect(() => {
     if (!slugTouched || !slugManualEdit) setCreateSlug(slugify(createName));
@@ -1661,7 +1725,7 @@ export default function FeedPage({ feed }) {
     setSelectedManualUserId('');
     setSelectedExcludedUserId('');
     loadSelectedChannelMembers(selectedChannel._id);
-  }, [selectedChannel?._id]);
+  }, [loadSelectedChannelMembers, selectedChannel]);
 
   const createChannel = async () => {
     const safeSlug = slugify(createSlug || createName);
@@ -1721,14 +1785,28 @@ export default function FeedPage({ feed }) {
 
   const saveRules = async () => {
     if (!selectedChannel?._id || !userId) return;
+    setSavingRules(true);
+    setManageMsg('');
     const res = await fetch(`/api/channels/${selectedChannel._id}/rules`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
-      body: JSON.stringify({ includeRoles: ruleRoles, includeMemberStatuses: ruleStatuses }),
+      body: JSON.stringify({ includeRoles: [...ruleRoles], includeMemberStatuses: [...ruleStatuses] }),
     });
     const data = await res.json().catch(() => ({}));
+    setSavingRules(false);
     if (!res.ok) return setManageMsg(data.message || 'Rules update failed');
-    setManageMsg('Rules updated');
+    setChannels(prev => prev.map(channel => (
+      String(channel._id) === String(selectedChannel._id)
+        ? {
+            ...channel,
+            includeRoles: Array.isArray(data.includeRoles) ? data.includeRoles : [...ruleRoles],
+            includeMemberStatuses: Array.isArray(data.includeMemberStatuses) ? data.includeMemberStatuses : [...ruleStatuses],
+          }
+        : channel
+    )));
+    setManageMsg(data.message || 'Rules updated successfully');
+    await loadChannels();
+    await loadSelectedChannelMembers(selectedChannel?._id);
   };
 
   const mutateMembers = async (type, addIds = [], removeIds = []) => {
@@ -2009,7 +2087,7 @@ export default function FeedPage({ feed }) {
                     ))}
                   </div>
                   <div style={{ marginTop: 6 }}>
-                    <button onClick={saveRules} style={{ ...managePrimaryButtonStyle, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>Save Rules</button>
+                    <button disabled={savingRules} onClick={saveRules} style={{ ...managePrimaryButtonStyle, opacity: savingRules ? 0.7 : 1, width: isPhone ? '100%' : 'auto', fontSize: 11, padding: '7px 12px' }}>{savingRules ? 'Saving...' : 'Save Rules'}</button>
                   </div>
                 </div>
 

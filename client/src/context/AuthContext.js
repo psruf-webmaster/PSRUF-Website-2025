@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { io } from "socket.io-client";
 import { normalizeUserAssets } from "../lib/assetUrls";
 
 const AuthCtx = createContext(null);
@@ -174,6 +175,25 @@ export default function AuthProvider({ children }) {
       document.removeEventListener("visibilitychange", refreshIfVisible);
     };
   }, [refreshUser, user?.id, user?._id]);
+
+  useEffect(() => {
+    const userId = user?._id || user?.id;
+    if (!userId) {
+      return undefined;
+    }
+
+    const socket = io({ auth: { userId } });
+
+    socket.on("user:updated", (payload) => {
+      if (!payload?.userId || String(payload.userId) === String(userId)) {
+        refreshUser();
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [refreshUser, user?._id, user?.id]);
 
   return (
     <AuthCtx.Provider

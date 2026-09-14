@@ -7,6 +7,9 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
+const User = require('./models/User');
+const Channel = require('./models/Channel');
+const { builtinMembershipMatch, canUserAccessChannel, isBuiltinSlug } = require('./utils/channelAccess');
 
 const app = express();
 const server = http.createServer(app); // Create HTTP server from Express app
@@ -14,6 +17,55 @@ const io = new Server(server, {
   cors: {
     origin: ['http://localhost:3000', 'https://psruf-website-2026.onrender.com'],
     credentials: true,
+  }
+});
+app.set('io', io);
+
+async function getSocketUser(socket) {
+  const authUserId = socket.handshake.auth?.userId;
+  const headerUserId = socket.handshake.headers['x-user-id'];
+  const authHeader = socket.handshake.headers.authorization || '';
+
+  if (typeof authHeader === 'string' && authHeader.toLowerCase().startsWith('bearer ')) {
+    const bearerId = authHeader.slice(7).trim();
+    if (mongoose.Types.ObjectId.isValid(bearerId)) {
+      const user = await User.findById(bearerId);
+      if (user) return user;
+    }
+  }
+
+  const candidateId = authUserId || headerUserId;
+  if (!candidateId || !mongoose.Types.ObjectId.isValid(candidateId)) return null;
+  return User.findById(candidateId);
+}
+
+async function canSocketJoinChannel(user, slug) {
+  if (!user) return false;
+
+  const channel = await Channel.findOne({ slug });
+  if (channel) {
+    return canUserAccessChannel(channel, user);
+  }
+
+  if (isBuiltinSlug(slug)) {
+    return builtinMembershipMatch(slug, user) === true;
+  }
+
+  return false;
+}
+
+io.use(async (socket, next) => {
+  try {
+    const user = await getSocketUser(socket);
+    if (!user) {
+      return next(new Error('Unauthorized socket connection'));
+    }
+
+    socket.data.user = user;
+    socket.join(`user:${String(user._id)}`);
+    return next();
+  } catch (error) {
+    return next(error);
   }
 });
 
@@ -98,6 +150,41 @@ async function startServer() {
     // Handle Socket.io client connections
     io.on('connection', (socket) => {
       console.log('A client connected:', socket.id);
+
+      socket.on('joinChannel', async (payload = {}, callback) => {
+        try {
+          const slug = String(payload?.slug || '').trim();
+          if (!slug) {
+            const errorPayload = { ok: false, message: 'Channel slug required' };
+            socket.emit('joinChannel:error', errorPayload);
+            if (typeof callback === 'function') callback(errorPayload);
+            return;
+          }
+
+          const allowed = await canSocketJoinChannel(socket.data.user, slug);
+          if (!allowed) {
+            const errorPayload = { ok: false, message: 'Not allowed to join this channel', slug };
+            socket.emit('joinChannel:error', errorPayload);
+            if (typeof callback === 'function') callback(errorPayload);
+            return;
+          }
+
+          const previousRoom = socket.data.channelRoom;
+          if (previousRoom) {
+            socket.leave(previousRoom);
+          }
+
+          const room = `feed:${slug}`;
+          socket.join(room);
+          socket.data.channelRoom = room;
+          if (typeof callback === 'function') callback({ ok: true, slug });
+        } catch (error) {
+          const errorPayload = { ok: false, message: error.message || 'Unable to join channel' };
+          socket.emit('joinChannel:error', errorPayload);
+          if (typeof callback === 'function') callback(errorPayload);
+        }
+      });
+
       socket.on('disconnect', () => {
         console.log('A client disconnected:', socket.id);
       });
@@ -110,12 +197,20 @@ async function startServer() {
     collectionsToWatch.forEach((colName) => {
       try {
         const collection = mongoose.connection.db.collection(colName);
-        const changeStream = collection.watch();
+        const changeStream = collection.watch([], { fullDocument: 'updateLookup' });
 
         changeStream.on('change', (next) => {
           console.log(`🔄 Change detected in collection [${colName}]:`, next.operationType);
-          // Broadcast to all connected frontend clients instantly
           io.emit('refresh_data', { collection: colName, action: next.operationType });
+
+          if (colName === 'users') {
+            const userId = String(next.documentKey?._id || '');
+            if (userId) {
+              io.to(`user:${userId}`).emit('user:updated', { userId });
+            }
+            io.emit('channels:updated', { reason: 'user-updated', userId });
+            io.emit('channel:members-updated', { all: true, reason: 'user-updated', userId });
+          }
         });
       } catch (err) {
         console.error(`⚠️ Could not set up change stream for ${colName}:`, err.message);
