@@ -106,6 +106,10 @@
   gap: 8px;
 }
 
+.events-tab-row-primary {
+  align-items: flex-start;
+}
+
 .events-tab-row-secondary {
   margin-top: 10px;
 }
@@ -1134,6 +1138,8 @@
     flex-wrap: nowrap;
     overflow-x: auto;
     padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
     scrollbar-width: none;
   }
 

@@ -63,13 +63,8 @@ const VIEW_OPTIONS = [
   { key: "month", label: "This Month" }, 
   { key: "nextMonth", label: "Next Month" }, 
   { key: "past", label: "Past Events" }, 
-  { key: "mine", label: "My Events" }, 
-]; 
- 
-const MINE_FILTERS = [ 
-  { key: "upcoming", label: "Upcoming" }, 
-  { key: "past", label: "Past" }, 
-  { key: "thisMonth", label: "This Month" }, 
+  { key: "rsvpd", label: "RSVP'd Events" }, 
+  { key: "created", label: "Created by Me" }, 
 ]; 
  
 const EVENT_FILTERS = [ 
@@ -380,7 +375,7 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
  
         <AttachmentLinks attachments={event.attachments} /> 
  
-        {view !== "mine" && canRsvp(user) ? ( 
+        {view !== "rsvpd" && canRsvp(user) ? ( 
           <div className="events-card-footer"> 
             <div className="events-attendance-copy">{totalMaybe} maybe attending</div> 
             <div className="events-rsvp-actions"> 
@@ -419,7 +414,7 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
     View Details 
   </Link> 
  
-  {view !== "mine" && isManager(user, event) && ( 
+  {isManager(user, event) && ( 
     <button type="button" className="events-secondary-button" onClick={() => onManage(event._id)}> 
       Manage Event 
     </button> 
@@ -2025,7 +2020,6 @@ function ManageEventModal({
 export default function Events() { 
   const { user } = useAuth(); 
   const [view, setView] = useState("week"); 
-  const [myFilter, setMyFilter] = useState("upcoming"); 
   const [events, setEvents] = useState([]); 
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(""); 
@@ -2046,12 +2040,16 @@ export default function Events() {
   const userId = user?._id || user?.id; 
  
   const canCreate = isCreatorRole(user); 
+  const availableViewOptions = useMemo(
+    () => VIEW_OPTIONS.filter((option) => option.key !== "created" || canCreate),
+    [canCreate]
+  );
  
   const loadEvents = useCallback(async () => { 
     setLoading(true); 
     setError(""); 
     try { 
-      const url = view === "mine" ? "/api/events/mine" : `/api/events?view=${view}`; 
+      const url = `/api/events?view=${view}`; 
       const response = await fetch(url, { 
         credentials: "include", 
         headers: userId ? { Authorization: `Bearer ${userId}` } : undefined, 
@@ -2074,20 +2072,15 @@ export default function Events() {
   useEffect(() => { 
     setMobileControlsOpen(false); 
   }, [view, manageId, modalOpen]); 
+
+  useEffect(() => {
+    if (!canCreate && view === "created") {
+      setView("week");
+    }
+  }, [canCreate, view]);
  
   const filteredEvents = useMemo(() => { 
-    const now = new Date(); 
     return events 
-      .filter((event) => { 
-        if (view !== "mine") return true; 
-        const start = new Date(event.startAt); 
-        if (myFilter === "upcoming") return start >= now; 
-        if (myFilter === "past") return start < now; 
-        if (myFilter === "thisMonth") { 
-          return start.getFullYear() === now.getFullYear() && start.getMonth() === now.getMonth(); 
-        } 
-        return true; 
-      }) 
       .filter((event) => { 
         const haystack = [event.title, event.description, event.location].filter(Boolean).join(" ").toLowerCase(); 
         return haystack.includes(searchQuery.trim().toLowerCase()); 
@@ -2098,7 +2091,7 @@ export default function Events() {
         if (eventFilter === "optional") return !event.isMandatory; 
         return String(event.points?.category || event.pointsCategory || "").toLowerCase() === eventFilter; 
       }); 
-  }, [events, eventFilter, myFilter, searchQuery, view]); 
+  }, [events, eventFilter, searchQuery]); 
  
   const handleRsvp = async (event, status, shiftId) => { 
     if (!userId) return; 
@@ -2391,7 +2384,7 @@ export default function Events() {
           <h1>Events</h1> 
           <p>Discover, organize, and manage chapter events with a cleaner RSVP and attendance workflow.</p> 
         </div> 
-        {canCreate && view !== "mine" ? ( 
+        {canCreate ? ( 
           <motion.button type="button" className="events-primary-button" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} onClick={() => setModalOpen(true)}> 
             <Plus size={16} /> Create Event 
           </motion.button> 
@@ -2402,7 +2395,7 @@ export default function Events() {
         <button type="button" className="events-secondary-button" onClick={() => setMobileControlsOpen(true)}> 
           <Filter size={16} /> Filters & Views 
         </button> 
-        {canCreate && view !== "mine" ? ( 
+        {canCreate ? ( 
           <button type="button" className="events-primary-button" onClick={() => setModalOpen(true)}> 
             <Plus size={16} /> Create 
           </button> 
@@ -2410,8 +2403,8 @@ export default function Events() {
       </section> 
  
       <motion.section className="events-toolbar" initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.48, delay: 0.06, ease: "easeOut" }}> 
-        <div className="events-tab-row"> 
-          {VIEW_OPTIONS.map((option) => ( 
+        <div className="events-tab-row events-tab-row-primary"> 
+          {availableViewOptions.map((option) => ( 
             <button key={option.key} type="button" className={view === option.key ? "events-tab active" : "events-tab"} onClick={() => setView(view === "week" && option.key === "week" ? "allUpcoming" : option.key)}> 
               {option.label} 
             </button> 
@@ -2421,7 +2414,7 @@ export default function Events() {
         <div className="events-controls-row"> 
           <label className="events-search-box"> 
             <Search size={16} /> 
-            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search events, locations, or descriptions" /> 
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search within this view, locations, or descriptions" /> 
           </label> 
  
           <label className="events-filter-select"> 
@@ -2434,15 +2427,6 @@ export default function Events() {
           </label> 
         </div> 
  
-        {view === "mine" ? ( 
-          <div className="events-tab-row events-tab-row-secondary"> 
-            {MINE_FILTERS.map((option) => ( 
-              <button key={option.key} type="button" className={myFilter === option.key ? "events-tab active" : "events-tab"} onClick={() => setMyFilter(option.key)}> 
-                {option.label} 
-              </button> 
-            ))} 
-          </div> 
-        ) : null} 
       </motion.section> 
  
       <AnimatePresence> 
@@ -2462,8 +2446,8 @@ export default function Events() {
               <div className="events-mobile-drawer-body"> 
                 <div className="events-mobile-block"> 
                   <span className="events-mobile-block-label">View</span> 
-                  <div className="events-tab-row"> 
-                    {VIEW_OPTIONS.map((option) => ( 
+                  <div className="events-tab-row events-tab-row-primary"> 
+                    {availableViewOptions.map((option) => ( 
                       <button key={option.key} type="button" className={view === option.key ? "events-tab active" : "events-tab"} onClick={() => setView(view === "week" && option.key === "week" ? "allUpcoming" : option.key)}> 
                         {option.label} 
                       </button> 
@@ -2473,7 +2457,7 @@ export default function Events() {
  
                 <label className="events-search-box"> 
                   <Search size={16} /> 
-                  <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search events, locations, or descriptions" /> 
+                  <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search within this view, locations, or descriptions" /> 
                 </label> 
  
                 <label className="events-filter-select"> 
@@ -2484,19 +2468,6 @@ export default function Events() {
                     ))} 
                   </select> 
                 </label> 
- 
-                {view === "mine" ? ( 
-                  <div className="events-mobile-block"> 
-                    <span className="events-mobile-block-label">My event filter</span> 
-                    <div className="events-tab-row"> 
-                      {MINE_FILTERS.map((option) => ( 
-                        <button key={option.key} type="button" className={myFilter === option.key ? "events-tab active" : "events-tab"} onClick={() => setMyFilter(option.key)}> 
-                          {option.label} 
-                        </button> 
-                      ))} 
-                    </div> 
-                  </div> 
-                ) : null} 
  
                 <div className="events-mobile-drawer-actions"> 
                   <button type="button" className="events-secondary-button" onClick={() => setMobileControlsOpen(false)}> 
