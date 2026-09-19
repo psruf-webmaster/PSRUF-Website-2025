@@ -111,11 +111,19 @@ router.get('/approved', async (req, res) => {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
 
-    const users = await User.find({ isApproved: true }).select('_id firstName lastName role memberStatus');
-    return res.json(users.map(current => ({
-      ...current.toObject(),
-      memberStatus: sanitizeMemberStatuses(current.memberStatus),
-    })));
+    const users = await User.find({ isApproved: true }).select('_id firstName lastName role memberStatus positions profilePicUrl phoneNumber ufEmail personalEmail major year privacy');
+    return res.json(users.map(current => {
+      const profile = current.toObject();
+      profile.profilePicUrl = normalizeAssetUrl(profile.profilePicUrl);
+      profile.memberStatus = sanitizeMemberStatuses(profile.memberStatus);
+      ['phoneNumber', 'personalEmail', 'ufEmail', 'major', 'year'].forEach(field => {
+        if (profile.privacy?.[field] === false ||
+            (['phoneNumber', 'personalEmail'].includes(field) && profile.privacy?.[field] !== true)) {
+          delete profile[field];
+        }
+      });
+      return profile;
+    }));
   } catch (err) {
     console.error('Users approved error:', err);
     return res.status(500).json({ message: 'Server error' });
