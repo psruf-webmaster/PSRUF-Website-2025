@@ -81,6 +81,15 @@ const userSchema = new mongoose.Schema({
 
   profilePicUrl: String,
 
+  // False restricts a field in member profile cards and directory responses.
+  privacy: {
+    phoneNumber: { type: Boolean, default: false },
+    personalEmail: { type: Boolean, default: false },
+    ufEmail: { type: Boolean, default: true },
+    major: { type: Boolean, default: true },
+    year: { type: Boolean, default: true },
+  },
+
   feedReadState: {
     type: Map,
     of: FeedReadStateSchema,

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { createAppSocket } from '../../lib/socket';
+import { MemberProfile, MemberProfilesProvider } from './MemberProfile';
 
 const FEED_TITLES = {
   chapterAnnouncements: 'Chapter Announcements',
@@ -457,10 +458,10 @@ function CommentThreadItem({
 
   return (
     <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (!isCompact) setActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 5 : 7, alignItems: 'flex-start', marginTop: isReply ? 6 : 0, marginLeft: isReply ? (isCompact ? 6 : 18) : 0, width: '100%', boxSizing: 'border-box' }}>
-      <ChatAvatar src={entryAvatar} name={entryName} size={isReply ? 22 : 26} fontSize={isReply ? 8 : 9} />
+      <MemberProfile hoverPreview userId={item?.userId} profile={item?.user || item?.author} name={entryName} avatar={entryAvatar} getAvatar={getUserAvatarUrl}><ChatAvatar src={entryAvatar} name={entryName} size={isReply ? 22 : 26} fontSize={isReply ? 8 : 9} /></MemberProfile>
       <div onClick={() => { if (isCompact) setActionsOpen(prev => !prev); }} style={{ flex: 1, minWidth: 0, background: isReply ? 'rgba(255,255,255,0.76)' : '#faf8f9', border: '1px solid rgba(109,44,44,0.08)', borderRadius: 11, padding: isCompact ? '6px 8px' : '7px 9px', boxShadow: '0 4px 12px rgba(109,44,44,0.04)', position: 'relative', cursor: isCompact ? 'pointer' : 'default' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap', paddingRight: actionRowVisible && !isCompact ? 100 : 0 }}>
-          <strong style={{ color: '#6d2c2c', fontSize: isReply ? 11 : 12 }}>{entryName}</strong>
+          <MemberProfile hoverPreview userId={item?.userId} profile={item?.user || item?.author} name={entryName} avatar={entryAvatar} getAvatar={getUserAvatarUrl}><strong style={{ color: '#6d2c2c', fontSize: isReply ? 11 : 12 }}>{entryName}</strong></MemberProfile>
           <span style={{ color: '#8a6a71', fontSize: 10 }}>{entryTime}</span>
         </div>
         {actionRowVisible && (
@@ -1091,13 +1092,13 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
     <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (isCompact) setMessageActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 6 : 10, alignItems: 'flex-start', padding: isGrouped ? (isCompact ? '0 2px 4px' : '0 8px 6px') : (isCompact ? '0 2px 8px' : '0 8px 10px'), borderBottom: 'none', marginBottom: 0, justifyContent: 'center', width: '100%', boxSizing: 'border-box' }}>
       <div style={{ width: '100%', minWidth: 0, display: 'flex', gap: isCompact ? 6 : 10, alignItems: 'flex-start', position: 'relative', boxSizing: 'border-box' }}>
         {!isGrouped ? (
-          <ChatAvatar src={avatarUrl} name={authorName} size={isCompact ? 30 : 36} fontSize={isCompact ? 10 : 12} style={{ boxShadow: '0 6px 12px rgba(109,44,44,0.05)' }} />
+          <MemberProfile hoverPreview userId={post.authorId} profile={authorProfile} name={authorName} avatar={avatarUrl} getAvatar={getUserAvatarUrl}><ChatAvatar src={avatarUrl} name={authorName} size={isCompact ? 30 : 36} fontSize={isCompact ? 10 : 12} style={{ boxShadow: '0 6px 12px rgba(109,44,44,0.05)' }} /></MemberProfile>
         ) : <div style={{ width: isCompact ? 30 : 36, flexShrink: 0 }} />}
 
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0, position: 'relative', boxSizing: 'border-box' }}>
           {!isGrouped && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3, flexWrap: 'wrap', justifyContent: 'flex-start', width: '100%' }}>
-              <strong style={{ color: authorDisplayColor, fontSize: 13, fontWeight: 700 }}>{authorName}</strong>
+              <MemberProfile hoverPreview userId={post.authorId} profile={authorProfile} name={authorName} avatar={avatarUrl} getAvatar={getUserAvatarUrl}><strong style={{ color: authorDisplayColor, fontSize: 13, fontWeight: 700 }}>{authorName}</strong></MemberProfile>
               {post.authorRole?.length > 0 && <span style={{ color: '#8a6a71', fontSize: 10 }}>{post.authorRole.join(', ')}</span>}
               <span style={{ color: '#7b5d63', fontSize: 10 }}>{when}</span>
             </div>
@@ -1879,6 +1880,7 @@ export default function FeedPage({ feed }) {
     && /^[a-z][a-zA-Z0-9]*$/.test(rawSlug);
 
   return (
+    <MemberProfilesProvider value={currentProfilesById}>
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }} style={{ height: isNarrow ? 'auto' : 'calc(100vh - 84px)', minHeight: 0, maxHeight: isNarrow ? 'none' : 'calc(100vh - 84px)', overflow: isNarrow ? 'visible' : 'hidden', paddingBottom: isNarrow ? 8 : 12, boxSizing: 'border-box', width: '100%' }}>
       <style>{`
         .psr-chat-scrollbar {
@@ -1965,12 +1967,14 @@ export default function FeedPage({ feed }) {
                     const memberName = `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Member';
                     const memberAvatar = member.profilePicUrl || member.avatar || '';
                     return (
-                      <div key={member._id || memberName} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#e2e8f0', padding: '1px 0' }}>
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', overflow: 'hidden', background: '#fbf2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#6d2c2c', border: '1px solid rgba(109,44,44,0.1)', flexShrink: 0 }}>
+                      <MemberProfile key={member._id || memberName} userId={member._id} profile={member} name={memberName} avatar={memberAvatar} getAvatar={getUserAvatarUrl}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '1px 0', minWidth: 0, width: '100%' }}>
+                        <span style={{ width: 22, height: 22, borderRadius: '50%', overflow: 'hidden', background: '#fbf2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#6d2c2c', border: '1px solid rgba(109,44,44,0.1)', flexShrink: 0 }}>
                           {memberAvatar ? <img src={memberAvatar} alt={memberName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} /> : getInitials(memberName)}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#3b2327', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{memberName}</div>
-                      </div>
+                        </span>
+                        <span style={{ fontSize: 11, color: '#3b2327', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{memberName}</span>
+                      </span>
+                      </MemberProfile>
                     );
                   })}
                 </div>
@@ -2174,5 +2178,6 @@ export default function FeedPage({ feed }) {
         </div>
       )}
     </motion.div>
+    </MemberProfilesProvider>
   );
 }
