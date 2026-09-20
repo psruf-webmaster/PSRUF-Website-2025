@@ -98,18 +98,6 @@ html, body {
   box-shadow: 0 0 0 4px rgba(236, 144, 184, 0.15);
 }
 
-/* Custom Select Dropdown with Repositioned Arrow */
-.signup-form select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B3F3F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 22px center;
-  background-size: 16px;
-  padding-right: 48px;
-}
-
 /* Specific styling for Date Inputs */
 .signup-form input[type="date"] {
   position: relative;
@@ -181,11 +169,6 @@ html, body {
   .signup-form select {
     font-size: 0.95rem;
     padding: 10px 14px;
-  }
-
-  .signup-form select {
-    padding-right: 42px;
-    background-position: right 18px center;
   }
 
   .signup-form button {
