@@ -208,10 +208,10 @@ export default function EventsScreen() {
       appendEventFormData(formData, draft, { imageAsset, attachmentAssets, applyToSeries });
 
       if (composerMode === 'create') {
-        await api.post('/events', formData, { headers: authHeaders(user) });
+        await api.post('/events', formData, { headers: authHeaders(user, true) });
         setDraftMessage('Event created.');
       } else {
-        await api.patch(`/events/${editingEventId}`, formData, { headers: authHeaders(user) });
+        await api.patch(`/events/${editingEventId}`, formData, { headers: authHeaders(user, true) });
         setDraftMessage('Event updated.');
       }
 
@@ -230,7 +230,7 @@ export default function EventsScreen() {
     try {
       await api.delete(`/events/${eventItem._id}`, {
         params: { scope: eventItem?.recurrence?.seriesId ? 'series' : 'single' },
-        headers: authHeaders(user),
+        headers: authHeaders(user, true),
       });
       await loadEvents(true);
     } catch (requestError) {
@@ -313,7 +313,7 @@ export default function EventsScreen() {
                 </View>
               </Pressable>
             </Link>
-            {canCreateEvents ? (
+            {!!(user?._id || user?.id) && String(eventItem.createdBy?._id || eventItem.createdBy) === String(user._id || user.id) ? (
               <View className="flex-row flex-wrap gap-3">
                 <Pressable onPress={() => openEditComposer(eventItem)} className="rounded-full border border-line bg-card px-5 py-3">
                   <Text className="text-sm font-semibold text-ink">Edit</Text>

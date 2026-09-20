@@ -57,7 +57,8 @@ export function getUserId(user) {
   return user?._id || user?.id || '';
 }
 
-export function authHeaders(user) {
+export function authHeaders(user, verified = false) {
+  if (verified) return user?.token ? { Authorization: `Bearer ${user.token}` } : {};
   const userId = getUserId(user);
   return userId ? { Authorization: `Bearer ${userId}` } : {};
 }

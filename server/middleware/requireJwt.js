@@ -19,7 +19,7 @@ async function requireJwt(req, res, next) {
     payload = jwt.verify(match?.[1] || '', process.env.JWT_SECRET, { algorithms: ['HS256'] });
     if (!mongoose.Types.ObjectId.isValid(payload.sub)) throw new Error('Invalid subject');
   } catch {
-    return res.status(401).json({ message: 'Please log in again to change your password.' });
+    return res.status(401).json({ message: 'Please log in again.' });
   }
   try {
     req.user = await User.findById(payload.sub);
