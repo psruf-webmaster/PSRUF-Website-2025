@@ -29,6 +29,7 @@ export default function EventDetailScreen() {
   const { eventId } = useLocalSearchParams();
   const { user } = useAuth();
   const headers = useMemo(() => authHeaders(user), [user]);
+  const managementHeaders = useMemo(() => authHeaders(user, true), [user]);
   const [event, setEvent] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -160,7 +161,7 @@ export default function EventDetailScreen() {
         attachmentAssets: editorAttachmentAssets,
         applyToSeries: applyEditToSeries,
       });
-      await api.patch(`/events/${eventId}`, formData, { headers });
+      await api.patch(`/events/${eventId}`, formData, { headers: managementHeaders });
       setEditorMessage('Event updated.');
       await loadEvent();
       await loadManage();
@@ -183,7 +184,7 @@ export default function EventDetailScreen() {
     try {
       await api.delete(`/events/${eventId}`, {
         params: { scope: event?.recurrence?.seriesId ? 'series' : 'single' },
-        headers,
+        headers: managementHeaders,
       });
       setEvent(null);
       setManageData(null);
@@ -249,7 +250,7 @@ export default function EventDetailScreen() {
 
     try {
       const [manageResponse, cohostResponse] = await Promise.all([
-        api.get(`/events/${eventId}/manage`, { headers }),
+        api.get(`/events/${eventId}/manage`, { headers: managementHeaders }),
         api.get('/users/cohosts', { headers }),
       ]);
 
@@ -291,7 +292,7 @@ export default function EventDetailScreen() {
     try {
       await api.patch(`/events/${eventId}/cohosts`, { coHostIds: selectedCohostIds }, {
         headers: {
-          ...headers,
+          ...managementHeaders,
           'Content-Type': 'application/json',
         },
       });
@@ -318,7 +319,7 @@ export default function EventDetailScreen() {
         status: massRsvpStatus,
       }, {
         headers: {
-          ...headers,
+          ...managementHeaders,
           'Content-Type': 'application/json',
         },
       });
@@ -347,7 +348,7 @@ export default function EventDetailScreen() {
         pointsAwarded: manualPoints === '' ? undefined : Number(manualPoints),
       }, {
         headers: {
-          ...headers,
+          ...managementHeaders,
           'Content-Type': 'application/json',
         },
       });
@@ -366,7 +367,7 @@ export default function EventDetailScreen() {
   useEffect(() => {
     loadEvent();
     loadManage();
-  }, [eventId, headers]);
+  }, [eventId, headers, managementHeaders]);
 
   const filteredMembers = (manageData?.eligibleMembers || [])
     .filter((member) => `${member.firstName || ''} ${member.lastName || ''}`.toLowerCase().includes(memberQuery.toLowerCase()))

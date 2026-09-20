@@ -54,3 +54,15 @@ test('empty attendance table and member action preserve their behavior', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Save Attendance' }));
   expect(saveAttendance).toHaveBeenCalledTimes(1);
 });
+
+test('management controls require the creator, not a role or co-host designation', () => {
+  const { isManager } = require('./Events');
+  const event = { createdBy: 'owner', coHosts: ['other'] };
+  for (const role of ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer']) {
+    expect(isManager({ id: 'other', role: [role] }, event)).toBe(false);
+  }
+  expect(isManager({ id: 'owner', role: ['member'] }, event)).toBe(true);
+  expect(isManager({ _id: 'owner' }, { createdBy: { _id: 'owner' } })).toBe(true);
+  expect(isManager({}, {})).toBe(false);
+  expect(isManager(null, event)).toBe(false);
+});

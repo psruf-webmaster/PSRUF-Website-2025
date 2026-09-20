@@ -96,14 +96,10 @@ function canRsvp(user) {
   return !!user; 
 } 
  
-function isManager(user, event) { 
-  if (!user || !event) return false; 
-  const userId = user._id || user.id; 
-  if (isCreatorRole(user) || hasRole(user, "officer")) return true;
-  if (userId && (event.createdBy === userId || String(event.createdBy) === String(userId))) return true; 
-  const coHosts = Array.isArray(event.coHosts) ? event.coHosts : [];
-  if (coHosts.some((entry) => String(entry?._id || entry?.id || entry) === String(userId))) return true;
-  return false; 
+export function isManager(user, event) {
+  const userId = user?._id || user?.id;
+  const creatorId = event?.createdBy?._id || event?.createdBy?.id || event?.createdBy;
+  return !!userId && !!creatorId && String(userId) === String(creatorId);
 } 
  
 function fmtRange(startAt, endAt) {
@@ -760,7 +756,7 @@ function CreateEventModal({ open, onClose, onCreated, user }) {
         method: "POST",
         headers: userId
           ? {
-              Authorization: `Bearer ${userId}`,
+              Authorization: `Bearer ${localStorage.getItem("psr_token") || ""}`,
             }
           : undefined,
         credentials: "include",
@@ -1565,7 +1561,7 @@ export function ManageEventModal({
               <section className="events-manage-panel"> 
                 <div className="events-manage-panel-head"> 
                   <h3>Co-hosts</h3> 
-                  <p>Choose up to seven additional managers for this event.</p> 
+                  <p>Choose up to seven co-hosts. Only the event creator can manage this event.</p>
                 </div> 
                 <div className="events-cohost-list" role="group" aria-label="Co-hosts" aria-describedby="cohost-selection-count">
                   {cohostOptions.length ? cohostOptions.map((option) => {
@@ -2194,7 +2190,7 @@ export default function Events() {
     setError(""); 
     try { 
       const response = await fetch(`/api/events/${id}/manage`, { 
-        headers: userId ? { Authorization: `Bearer ${userId}` } : undefined, 
+        headers: userId ? { Authorization: `Bearer ${localStorage.getItem("psr_token") || ""}` } : undefined,
         credentials: "include", 
       }); 
       const data = await response.json(); 
@@ -2252,7 +2248,7 @@ export default function Events() {
         method: "PUT", 
         headers: { 
           "Content-Type": "application/json", 
-          ...(userId ? { Authorization: `Bearer ${userId}` } : {}), 
+          ...(userId ? { Authorization: `Bearer ${localStorage.getItem("psr_token") || ""}` } : {}),
         }, 
         credentials: "include", 
         body: JSON.stringify({ entries }), 
@@ -2279,7 +2275,7 @@ export default function Events() {
         method: "PATCH", 
         headers: { 
           "Content-Type": "application/json", 
-          ...(userId ? { Authorization: `Bearer ${userId}` } : {}), 
+          ...(userId ? { Authorization: `Bearer ${localStorage.getItem("psr_token") || ""}` } : {}),
         }, 
         credentials: "include", 
         body: JSON.stringify({ coHostIds: cohostSelection }), 
@@ -2323,7 +2319,7 @@ export default function Events() {
       const response = await fetch(`/api/events/${manageId}`, { 
         method: "PATCH", 
         headers: { 
-          ...(userId ? { Authorization: `Bearer ${userId}` } : {}), 
+          ...(userId ? { Authorization: `Bearer ${localStorage.getItem("psr_token") || ""}` } : {}),
         }, 
         credentials: "include", 
         body: formData, 
@@ -2350,7 +2346,7 @@ export default function Events() {
         method: "POST", 
         headers: { 
           "Content-Type": "application/json", 
-          ...(userId ? { Authorization: `Bearer ${userId}` } : {}), 
+          ...(userId ? { Authorization: `Bearer ${localStorage.getItem("psr_token") || ""}` } : {}),
         }, 
         credentials: "include", 
         body: JSON.stringify({ roles, memberStatuses, status, shiftId }), 
@@ -2376,7 +2372,7 @@ export default function Events() {
         method: "POST", 
         headers: { 
           "Content-Type": "application/json", 
-          ...(userId ? { Authorization: `Bearer ${userId}` } : {}), 
+          ...(userId ? { Authorization: `Bearer ${localStorage.getItem("psr_token") || ""}` } : {}),
         }, 
         credentials: "include", 
         body: JSON.stringify({ 
@@ -2409,7 +2405,7 @@ export default function Events() {
     try { 
       const response = await fetch(`/api/events/${manageId}?scope=${scope}`, { 
         method: "DELETE", 
-        headers: userId ? { Authorization: `Bearer ${userId}` } : undefined, 
+        headers: userId ? { Authorization: `Bearer ${localStorage.getItem("psr_token") || ""}` } : undefined,
         credentials: "include", 
       }); 
       const data = await response.json(); 

@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
+const { requireJwt } = require('../middleware/requireJwt');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const PointsLedger = require('../models/PointsLedger');
@@ -331,17 +332,14 @@ function getSpecialEventQuery(viewParam, user) {
 }
 
 function canManageEvent(event, user) {
-  if (!user || !event) return false;
-  if (isOfficerLevel(user)) return true;
-  if (isCandOfficer(user) && String(event.createdBy || '') === String(user._id || user.id)) return true;
-  const coHosts = (event.coHosts || []).map(id => String(id));
-  if (coHosts.includes(String(user._id || user.id))) return true;
-  return false;
+  return isEventCreator(event, user);
 }
 
 function isEventCreator(event, user) {
   if (!user || !event) return false;
-  return String(event.createdBy || '') === String(user._id || user.id || '');
+  const creatorId = event.createdBy?._id || event.createdBy;
+  const userId = user._id || user.id;
+  return !!creatorId && !!userId && String(creatorId) === String(userId);
 }
 
 function canManageEventDetails(event, user) {
@@ -649,7 +647,7 @@ function validateEventPayload(body, isCandOfficerCreator) {
 }
 
 // POST /api/events
-router.post('/', eventUpload, async (req, res) => {
+router.post('/', requireJwt, eventUpload, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -701,7 +699,7 @@ router.post('/', eventUpload, async (req, res) => {
 });
 
 // PATCH /api/events/:id
-router.patch('/:id', eventUpload, async (req, res) => {
+router.patch('/:id', requireJwt, eventUpload, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -771,7 +769,7 @@ router.patch('/:id', eventUpload, async (req, res) => {
     merged.points.category = String(merged.points.category).toLowerCase();
 
     if (applyToSeries && event.recurrence?.seriesId) {
-      const seriesEvents = await Event.find({ 'recurrence.seriesId': event.recurrence.seriesId }).sort({ startAt: 1 });
+      const seriesEvents = await Event.find({ 'recurrence.seriesId': event.recurrence.seriesId, createdBy: user._id }).sort({ startAt: 1 });
       for (const seriesEvent of seriesEvents) {
         const seriesUpdate = applySeriesTemplate(seriesEvent, merged, event._id);
         Object.assign(seriesEvent, seriesUpdate);
@@ -836,7 +834,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // GET /api/events/:id/manage
-router.get('/:id/manage', async (req, res) => {
+router.get('/:id/manage', requireJwt, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -974,7 +972,7 @@ router.post('/:id/rsvp', async (req, res) => {
 });
 
 // PATCH /api/events/:id/cohosts
-router.patch('/:id/cohosts', async (req, res) => {
+router.patch('/:id/cohosts', requireJwt, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -1007,7 +1005,7 @@ router.patch('/:id/cohosts', async (req, res) => {
 });
 
 // PUT /api/events/:id/attendance
-router.put('/:id/attendance', async (req, res) => {
+router.put('/:id/attendance', requireJwt, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -1091,7 +1089,7 @@ router.put('/:id/attendance', async (req, res) => {
 });
 
 // POST /api/events/:id/mass-rsvp
-router.post('/:id/mass-rsvp', async (req, res) => {
+router.post('/:id/mass-rsvp', requireJwt, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -1126,7 +1124,7 @@ router.post('/:id/mass-rsvp', async (req, res) => {
 });
 
 // POST /api/events/:id/manage-members
-router.post('/:id/manage-members', async (req, res) => {
+router.post('/:id/manage-members', requireJwt, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -1203,7 +1201,7 @@ router.post('/:id/manage-members', async (req, res) => {
 });
 
 // DELETE /api/events/:id?scope=single|series
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireJwt, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -1218,7 +1216,7 @@ router.delete('/:id', async (req, res) => {
     const scope = String(req.query.scope || 'single').toLowerCase();
     const deleteSeries = scope === 'series' && !!event.recurrence?.seriesId;
     const targetEvents = deleteSeries
-      ? await Event.find({ 'recurrence.seriesId': event.recurrence.seriesId }).select('_id')
+      ? await Event.find({ 'recurrence.seriesId': event.recurrence.seriesId, createdBy: user._id }).select('_id')
       : [{ _id: event._id }];
     const targetIds = targetEvents.map((entry) => entry._id);
 
