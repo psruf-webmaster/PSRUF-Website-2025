@@ -106,16 +106,12 @@ function isManager(user, event) {
   return false; 
 } 
  
-function fmtRange(startAt, endAt) { 
-  const start = new Date(startAt); 
-  const end = new Date(endAt); 
-  const sameDay = start.toDateString() === end.toDateString(); 
-  const datePart = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }); 
-  const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); 
-  const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); 
-  return sameDay ? `${datePart} at ${startTime} - ${endTime}` : `${datePart} ${startTime} -> ${end.toLocaleString()}`; 
-} 
- 
+function fmtRange(startAt, endAt) {
+  const options = { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" };
+  const format = (value) => new Date(value).toLocaleString(undefined, options);
+  return `${format(startAt)} – ${format(endAt)}`;
+}
+
 function formatDurationHours(startAt, endAt) { 
   const durationMs = Math.max(0, new Date(endAt).getTime() - new Date(startAt).getTime()); 
   const hours = durationMs / (1000 * 60 * 60); 
@@ -267,11 +263,11 @@ function ShiftEditor({ shifts, setShifts }) {
           <div className="events-form-grid"> 
             <label className="events-field"> 
               <span>Shift start</span> 
-              <input type="datetime-local" value={shift.startAt} onChange={(e) => updateShift(shift.shiftId, "startAt", e.target.value)} /> 
+              <input type="datetime-local" step="60" value={shift.startAt} onChange={(e) => updateShift(shift.shiftId, "startAt", e.target.value)} />
             </label> 
             <label className="events-field"> 
               <span>Shift end</span> 
-              <input type="datetime-local" value={shift.endAt} onChange={(e) => updateShift(shift.shiftId, "endAt", e.target.value)} /> 
+              <input type="datetime-local" step="60" value={shift.endAt} onChange={(e) => updateShift(shift.shiftId, "endAt", e.target.value)} />
             </label> 
           </div> 
  
@@ -1353,7 +1349,7 @@ function CreateEventModal({ open, onClose, onCreated, user }) {
   );
 }
  
-function ManageEventModal({ 
+export function ManageEventModal({
   manageId, 
   manageData, 
   manageTab, 
@@ -1571,31 +1567,37 @@ function ManageEventModal({
                   <h3>Co-hosts</h3> 
                   <p>Choose up to seven additional managers for this event.</p> 
                 </div> 
-                <select 
-                  multiple 
-                  value={cohostSelection} 
-                  onChange={(e) => { 
-                    const values = Array.from(e.target.selectedOptions).map((option) => option.value); 
-                    if (values.length <= 7) setCohostSelection(values); 
-                  }} 
-                  className="events-multi-select" 
-                > 
-                  {cohostOptions.map((option) => ( 
-                    <option key={option._id} value={option._id}> 
-                      {option.firstName} {option.lastName} {option.role?.join ? `(${option.role.join(",")})` : ""} 
-                    </option> 
-                  ))} 
-                </select> 
-                <button type="button" className="events-secondary-button" onClick={saveCohosts} disabled={savingCohosts}> 
+                <div className="events-cohost-list" role="group" aria-label="Co-hosts" aria-describedby="cohost-selection-count">
+                  {cohostOptions.length ? cohostOptions.map((option) => {
+                    const selected = cohostSelection.includes(option._id);
+                    return (
+                      <label className="events-cohost-option" key={option._id}>
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          disabled={savingCohosts || (!selected && cohostSelection.length >= 7)}
+                          onChange={() => setCohostSelection(selected
+                            ? cohostSelection.filter((id) => id !== option._id)
+                            : [...cohostSelection, option._id])}
+                        />
+                        <span>{option.firstName} {option.lastName}
+                          {option.role?.length ? <small>{[].concat(option.role).join(", ")}</small> : null}
+                        </span>
+                      </label>
+                    );
+                  }) : <p className="events-empty-note">No co-hosts available.</p>}
+                </div>
+                <p id="cohost-selection-count" className="events-empty-note" aria-live="polite">{cohostSelection.length} of 7 selected</p>
+                <button type="button" className="events-secondary-button events-cohost-save" onClick={saveCohosts} disabled={savingCohosts}>
                   {savingCohosts ? "Saving..." : "Save Co-hosts"} 
                 </button> 
               </section> 
  
               <section className="events-manage-panel events-manage-panel-wide"> 
-                <div className="events-manage-tabs"> 
-                  <button type="button" className={manageTab === "details" ? "events-tab active" : "events-tab"} onClick={() => setManageTab("details")}>Details</button> 
-                  <button type="button" className={manageTab === "rsvps" ? "events-tab active" : "events-tab"} onClick={() => setManageTab("rsvps")}>RSVPs</button> 
-                  <button type="button" className={manageTab === "attendance" ? "events-tab active" : "events-tab"} onClick={() => setManageTab("attendance")}>Attendance</button> 
+                <div className="events-manage-tabs" role="group" aria-label="Manage event sections">
+                  <button type="button" aria-pressed={manageTab === "details"} className={manageTab === "details" ? "events-tab active" : "events-tab"} onClick={() => setManageTab("details")}>Details</button>
+                  <button type="button" aria-pressed={manageTab === "rsvps"} className={manageTab === "rsvps" ? "events-tab active" : "events-tab"} onClick={() => setManageTab("rsvps")}>RSVPs</button>
+                  <button type="button" aria-pressed={manageTab === "attendance"} className={manageTab === "attendance" ? "events-tab active" : "events-tab"} onClick={() => setManageTab("attendance")}>Attendance</button>
                 </div> 
  
                 {manageTab === "details" ? ( 
@@ -1624,11 +1626,11 @@ function ManageEventModal({
                     <div className="events-form-grid"> 
                       <label className="events-field"> 
                         <span>Start <strong className="events-required-asterisk" aria-hidden="true">*</strong></span> 
-                        <input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} required /> 
+                        <input type="datetime-local" step="60" value={startAt} onChange={(e) => setStartAt(e.target.value)} required />
                       </label> 
                       <label className="events-field"> 
                         <span>End <strong className="events-required-asterisk" aria-hidden="true">*</strong></span> 
-                        <input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} required /> 
+                        <input type="datetime-local" step="60" value={endAt} onChange={(e) => setEndAt(e.target.value)} required />
                       </label> 
                     </div> 
  
@@ -1741,7 +1743,7 @@ function ManageEventModal({
                         </label> 
                         <label className="events-field"> 
                           <span>Repeat through</span> 
-                          <input type="datetime-local" value={recurrenceEndDate} onChange={(e) => setRecurrenceEndDate(e.target.value)} disabled={recurrenceFrequency === "none"} /> 
+                          <input type="datetime-local" step="60" value={recurrenceEndDate} onChange={(e) => setRecurrenceEndDate(e.target.value)} disabled={recurrenceFrequency === "none"} />
                         </label> 
                       </div> 
                     </div> 
@@ -1836,7 +1838,7 @@ function ManageEventModal({
                             <select value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)}> 
                               <option value="going">Going</option> 
                               <option value="maybe">Maybe</option> 
-                              <option value="notGoing">Pass</option> 
+                              <option value="notGoing">Not Going</option>
                             </select> 
                           </label> 
                           {manageData.event?.shiftBasedRegistration ? ( 
@@ -1884,7 +1886,7 @@ function ManageEventModal({
                     <div className="events-rsvp-columns"> 
                       {["going", "maybe", "notGoing"].map((status) => ( 
                         <div key={status} className="events-rsvp-column"> 
-                          <h4>{status}</h4> 
+                          <h4>{status === "notGoing" ? "Not Going" : toTitleCase(status)}</h4>
                           {(manageData.rsvps || []).filter((entry) => entry.status === status).length ? ( 
                             (manageData.rsvps || []) 
                               .filter((entry) => entry.status === status) 
@@ -1909,23 +1911,10 @@ function ManageEventModal({
                     <div className="events-inline-card"> 
                       <div className="events-stack-panel-head"> 
                         <div> 
-                          <h3>Manage Event / Add Member</h3> 
+                          <h3>Add member</h3>
                           <p>Retroactively add a member who missed sign-up so attendance and points stay accurate.</p> 
                         </div> 
-                        <button 
-                          type="button" 
-                          className="events-primary-button" 
-                          onClick={() => addManagedMember({ 
-                            userId: memberToAdd, 
-                            rsvpStatus: manualRsvpStatus, 
-                            attendanceStatus: manualAttendanceStatus, 
-                            shiftId: manualShiftId, 
-                            pointsAwarded: manualPoints === "" ? undefined : Number(manualPoints), 
-                          })} 
-                          disabled={!memberToAdd || addingMember} 
-                        > 
-                          {addingMember ? "Adding..." : "Add Member"} 
-                        </button> 
+
                       </div> 
  
                       <div className="events-form-grid"> 
@@ -1945,7 +1934,7 @@ function ManageEventModal({
                           <select value={manualRsvpStatus} onChange={(e) => setManualRsvpStatus(e.target.value)}> 
                             <option value="going">Going</option> 
                             <option value="maybe">Maybe</option> 
-                            <option value="notGoing">Pass</option> 
+                            <option value="notGoing">Not Going</option>
                           </select> 
                         </label> 
                       </div> 
@@ -1975,8 +1964,25 @@ function ManageEventModal({
                           </select> 
                         </label> 
                       ) : null} 
+                      <div className="events-member-actions">
+                        <button
+                          type="button"
+                          className="events-secondary-button"
+                          onClick={() => addManagedMember({
+                            userId: memberToAdd,
+                            rsvpStatus: manualRsvpStatus,
+                            attendanceStatus: manualAttendanceStatus,
+                            shiftId: manualShiftId,
+                            pointsAwarded: manualPoints === "" ? undefined : Number(manualPoints),
+                          })}
+                          disabled={!memberToAdd || addingMember}
+                        >
+                          {addingMember ? "Adding..." : "Add Member"}
+                        </button>
+                      </div>
                     </div> 
  
+                    <div className="events-attendance-card">
                     <div className="events-attendance-table-wrap"> 
                       {(() => { 
                         const byId = new Map(); 
@@ -2000,7 +2006,8 @@ function ManageEventModal({
                                 <th>Points</th> 
                               </tr> 
                             </thead> 
-                            <tbody> 
+                            <tbody>
+                              {!rows.length ? <tr><td colSpan={5} className="events-attendance-empty">No attendance records yet.</td></tr> : null}
                               {rows.map((row) => { 
                                 const edit = attendanceEdits[row.uid] || {}; 
                                 const rsvp = row.rsvp; 
@@ -2014,7 +2021,7 @@ function ManageEventModal({
                                 return ( 
                                   <tr key={row.uid}> 
                                     <td>{name}</td> 
-                                    <td>{rsvp?.status || "-"}</td> 
+                                    <td>{rsvp?.status === "notGoing" ? "Not Going" : toTitleCase(rsvp?.status || "-")}</td>
                                     <td>{shiftLabel || "-"}</td> 
                                     <td> 
                                       <select value={edit.status || attendance?.status || ""} onChange={(e) => updateAttendanceRow(row.uid, "status", e.target.value)}> 
@@ -2039,6 +2046,7 @@ function ManageEventModal({
                           </table> 
                         ); 
                       })()} 
+                    </div>
                       <div className="events-table-actions"> 
                         <button type="button" className="events-primary-button" onClick={saveAttendance} disabled={savingAttendance}> 
                           {savingAttendance ? "Saving..." : "Save Attendance"} 

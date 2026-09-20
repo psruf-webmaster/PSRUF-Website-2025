@@ -1456,3 +1456,197 @@ label.events-filter-select {
   background: #ffffff !important;
   background-color: #ffffff !important;
 }
+
+/* Manage Event: shared spacing, accessible controls, and content-sized panels. */
+.events-manage-modal {
+  --manage-border: #8b777e;
+  --manage-muted: #66545d;
+}
+
+.events-manage-modal .events-modal-header {
+  align-items: center;
+  background: #fffafc;
+}
+
+.events-manage-modal .events-kicker {
+  color: #6d2c2c;
+  background: #f5e8ed;
+  width: fit-content;
+  font-weight: 700;
+}
+
+.events-manage-modal .events-icon-button {
+  flex-shrink: 0;
+}
+
+.events-manage-split {
+  align-items: start;
+}
+
+.events-manage-panel {
+  min-width: 0;
+}
+
+.events-manage-modal .events-manage-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--manage-border);
+  border-radius: 14px;
+  background: #f5e8ed;
+}
+
+.events-manage-modal .events-manage-tabs .events-tab {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #54252d;
+}
+
+.events-manage-modal .events-manage-tabs .events-tab.active {
+  background: #6d2c2c;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(45, 18, 18, 0.15);
+}
+
+.events-manage-modal .events-field input,
+.events-manage-modal .events-field select,
+.events-manage-modal .events-field textarea,
+.events-manage-modal .events-attendance-table input,
+.events-manage-modal .events-attendance-table select {
+  box-sizing: border-box;
+  min-height: 46px;
+  border: 1px solid var(--manage-border);
+  background-color: #ffffff;
+  line-height: 1.4;
+}
+
+.events-manage-modal input::placeholder,
+.events-manage-modal textarea::placeholder,
+.events-manage-modal .events-empty-note {
+  color: var(--manage-muted);
+}
+
+.events-manage-modal .events-secondary-button,
+.events-manage-modal .events-icon-button,
+.events-manage-modal .events-chip,
+.events-manage-modal .events-segment {
+  border-color: var(--manage-border);
+}
+
+.events-manage-modal :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid #6d2c2c;
+  outline-offset: 3px;
+}
+
+.events-cohost-list {
+  display: grid;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding: 8px;
+  border: 1px solid var(--manage-border);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.events-cohost-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  color: #2a1e23;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.events-cohost-option:has(input:checked) {
+  background: #f5e8ed;
+}
+
+.events-cohost-option input {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  accent-color: #6d2c2c;
+}
+
+.events-cohost-option small {
+  display: block;
+  color: var(--manage-muted);
+  font-size: 0.8rem;
+}
+
+.events-cohost-save {
+  width: 100%;
+}
+
+.events-manage-modal .events-rsvp-column h4 {
+  font-weight: 750;
+  margin: 0 0 12px;
+}
+
+.events-manage-modal .events-rsvp-columns {
+  align-items: start;
+}
+
+.events-member-actions,
+.events-manage-modal .events-table-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+}
+
+.events-attendance-card {
+  min-width: 0;
+  border: 1px solid var(--manage-border);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.events-manage-modal .events-attendance-table-wrap {
+  border: 0;
+  border-radius: 0;
+}
+
+.events-manage-modal .events-table-actions {
+  position: static;
+  margin: 0;
+  padding: 16px;
+  border-top: 1px solid var(--manage-border);
+  background: #faf5f7;
+}
+
+.events-manage-modal .events-attendance-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--manage-muted);
+}
+
+.events-manage-modal .events-modal-header h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  line-height: 1.25;
+  font-weight: 750;
+  color: #2a1e23;
+}
+
+.events-manage-modal .events-stack-panel-head h3 {
+  font-weight: 700;
+}
+
+.events-manage-modal .events-field input,
+.events-manage-modal .events-field select {
+  height: 48px;
+  min-height: 48px !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
