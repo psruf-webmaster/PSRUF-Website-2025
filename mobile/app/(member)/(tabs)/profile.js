@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { AppScreen, Card } from '../../../src/components/AppScreen';
 import { useAuth } from '../../../src/context/AuthContext';
-import { api, authHeaders } from '../../../src/lib/api';
+import { api } from '../../../src/lib/api';
 import { Notice } from '../../../src/components/MobileUI';
 
 export default function ProfileScreen() {
@@ -62,8 +62,8 @@ export default function ProfileScreen() {
     setMessage('');
 
     try {
+      if (!user?.token) throw new Error('Please log out and log in again to update your profile.');
       const payload = new FormData();
-      payload.append('userId', user?._id || user?.id || '');
       Object.entries(form).forEach(([key, value]) => {
         payload.append(key, value || '');
       });
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
       }
 
       const response = await api.patch('/users/me', payload, {
-        headers: authHeaders(user),
+        headers: { Authorization: `Bearer ${user.token}` },
       });
       await updateUser(response.data?.user || null);
       setProfileAsset(null);
@@ -95,12 +95,14 @@ export default function ProfileScreen() {
     setMessage('');
 
     try {
+      if (!user?.token) throw new Error('Please log out and log in again to change your password.');
       const response = await api.patch('/users/me/password', passwordForm, {
         headers: {
-          ...authHeaders(user),
+          Authorization: `Bearer ${user.token}`,
           'Content-Type': 'application/json',
         },
       });
+      if (response.data?.token) await updateUser({ ...user, token: response.data.token });
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setMessage(response.data?.message || 'Password updated.');
     } catch (requestError) {

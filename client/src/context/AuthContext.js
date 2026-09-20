@@ -34,6 +34,7 @@ export default function AuthProvider({ children }) {
     if (!nextUser) {
       setUser(null);
       localStorage.removeItem("psr_user");
+      localStorage.removeItem("psr_token");
       return;
     }
 
@@ -67,6 +68,7 @@ export default function AuthProvider({ children }) {
         throw new Error(data.message || "Login failed");
       }
 
+      localStorage.setItem("psr_token", data.token);
       updateUser(data.user);
 
       return data.user;
@@ -84,6 +86,7 @@ export default function AuthProvider({ children }) {
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem("psr_user");
+    localStorage.removeItem("psr_token");
   }, []);
 
   /*

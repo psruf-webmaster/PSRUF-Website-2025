@@ -51,6 +51,7 @@ function Login() {
       </form>
 
       <div className="signinup-footer">
+        <p><Link to="/forgot-password">Forgot Password?</Link></p>
         <p>
           New to our website? <Link to="/signup">Sign up here</Link>
         </p>

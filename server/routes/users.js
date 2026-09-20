@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
+const { requireJwt, issueToken } = require('../middleware/requireJwt');
 const multer = require('multer');
 const { storage, getCloudinaryFileUrl } = require('../utils/cloudinaryConfig');
 const { sanitizeMemberStatuses } = require('../constants/memberOptions');
@@ -142,7 +143,7 @@ router.get('/me', async (req, res) => {
   }
 });
 
-router.patch('/me', handleProfileUpload, async (req, res) => {
+router.patch('/me', requireJwt, handleProfileUpload, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -217,7 +218,7 @@ router.patch('/me', handleProfileUpload, async (req, res) => {
   }
 });
 
-router.patch('/me/password', async (req, res) => {
+router.patch('/me/password', requireJwt, async (req, res) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ message: 'User required' });
@@ -228,7 +229,7 @@ router.patch('/me/password', async (req, res) => {
       confirmPassword,
     } = req.body || {};
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if (![currentPassword, newPassword, confirmPassword].every(value => typeof value === 'string' && value.length > 0)) {
       return res.status(400).json({ message: 'All password fields are required.' });
     }
 
@@ -236,8 +237,8 @@ router.patch('/me/password', async (req, res) => {
       return res.status(400).json({ message: 'New passwords do not match.' });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'New password must be at least 6 characters long.' });
+    if (newPassword.length < 6 || Buffer.byteLength(newPassword) > 72) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters and at most 72 bytes.' });
     }
 
     const matches = await bcrypt.compare(currentPassword, user.personalPassword || '');
@@ -245,10 +246,20 @@ router.patch('/me/password', async (req, res) => {
       return res.status(400).json({ message: 'Current password is incorrect.' });
     }
 
-    user.personalPassword = await bcrypt.hash(newPassword, 10);
-    await user.save();
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const updated = await User.updateOne({ _id: user._id, personalPassword: user.personalPassword }, {
+      $set: { personalPassword: passwordHash },
+      $inc: { passwordVersion: 1 },
+      $unset: { resetPasswordToken: '', resetPasswordExpires: '' },
+    });
+    if (!updated.modifiedCount) {
+      return res.status(400).json({ message: 'Password changed during this request. Please try again.' });
+    }
 
-    return res.json({ message: 'Password updated successfully.' });
+    return res.json({
+      message: 'Password updated successfully.',
+      token: issueToken({ _id: user._id, passwordVersion: (user.passwordVersion || 0) + 1 }),
+    });
   } catch (err) {
     console.error('Users me password update error:', err);
     return res.status(500).json({ message: 'Server error' });

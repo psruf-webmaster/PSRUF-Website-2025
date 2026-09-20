@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { api, authHeaders, getUserId } from '../lib/api';
 import { normalizeUserAssets } from '../lib/assetUrls';
@@ -15,9 +15,12 @@ export default function AuthProvider({ children }) {
   const [hydrated, setHydrated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const tokenRef = useRef(null);
 
   const updateUser = useCallback(async (nextUser) => {
     const normalized = nextUser ? normalizeUserAssets(nextUser) : null;
+    tokenRef.current = normalized ? (normalized.token || tokenRef.current) : null;
+    if (normalized) normalized.token = tokenRef.current;
     setUser(normalized);
 
     if (!normalized) {
@@ -58,7 +61,7 @@ export default function AuthProvider({ children }) {
 
     try {
       const response = await api.post('/auth/login', { email, password });
-      const nextUser = await updateUser(response.data.user || null);
+      const nextUser = await updateUser(response.data.user ? { ...response.data.user, token: response.data.token } : null);
       return nextUser;
     } catch (requestError) {
       const nextError = requestError?.response?.data?.message || requestError.message || 'Login failed';
@@ -78,6 +81,7 @@ export default function AuthProvider({ children }) {
         return;
       }
 
+      tokenRef.current = storedUser?.token || null;
       setUser(normalizeUserAssets(storedUser));
       setHydrated(true);
     }

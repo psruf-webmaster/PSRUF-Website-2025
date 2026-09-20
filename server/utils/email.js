@@ -31,7 +31,16 @@ async function sendApprovalEmail(to, name = 'there') {
   });
 }
 
-module.exports = { transporter, sendApprovalEmail };
+async function sendPasswordResetEmail(to, link) {
+  return transporter.sendMail({
+    from: `"${process.env.SMTP_FROM_NAME || 'PSR Webmaster'}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
+    to,
+    subject: 'Reset your PSR password',
+    text: `Reset your password using this link:\n\n${link}\n\nThis link expires in one hour and can only be used once. If you did not request this, you can ignore this email.`,
+  });
+}
+
+module.exports = { transporter, sendApprovalEmail, sendPasswordResetEmail };
 
 /** ---- one-off manual test runner (optional) ----
  * Run: node utils/email.js
