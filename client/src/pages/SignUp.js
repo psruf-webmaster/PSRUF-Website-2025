@@ -157,8 +157,9 @@ function SignUp() {
         <div className="form-row">
           <label>Create Your Password!<span>*</span></label>
           <input
-            type="text"
+            type="password"
             name="personalPassword"
+            autoComplete="new-password"
             value={formData.personalPassword}
             onChange={handleChange}
             required
