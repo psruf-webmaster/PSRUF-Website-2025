@@ -242,6 +242,11 @@
   font: inherit;
 }
 
+/* The select supplies the caret inset from this wrapper's visible border. */
+label.events-filter-select {
+  padding-right: 0;
+}
+
 /* =========================================================
    CARDS — modern refresh
    Cleaner surface, subtler shadows, refined type + spacing,
