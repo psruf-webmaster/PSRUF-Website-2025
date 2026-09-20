@@ -111,10 +111,9 @@ export default function ProfileSettings() {
     setMessage('');
 
     try {
+      const token = localStorage.getItem('psr_token');
+      if (!token) throw new Error('Please log out and log in again to update your profile.');
       const payload = new FormData();
-      
-      // Append userId explicitly so multer/FormData requests authenticate reliably
-      payload.append('userId', user?.id || user?._id || '');
 
       Object.entries(form).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
@@ -129,7 +128,7 @@ export default function ProfileSettings() {
       const response = await fetch('/api/users/me', {
         method: 'PATCH',
         headers: {
-          Authorization: `Bearer ${user?.id || user?._id || ''}`,
+          Authorization: `Bearer ${token}`,
         },
         body: payload,
       });
@@ -153,6 +152,25 @@ export default function ProfileSettings() {
 
   const handlePasswordSubmit = async (event) => {
     event.preventDefault();
+    const { currentPassword, newPassword, confirmPassword } = passwordForm;
+    setPasswordMessage('');
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError('All password fields are required.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long.');
+      return;
+    }
+    const token = localStorage.getItem('psr_token');
+    if (!token) {
+      setPasswordError('Please log out and log in again to change your password.');
+      return;
+    }
     setSavingPassword(true);
     setPasswordError('');
     setPasswordMessage('');
@@ -162,7 +180,7 @@ export default function ProfileSettings() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${user?.id || user?._id || ''}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(passwordForm),
       });
@@ -172,6 +190,7 @@ export default function ProfileSettings() {
         throw new Error(result.message || 'Unable to update password.');
       }
 
+      if (result.token) localStorage.setItem('psr_token', result.token);
       setPasswordMessage(result.message || 'Password updated.');
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (saveError) {
@@ -369,7 +388,7 @@ export default function ProfileSettings() {
           >
             <form className="profile-form" onSubmit={handlePasswordSubmit}>
               <div className="profile-form-header">
-                <h2>Reset password</h2>
+                <h2>Change password</h2>
                 <p>Change your sign-in password with your current password.</p>
               </div>
 

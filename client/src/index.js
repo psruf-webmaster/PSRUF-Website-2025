@@ -4,6 +4,12 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// Translate email links for the existing HashRouter before rendering.
+if (window.location.pathname.replace(/\/$/, '').endsWith('/reset-password')) {
+  const basePath = window.location.pathname.replace(/reset-password\/?$/, '');
+  window.history.replaceState(null, '', `${basePath}#/reset-password${window.location.search}`);
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

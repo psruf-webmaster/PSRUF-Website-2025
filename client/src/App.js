@@ -25,6 +25,7 @@ import Members from './pages/Members';
 import SignInUp from './pages/SignInUp';
 import SignUp from './pages/SignUp';
 import Login from './pages/Login';
+import PasswordReset from './pages/PasswordReset';
 import ProfileSettings from './pages/ProfileSettings';
 
 import Dashboard from './account pages/Dashboard';
@@ -175,6 +176,8 @@ function isPublicRoute(pathname) {
     '/signinup',
     '/signup',
     '/login',
+    '/forgot-password',
+    '/reset-password',
   ].includes(pathname);
 }
 
@@ -221,6 +224,8 @@ function AppContent() {
           <Route path="/signinup" element={<SignInUp />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<PasswordReset key="forgot" />} />
+          <Route path="/reset-password" element={<PasswordReset key="reset" reset />} />
 
           {/* Logged-in area */}
           <Route element={<PrivateRoute />}>

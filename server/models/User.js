@@ -69,6 +69,9 @@ const userSchema = new mongoose.Schema({
   },
 
   personalPassword: String,
+  passwordVersion: { type: Number, default: 0 },
+  resetPasswordToken: { type: String, select: false },
+  resetPasswordExpires: { type: Date, select: false },
 
   ufEmail: {
     type: String,

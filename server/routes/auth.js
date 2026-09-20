@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const { rateLimit } = require('express-rate-limit');
+const { issueToken } = require('../middleware/requireJwt');
+const { sendPasswordResetEmail } = require('../utils/email');
 const mongoose = require('mongoose');
 const { sanitizeMemberStatuses } = require('../constants/memberOptions');
 const { normalizeAssetUrl } = require('../utils/assetUrls');
@@ -227,6 +231,7 @@ router.post('/login', async (req, res) => {
 
     return res.json({
       message: 'Login successful',
+      token: issueToken(user),
       user: toSafeUser(user),
     });
   } catch (err) {
@@ -272,6 +277,80 @@ router.get('/me', async (req, res) => {
     return res.status(500).json({
       message: 'Server error.',
     });
+  }
+});
+
+const passwordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { message: 'Too many password requests. Please try again later.' },
+});
+
+router.post('/forgot-password', passwordLimiter, async (req, res) => {
+  const { personalEmail } = req.body || {};
+  if (typeof personalEmail !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalEmail.trim())) {
+    return res.status(400).json({ message: 'Enter a valid personal email address.' });
+  }
+  try {
+    let base;
+    try {
+      base = new URL(process.env.FRONTEND_URL);
+      if (!['http:', 'https:'].includes(base.protocol)) throw new Error();
+    } catch {
+      console.error('Password reset unavailable: configure FRONTEND_URL with the public frontend URL.');
+      return res.status(503).json({ message: 'Password reset is temporarily unavailable. Please try again later.' });
+    }
+    const user = await User.findOne({ personalEmail: personalEmail.trim() });
+    if (user) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const digest = crypto.createHash('sha256').update(rawToken).digest('hex');
+      await User.updateOne({ _id: user._id }, { $set: {
+        resetPasswordToken: digest,
+        resetPasswordExpires: new Date(Date.now() + 60 * 60 * 1000),
+      } });
+      const link = new URL('reset-password', `${base.origin}${base.pathname.replace(/\/$/, '')}/`);
+      link.searchParams.set('token', rawToken);
+      try {
+        await sendPasswordResetEmail(user.personalEmail, link.toString());
+      } catch {
+        // Never expose account existence or email transport details to the caller.
+        console.error('Password reset email delivery failed.');
+        await User.updateOne({ _id: user._id, resetPasswordToken: digest }, {
+          $unset: { resetPasswordToken: '', resetPasswordExpires: '' },
+        });
+      }
+    }
+    return res.json({ message: 'If an account exists for that email, a reset link has been sent.' });
+  } catch {
+    return res.status(500).json({ message: 'Unable to request a reset. Please try again later.' });
+  }
+});
+
+router.post('/reset-password', passwordLimiter, async (req, res) => {
+  const { token, newPassword } = req.body || {};
+  if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
+    return res.status(400).json({ message: 'This reset link is invalid or expired. Request a new link.' });
+  }
+  if (typeof newPassword !== 'string' || newPassword.length < 6 || Buffer.byteLength(newPassword) > 72) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters and at most 72 bytes.' });
+  }
+  try {
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    // Consume the token atomically so concurrent requests cannot reuse it.
+    const user = await User.findOneAndUpdate({
+      resetPasswordToken: crypto.createHash('sha256').update(token).digest('hex'),
+      resetPasswordExpires: { $gt: new Date() },
+    }, {
+      $set: { personalPassword: passwordHash },
+      $inc: { passwordVersion: 1 },
+      $unset: { resetPasswordToken: '', resetPasswordExpires: '' },
+    });
+    if (!user) return res.status(400).json({ message: 'This reset link is invalid or expired. Request a new link.' });
+    return res.json({ message: 'Password reset successfully. You can now log in.' });
+  } catch {
+    return res.status(500).json({ message: 'Unable to reset password. Please try again later.' });
   }
 });
 
