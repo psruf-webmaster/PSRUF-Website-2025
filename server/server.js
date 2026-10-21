@@ -89,7 +89,9 @@ app.post('/api/internal/event-reminders', async (req, res) => {
   }
   if (mongoose.connection.readyState !== 1) return res.sendStatus(503);
   try {
-    return res.json(await require('./utils/eventReminders').runEventReminders());
+    const texts = await require('./services/scheduledSms').runScheduledSms();
+    const reminders = await require('./utils/eventReminders').runEventReminders();
+    return res.json({ ...reminders, texts });
   } catch {
     console.error('Event reminder scan failed.');
     return res.sendStatus(500);
@@ -238,6 +240,7 @@ async function startServer() {
     // Initialize the unique reminder claim index before any scans can send mail.
     await require('./models/EventReminder').init();
     require('./utils/eventReminders').startEventReminders();
+    require('./services/scheduledSms').startScheduledSms();
     const PORT = process.env.PORT || 5000;
     // Note: We use server.listen instead of app.listen to support Socket.io
     server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

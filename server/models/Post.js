@@ -44,6 +44,14 @@ const PostSchema = new mongoose.Schema({
   imageURL: String,
   attachments: { type: [AttachmentItemSchema], default: [] },
   sendTextBlast: { type: Boolean, default: false },
+  smsSchedule: {
+    sendAt: Date,
+    message: String,
+    status: { type: String, enum: ['pending', 'sending', 'sent', 'partial', 'failed', 'cancelled'] },
+    attempted: Number,
+    sent: Number,
+    failed: Number,
+  },
   blastAudience: {
     scope: { type: String, enum: ['ALL','GROUPS','INDIVIDUALS','CHANNEL','ROLE_STATUS'], default: 'ALL' },
     channelSlug: String,
@@ -56,4 +64,5 @@ const PostSchema = new mongoose.Schema({
   comments: [CommentSchema],
 });
 
+PostSchema.index({ 'smsSchedule.status': 1, 'smsSchedule.sendAt': 1 });
 module.exports = mongoose.model('Post', PostSchema);

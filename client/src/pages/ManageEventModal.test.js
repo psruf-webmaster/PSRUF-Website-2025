@@ -55,7 +55,7 @@ test('empty attendance table and member action preserve their behavior', () => {
   expect(saveAttendance).toHaveBeenCalledTimes(1);
 });
 
-test('management controls require the creator, not a role or co-host designation', () => {
+test('management controls allow creators and VP Standards, not general roles or co-hosts', () => {
   const { isManager } = require('./Events');
   const event = { createdBy: 'owner', coHosts: ['other'] };
   for (const role of ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer']) {
@@ -65,4 +65,8 @@ test('management controls require the creator, not a role or co-host designation
   expect(isManager({ _id: 'owner' }, { createdBy: { _id: 'owner' } })).toBe(true);
   expect(isManager({}, {})).toBe(false);
   expect(isManager(null, event)).toBe(false);
+  expect(isManager({ id: 'other', positions: [{ key: 'VP_STANDARDS' }] }, event)).toBe(true);
+  expect(isManager({ id: 'other', positions: ['VP_STANDARDS'] }, event)).toBe(true);
+  expect(isManager({ id: 'other', positions: [{ key: 'STANDARDS_BOARD', exec: 'VP_STANDARDS' }] }, event)).toBe(false);
+  expect(isManager({ id: 'other', positions: [{ key: 'VP_SOCIAL' }] }, event)).toBe(false);
 });

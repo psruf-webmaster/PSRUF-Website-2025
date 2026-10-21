@@ -99,7 +99,9 @@ function canRsvp(user) {
 export function isManager(user, event) {
   const userId = user?._id || user?.id;
   const creatorId = event?.createdBy?._id || event?.createdBy?.id || event?.createdBy;
-  return !!userId && !!creatorId && String(userId) === String(creatorId);
+  const vpStandards = (Array.isArray(user?.positions) ? user.positions : []).some(position =>
+    String(position?.key || position || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === 'VPSTANDARDS');
+  return !!userId && !!event && (vpStandards || (!!creatorId && String(userId) === String(creatorId)));
 } 
  
 function fmtRange(startAt, endAt) {
@@ -1561,7 +1563,7 @@ export function ManageEventModal({
               <section className="events-manage-panel"> 
                 <div className="events-manage-panel-head"> 
                   <h3>Co-hosts</h3> 
-                  <p>Choose up to seven co-hosts. Only the event creator can manage this event.</p>
+                  <p>Choose up to seven co-hosts. The event creator and VP Standards can manage this event.</p>
                 </div> 
                 <div className="events-cohost-list" role="group" aria-label="Co-hosts" aria-describedby="cohost-selection-count">
                   {cohostOptions.length ? cohostOptions.map((option) => {

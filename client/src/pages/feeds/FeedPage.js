@@ -1,3 +1,4 @@
+import ScheduledTexts, { canScheduleTexts, TextScheduleFields } from './ScheduledTexts';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
@@ -512,6 +513,10 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
   const { user } = useAuth();
   const [content, setContent] = useState('');
   const [sendAsText, setSendAsText] = useState(false);
+  const [scheduleLater, setScheduleLater] = useState(false);
+  const [smsSendAt, setSmsSendAt] = useState('');
+  const [scheduleRefresh, setScheduleRefresh] = useState(0);
+  const canSchedule = canScheduleTexts(user);
   const [audienceType, setAudienceType] = useState('channel');
   const [includeRoles, setIncludeRoles] = useState([]);
   const [includeMemberStatuses, setIncludeMemberStatuses] = useState([]);
@@ -523,9 +528,9 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const currentUserAvatar = getCurrentUserAvatar(user);
-  const canSendSms = Array.isArray(user?.positions)
+  const canSendSms = canSchedule || (Array.isArray(user?.positions)
     ? user.positions.some(p => SMS_ALLOWED_POSITION_KEYS.includes(p?.key))
-    : false;
+    : false);
 
   useEffect(() => {
     return () => {
@@ -623,6 +628,9 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
   const resetComposer = () => {
     setContent('');
     setSendAsText(false);
+    setScheduleLater(false);
+    setSmsSendAt('');
+    setScheduleRefresh(value => value + 1);
     setAudienceType('channel');
     setIncludeRoles([]);
     setIncludeMemberStatuses([]);
@@ -638,6 +646,12 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
     if (postingLocked) return;
     if (sendAsText && audienceType === 'specific' && selectedUserIds.length === 0) return;
 
+    if (!composerState && sendAsText && scheduleLater && (!smsSendAt ||
+        !Number.isFinite(+new Date(smsSendAt)) || +new Date(smsSendAt) < Date.now() + 60000 ||
+        +new Date(smsSendAt) > Date.now() + 90 * 86400000)) {
+      onError && onError('Choose a text send time between one minute and 90 days from now.');
+      return;
+    }
     setSubmitting(true);
     const userId = user?._id || user?.id;
 
@@ -750,6 +764,7 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
     formData.append('sendAsText', String(canSendSms ? sendAsText : false));
 
     if (canSendSms && sendAsText) {
+      if (canSchedule && scheduleLater) formData.append('smsSendAt', new Date(smsSendAt).toISOString());
       formData.append('audienceType', audienceType);
       formData.append('channelSlug', feed);
       formData.append('includeRoles', JSON.stringify(includeRoles));
@@ -765,6 +780,7 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
       method: 'POST',
       headers: {
         'x-user-id': userId || '',
+        ...(scheduleLater ? { Authorization: `Bearer ${localStorage.getItem('psr_token') || ''}` } : {}),
       },
       body: formData,
     });
@@ -988,6 +1004,8 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#6d2c2c', fontWeight: 600 }}>
             <input type="checkbox" checked={sendAsText} onChange={e => setSendAsText(e.target.checked)} /> Also send as text blast
           </label>
+          {sendAsText && canSchedule && <TextScheduleFields key={scheduleRefresh} later={scheduleLater} onModeChange={setScheduleLater} value={smsSendAt} onChange={setSmsSendAt} />}
+          {canSchedule && <ScheduledTexts refreshKey={scheduleRefresh} />}
           {sendAsText && (
             <select value={audienceType} onChange={e => setAudienceType(e.target.value)} style={{ borderRadius: 999, border: '1px solid rgba(109,44,44,0.14)', background: 'rgba(255,255,255,0.8)', color: '#4f2f32', padding: '4px 8px', minHeight: 30, fontSize: 11, width: '100%', boxSizing: 'border-box' }}>
               <option value="channel">All Sisters (Channel Members)</option>
@@ -1173,7 +1191,7 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
             </div>
           )}
 
-          {post.sendTextBlast && <div style={{ fontSize: 10, color: '#a5b4fc', marginTop: 6 }}>📢 Sent as text</div>}
+          {post.sendTextBlast && <div style={{ fontSize: 10, color: '#a5b4fc', marginTop: 6 }}>{post.smsSchedule?.status ? `Text ${post.smsSchedule.status}${post.smsSchedule.status === 'pending' ? ` for ${new Date(post.smsSchedule.sendAt).toLocaleString()}` : ''}` : '📢 Sent as text'}</div>}
           {post.smsResult && (
             <div style={{ fontSize: 10, color: post.smsResult.failed > 0 ? '#fca5a5' : '#bdc7ff', marginTop: 5 }}>
               {post.smsResult.error

@@ -248,6 +248,7 @@ function memberStatusMatches(event, user) {
 
 function eventVisibleToUser(event, user) {
   if (!user) return false;
+  if (isVpStandards(user)) return true;
   if (isOfficerLevel(user)) return true;
 
   const rolesAllowed = normalizeStrings(event.visibility?.rolesAllowed);
@@ -333,7 +334,12 @@ function getSpecialEventQuery(viewParam, user) {
 }
 
 function canManageEvent(event, user) {
-  return isEventCreator(event, user);
+  return !!event && (isVpStandards(user) || isEventCreator(event, user));
+}
+
+function isVpStandards(user) {
+  return (Array.isArray(user?.positions) ? user.positions : []).some(position =>
+    String(position?.key || position || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === 'VPSTANDARDS');
 }
 
 function isEventCreator(event, user) {
@@ -729,7 +735,7 @@ router.patch('/:id', requireJwt, eventUpload, async (req, res) => {
         }))
       : event.attachments || [];
 
-    const isCandOfficerEditor = isCandOfficer(user);
+    const isCandOfficerEditor = isCandOfficer(user) && !isVpStandards(user);
     const merged = {
       title: has('title') ? req.body?.title : event.title,
       description: has('description') ? req.body?.description : event.description,
@@ -770,7 +776,7 @@ router.patch('/:id', requireJwt, eventUpload, async (req, res) => {
     merged.points.category = String(merged.points.category).toLowerCase();
 
     if (applyToSeries && event.recurrence?.seriesId) {
-      const seriesEvents = await Event.find({ 'recurrence.seriesId': event.recurrence.seriesId, createdBy: user._id }).sort({ startAt: 1 });
+      const seriesEvents = await Event.find({ 'recurrence.seriesId': event.recurrence.seriesId, createdBy: event.createdBy }).sort({ startAt: 1 });
       for (const seriesEvent of seriesEvents) {
         const seriesUpdate = applySeriesTemplate(seriesEvent, merged, event._id);
         Object.assign(seriesEvent, seriesUpdate);
@@ -1226,14 +1232,14 @@ router.delete('/:id', requireJwt, async (req, res) => {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    if (!isEventCreator(event, user)) {
+    if (!canManageEvent(event, user)) {
       return res.status(403).json({ message: 'Not allowed to delete this event' });
     }
 
     const scope = String(req.query.scope || 'single').toLowerCase();
     const deleteSeries = scope === 'series' && !!event.recurrence?.seriesId;
     const targetEvents = deleteSeries
-      ? await Event.find({ 'recurrence.seriesId': event.recurrence.seriesId, createdBy: user._id }).select('_id')
+      ? await Event.find({ 'recurrence.seriesId': event.recurrence.seriesId, createdBy: event.createdBy }).select('_id')
       : [{ _id: event._id }];
     const targetIds = targetEvents.map((entry) => entry._id);
 

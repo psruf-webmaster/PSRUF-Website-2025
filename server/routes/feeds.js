@@ -6,7 +6,8 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const { sendSmsBlastToRecipients } = require('../services/smsBlast');
 const { resolveRecipientPhones } = require('../services/audienceResolver');
-const { canUserSendSms } = require('../utils/smsPermissions');
+const { canUserSendSms, canScheduleSms } = require('../utils/smsPermissions');
+const { requireJwt } = require('../middleware/requireJwt');
 const Channel = require('../models/Channel');
 const { upload, getCloudinaryFileUrl } = require('../utils/cloudinaryConfig');
 const {
@@ -22,6 +23,7 @@ function bad(res, code, message) {
 }
 
 async function getUser(req) {
+  if (req.user) return req.user;
   const auth = req.header('authorization') || '';
   if (auth.toLowerCase().startsWith('bearer ')) {
     const bearerId = auth.slice(7).trim();
@@ -247,6 +249,26 @@ function emitFeedSocketEvent(req, feed, eventName, payload) {
 }
 
 // ---------- List posts (newest first) ----------
+router.get('/scheduled-sms', requireJwt, async (req, res) => {
+  if (!canScheduleSms(req.user)) return bad(res, 403, 'Not allowed');
+  try {
+    const posts = await Post.find({ 'smsSchedule.status': { $exists: true } })
+      .select('feed authorName smsSchedule').sort({ 'smsSchedule.sendAt': -1 }).limit(100);
+    return res.json(posts);
+  } catch { return bad(res, 500, 'Unable to load scheduled texts'); }
+});
+
+router.post('/scheduled-sms/:id/cancel', requireJwt, async (req, res) => {
+  if (!canScheduleSms(req.user)) return bad(res, 403, 'Not allowed');
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) return bad(res, 400, 'Invalid post id');
+  try {
+    const post = await Post.findOneAndUpdate({ _id: req.params.id, 'smsSchedule.status': 'pending' },
+      { $set: { 'smsSchedule.status': 'cancelled' } }, { new: true });
+    if (!post) return bad(res, 409, 'This text has already been sent, cancelled, or started sending');
+    return res.json({ ok: true });
+  } catch { return bad(res, 500, 'Unable to cancel scheduled text'); }
+});
+
 router.get('/:feed/posts', async (req, res) => {
   try {
     const user = await getUser(req);
@@ -323,7 +345,10 @@ router.patch('/:feed/read-state', async (req, res) => {
 });
 
 // ---------- Create post (optional text blast & Cloudinary uploads) ----------
-router.post('/:feed/posts', upload.array('attachments', 10), async (req, res) => {
+router.post('/:feed/posts', upload.array('attachments', 10), (req, res, next) => {
+  if (req.body?.smsSendAt) return requireJwt(req, res, next);
+  next();
+}, async (req, res) => {
   try {
     const user = await getUser(req);
     const { feed } = req.params;
@@ -387,6 +412,25 @@ router.post('/:feed/posts', upload.array('attachments', 10), async (req, res) =>
       return bad(res, 400, 'Invalid audienceType');
     }
 
+    let smsSchedule;
+    if (body.smsSendAt) {
+      if (!canScheduleSms(user)) return bad(res, 403, 'Only Webmaster and C&R can schedule text blasts');
+      const sendAt = new Date(body.smsSendAt);
+      if (typeof body.smsSendAt !== 'string' || !/(Z|[+-]\d{2}:\d{2})$/.test(body.smsSendAt) ||
+          !sendAsTextNormalized || !String(content).trim() || !Number.isFinite(+sendAt) ||
+          +sendAt < Date.now() + 60000 || +sendAt > Date.now() + 90 * 86400000) {
+        return bad(res, 400, 'Choose a text send time between one minute and 90 days from now');
+      }
+      // Validate the audience before creating the post; resolve current recipients again at send time.
+      try {
+        await resolveRecipientPhones({ audienceType: audienceTypeNormalized, channelSlug: channelSlugNormalized,
+          includeRoles, includeMemberStatuses, selectedUserIds });
+      } catch (err) {
+        return bad(res, [400, 404].includes(err.status) ? err.status : 500, 'Unable to schedule: check the selected text audience');
+      }
+      smsSchedule = { sendAt, message: String(content).trim(), status: 'pending' };
+    }
+
     const post = await Post.create({
       feed,
       authorId: user._id,
@@ -397,6 +441,7 @@ router.post('/:feed/posts', upload.array('attachments', 10), async (req, res) =>
       imageURL: firstAttachment,
       attachments: finalAttachments,
       sendTextBlast: sendAsTextNormalized,
+      smsSchedule,
       blastAudience: sendAsTextNormalized
         ? buildBlastAudience({
             audienceType: audienceTypeNormalized,
@@ -412,7 +457,7 @@ router.post('/:feed/posts', upload.array('attachments', 10), async (req, res) =>
       emitFeedSocketEvent(req, feed, 'post:created', livePost);
 
     let smsResult;
-    const shouldSendSms = sendAsTextNormalized === true;
+    const shouldSendSms = sendAsTextNormalized === true && !smsSchedule;
 
     if (shouldSendSms) {
       if (!canUserSendSms(user)) {
