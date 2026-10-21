@@ -1000,19 +1000,22 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
       </AnimatePresence>
 
       {!composerState && canSendSms && (
-        <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 5, color: '#7b5d63', padding: '0 2px', boxSizing: 'border-box' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#6d2c2c', fontWeight: 600 }}>
-            <input type="checkbox" checked={sendAsText} onChange={e => setSendAsText(e.target.checked)} /> Also send as text blast
+        <div className="sms-composer-panel">
+          <label className="sms-enable">
+            <span><strong>Text blast</strong><small>Reach sisters beyond the feed.</small></span>
+            <input type="checkbox" role="switch" aria-label="Also send as text blast" checked={sendAsText} onChange={e => setSendAsText(e.target.checked)} />
           </label>
           {sendAsText && canSchedule && <TextScheduleFields key={scheduleRefresh} later={scheduleLater} onModeChange={setScheduleLater} value={smsSendAt} onChange={setSmsSendAt} />}
-          {canSchedule && <ScheduledTexts refreshKey={scheduleRefresh} />}
           {sendAsText && (
-            <select value={audienceType} onChange={e => setAudienceType(e.target.value)} style={{ borderRadius: 999, border: '1px solid rgba(109,44,44,0.14)', background: 'rgba(255,255,255,0.8)', color: '#4f2f32', padding: '4px 8px', minHeight: 30, fontSize: 11, width: '100%', boxSizing: 'border-box' }}>
+            <label className="sms-audience"><span className="sms-field-label">Send to</span>
+            <select value={audienceType} onChange={e => setAudienceType(e.target.value)}>
+
               <option value="channel">All Sisters (Channel Members)</option>
               <option value="roleStatus">By Role/Status</option>
               <option value="specific">Specific Users</option>
-            </select>
+            </select></label>
           )}
+          {canSchedule && <ScheduledTexts refreshKey={scheduleRefresh} />}
         </div>
       )}
 

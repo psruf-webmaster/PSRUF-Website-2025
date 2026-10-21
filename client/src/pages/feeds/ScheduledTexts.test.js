@@ -19,11 +19,11 @@ test('later delivery exposes local time and returning to now clears the schedule
   }
   render(<Fields />);
   expect(screen.queryByLabelText('Send text at')).not.toBeInTheDocument();
-  fireEvent.change(screen.getByRole('combobox'), { target: { value: 'later' } });
+  fireEvent.click(screen.getByRole('radio', { name: /Schedule for later/ }));
   fireEvent.change(screen.getByLabelText('Send text at'), { target: { value: '2027-01-01T12:30' } });
   expect(screen.getByText(/feed post appears now/)).toBeInTheDocument();
-  fireEvent.change(screen.getByRole('combobox'), { target: { value: 'now' } });
-  fireEvent.change(screen.getByRole('combobox'), { target: { value: 'later' } });
+  fireEvent.click(screen.getByRole('radio', { name: /Send now/ }));
+  fireEvent.click(screen.getByRole('radio', { name: /Schedule for later/ }));
   expect(screen.getByLabelText('Send text at')).toHaveValue('');
 });
 
