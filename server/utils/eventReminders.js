@@ -20,7 +20,7 @@ function reminderDue(event, rsvp, offset, now) {
 
 function reminderMessage(event, rsvp, offset) {
   const message = rsvpMessage(event, {}, 'going', rsvp.shiftId);
-  const headline = offset === 72 ? 'Just a reminder: your event is in 3 days.' : 'Just a reminder: your event is in a few hours.';
+  const headline = offset === 72 ? `Just a reminder: ${event.title} is in 3 days.` : `Just a reminder: ${event.title} is in a few hours.`;
   message.subject = `Reminder: ${String(event.title).replace(/[\r\n]/g, ' ')} ${offset === 72 ? 'is in 3 days' : 'starts soon'}`;
   message.text = message.text.replace('Hi there,', `Hi there,\n\n${headline}`);
   message.html = message.html.replace('<p>Hi there,</p>', `<p>Hi there,</p><p>${headline}</p>`);

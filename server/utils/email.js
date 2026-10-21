@@ -22,7 +22,7 @@ async function sendPasswordResetEmail(to, link) {
     from: `"${process.env.SMTP_FROM_NAME || 'PSR Webmaster'}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
     to,
     subject: 'Reset your PSR password',
-    text: `Reset your password using this link:\n\n${link}\n\nThis link expires in one hour and can only be used once. If you did not request this, you can ignore this email.`,
+    text: `Hello! Reset your password using this link:\n\n${link}\n\nThis link expires in one hour and can only be used once. If you did not request this, you can ignore this email and let the webmaster know :).`,
   });
 }
 
@@ -48,9 +48,9 @@ if (require.main === module) {
         subject: 'PSR email delivery test',
         text: 'If you see this, email delivery works.',
       });
-      console.log('✅ Test email sent:', info.messageId);
+      console.log('Test email sent:', info.messageId);
     } catch (e) {
-      console.error('❌ Failed to send test email:', e.message);
+      console.error('Failed to send test email:', e.message);
     }
   })();
 }
