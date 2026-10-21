@@ -26,7 +26,15 @@ async function sendPasswordResetEmail(to, link) {
   });
 }
 
-module.exports = { transporter, sendApprovalEmail, sendPasswordResetEmail };
+async function sendRsvpChangeEmail(to, message) {
+  return transporter.sendMail({
+    from: `"${process.env.SMTP_FROM_NAME || 'PSR Webmaster'}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
+    to,
+    ...message,
+  });
+}
+
+module.exports = { transporter, sendApprovalEmail, sendPasswordResetEmail, sendRsvpChangeEmail };
 
 /** ---- one-off manual test runner (optional) ----
  * Run: node utils/email.js

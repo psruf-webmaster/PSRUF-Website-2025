@@ -5,6 +5,7 @@ const { requireJwt } = require('../middleware/requireJwt');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const PointsLedger = require('../models/PointsLedger');
+const { notifyRsvpChange } = require('../utils/rsvpNotification');
 const multer = require('multer');
 const { storage, getCloudinaryFileUrl } = require('../utils/cloudinaryConfig');
 
@@ -924,13 +925,19 @@ router.post('/:id/rsvp', async (req, res) => {
     if (!user) return res.status(401).json({ message: 'User required' });
 
     const { status, shiftId } = req.body || {};
-    if (status != null && status !== 'none' && !['going', 'maybe', 'notGoing'].includes(status)) {
+    if (!['none', 'going', 'maybe', 'notGoing'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
+    }
+    if (shiftId != null && typeof shiftId !== 'string') {
+      return res.status(400).json({ message: 'Invalid shift' });
     }
 
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Event not found' });
     if (!eventVisibleToUser(event, user)) return res.status(403).json({ message: 'Not allowed to RSVP' });
+    if (!event.shiftBasedRegistration && shiftId) {
+      return res.status(400).json({ message: 'This event does not use shifts' });
+    }
 
     if (event.shiftBasedRegistration) {
       const shifts = Array.isArray(event.shifts) ? event.shifts : [];
@@ -955,14 +962,24 @@ router.post('/:id/rsvp', async (req, res) => {
 
     const existing = (event.rsvps || []).find((entry) => String(entry.user) === String(user._id));
     const sameSelection = existing && existing.status === status && String(existing.shiftId || '') === String(shiftId || '');
+    if (sameSelection || (status === 'none' && !existing)) {
+      return res.json({ ...event.toObject(), ...summarizeRsvps(event, user) });
+    }
+    const originalRsvps = event.toObject().rsvps;
+    const notificationShiftId = status === 'none' ? existing.shiftId : shiftId;
 
-    if (status === 'none' || sameSelection) {
+    if (status === 'none') {
       event.rsvps = (event.rsvps || []).filter((entry) => String(entry.user) !== String(user._id));
     } else {
       upsertRsvpEntry(event, { userId: user._id, status, shiftId });
     }
 
-    await event.save();
+    // Compare-and-set prevents concurrent retries from saving/sending the same change twice.
+    const saved = await Event.updateOne({ _id: event._id, rsvps: originalRsvps }, {
+      $set: { rsvps: event.toObject().rsvps }, $inc: { __v: 1 },
+    }, { runValidators: true });
+    if (!saved.modifiedCount) return res.status(409).json({ message: 'RSVPs changed. Refresh and try again.' });
+    await notifyRsvpChange(event.toObject(), user, status, notificationShiftId);
     const summary = summarizeRsvps(event, user);
     return res.json({ ...event.toObject(), ...summary });
   } catch (err) {
