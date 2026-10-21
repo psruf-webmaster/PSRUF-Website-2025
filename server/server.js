@@ -77,6 +77,24 @@ transporter.verify()
 
 // --- Middleware ---
 app.use(express.json({ limit: '10mb' }));
+// An external scheduler can wake a sleeping Render Free service every five minutes.
+app.post('/api/internal/event-reminders', async (req, res) => {
+  const expected = process.env.REMINDER_CRON_SECRET;
+  const supplied = req.get('authorization') || '';
+  const crypto = require('crypto');
+  const token = `Bearer ${expected || ''}`;
+  if (!expected || Buffer.byteLength(supplied) !== Buffer.byteLength(token) ||
+      !crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(token))) {
+    return res.sendStatus(401);
+  }
+  if (mongoose.connection.readyState !== 1) return res.sendStatus(503);
+  try {
+    return res.json(await require('./utils/eventReminders').runEventReminders());
+  } catch {
+    console.error('Event reminder scan failed.');
+    return res.sendStatus(500);
+  }
+});
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/sms', require('./routes/sms'));
 
@@ -217,6 +235,9 @@ async function startServer() {
       }
     });
 
+    // Initialize the unique reminder claim index before any scans can send mail.
+    await require('./models/EventReminder').init();
+    require('./utils/eventReminders').startEventReminders();
     const PORT = process.env.PORT || 5000;
     // Note: We use server.listen instead of app.listen to support Socket.io
     server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
