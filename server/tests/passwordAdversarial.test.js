@@ -21,6 +21,7 @@ const copy = () => ({ ...user, save: async function () { Object.assign(user, thi
 beforeEach(async () => {
   process.env.JWT_SECRET = 'adversarial-test-secret';
   process.env.FRONTEND_URL = 'https://phisigmarhouf.com';
+  delete process.env.RENDER_EXTERNAL_URL;
   links = []; mailFailure = false; dbFailure = false;
   user = { _id: '507f1f77bcf86cd799439011', personalEmail: 'member@example.com',
     isApproved: true, personalPassword: await bcrypt.hash('original-password', 10) };
@@ -187,6 +188,26 @@ test('invalid frontend configuration fails before writing tokens or sending mail
     assert.equal(user.resetPasswordToken, undefined);
   }
   assert.equal(links.length, 0);
+});
+
+test('Render deployments can send and redeem reset links without FRONTEND_URL', async () => {
+  delete process.env.FRONTEND_URL;
+  process.env.RENDER_EXTERNAL_URL = 'https://psruf-website-2026.onrender.com';
+  const result = await request('/api/auth/forgot-password', { personalEmail: user.personalEmail }, {
+    headers: { Host: 'attacker.example', 'X-Forwarded-Host': 'attacker.example', Origin: 'https://attacker.example' },
+  });
+  assert.equal(result.status, 200);
+  const link = new URL(links[0]);
+  assert.equal(link.origin, process.env.RENDER_EXTERNAL_URL);
+  assert.equal(link.pathname, '/reset-password');
+  assert.equal((await reset(link.searchParams.get('token'))).status, 200);
+  assert.equal(await bcrypt.compare('replacement-password', user.personalPassword), true);
+});
+
+test('explicit frontend configuration takes precedence over the Render URL', async () => {
+  process.env.RENDER_EXTERNAL_URL = 'https://psruf-website-2026.onrender.com';
+  assert.equal((await forgot(user.personalEmail)).status, 200);
+  assert.equal(new URL(links[0]).origin, process.env.FRONTEND_URL);
 });
 
 test('reset emails use the configured public domain, never request host headers', async () => {

@@ -5,3 +5,6 @@ services:
     rootDir: server
     buildCommand: npm install && npm run build:client
     startCommand: npm start
+    envVars:
+      - key: FRONTEND_URL
+        value: https://psruf-website-2026.onrender.com

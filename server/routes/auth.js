@@ -296,10 +296,12 @@ router.post('/forgot-password', passwordLimiter, async (req, res) => {
   try {
     let base;
     try {
-      base = new URL(process.env.FRONTEND_URL);
+      // Render serves the frontend and API together and supplies this trusted URL.
+      // Never derive recovery links from request Host/Origin headers.
+      base = new URL(process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL);
       if (!['http:', 'https:'].includes(base.protocol)) throw new Error();
     } catch {
-      console.error('Password reset unavailable: configure FRONTEND_URL with the public frontend URL.');
+      console.error('Password reset unavailable: configure FRONTEND_URL with the public frontend URL (or RENDER_EXTERNAL_URL on Render).');
       return res.status(503).json({ message: 'Password reset is temporarily unavailable. Please try again later.' });
     }
     const user = await User.findOne({ personalEmail: personalEmail.trim() });

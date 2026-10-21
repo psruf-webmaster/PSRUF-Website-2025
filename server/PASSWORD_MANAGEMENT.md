@@ -1,5 +1,7 @@
 # Password management configuration
 
+The Render deployment file sets `FRONTEND_URL` to `https://psruf-website-2026.onrender.com`. If it is unset, password reset links fall back to Render's `RENDER_EXTERNAL_URL` for the combined frontend/API service. For a custom domain or separately hosted frontend, set `FRONTEND_URL` explicitly. Recovery links never use request host or origin headers. Outside Render, `FRONTEND_URL` is required (use `http://localhost:3000` for local development).
+
 Set `JWT_SECRET` to a strong random secret before deploying. Login issues an HS256 JWT valid for one day; the web client stores it as `psr_token` and removes it on logout. Existing sessions must log out and log in again to change passwords.
 
 Set `FRONTEND_URL` to the public frontend base URL (for example `https://example.com`, without a hash route). Configure the existing `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and optional `SMTP_FROM_NAME` / `SMTP_FROM_EMAIL` settings. Reset emails link to `/reset-password?token=...`; the host must serve the SPA at that path. The Express production server already supports this fallback. The client translates that URL to its hash route.
