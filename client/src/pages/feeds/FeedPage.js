@@ -509,7 +509,7 @@ function CommentThreadItem({
   );
 }
 
-function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composerState, onClearComposerState, onError, isCompact = false, isPhone = false }) {
+export function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composerState, onClearComposerState, onError, isCompact = false, isPhone = false }) {
   const { user } = useAuth();
   const [content, setContent] = useState('');
   const [sendAsText, setSendAsText] = useState(false);
@@ -525,6 +525,8 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
   const [draftAttachments, setDraftAttachments] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const submitInFlight = useRef(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const currentUserAvatar = getCurrentUserAvatar(user);
@@ -640,161 +642,181 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
     onClearComposerState && onClearComposerState();
   };
 
+  const reportSubmitError = (message) => {
+    setSubmitError(message);
+    onError && onError(message);
+  };
+
   const submit = async () => {
+    if (submitInFlight.current) return;
+    setSubmitError('');
     const trimmed = content.trim();
-    if ((!trimmed && draftAttachments.length === 0) || !user) return;
-    if (postingLocked) return;
-    if (sendAsText && audienceType === 'specific' && selectedUserIds.length === 0) return;
+    if (!user) return reportSubmitError('Please sign in again to send your message.');
+    if (!trimmed && draftAttachments.length === 0) return reportSubmitError('Write a message or add an attachment first.');
+    if (postingLocked) return reportSubmitError('This channel is archived. Messages cannot be sent here.');
+    if (!composerState && sendAsText && audienceType === 'specific' && selectedUserIds.length === 0) {
+      return reportSubmitError('Select at least one person to receive this text, or choose a different audience.');
+    }
+    if (!composerState && sendAsText && audienceType === 'roleStatus' && !includeRoles.length && !includeMemberStatuses.length) {
+      return reportSubmitError('Select at least one role or member status for this text.');
+    }
+    if (!composerState && sendAsText && scheduleLater && !localStorage.getItem('psr_token')) {
+      return reportSubmitError('Please sign out and sign in again before scheduling a text. Your draft is still here.');
+    }
 
     if (!composerState && sendAsText && scheduleLater && (!smsSendAt ||
         !Number.isFinite(+new Date(smsSendAt)) || +new Date(smsSendAt) < Date.now() + 60000 ||
         +new Date(smsSendAt) > Date.now() + 90 * 86400000)) {
-      onError && onError('Choose a text send time between one minute and 90 days from now.');
+      reportSubmitError('Choose a text send time between one minute and 90 days from now.');
       return;
     }
+    submitInFlight.current = true;
     setSubmitting(true);
-    const userId = user?._id || user?.id;
+    try {
+      const userId = user?._id || user?.id;
 
-    if (composerState?.type === 'edit') {
-      const res = await fetch(`/api/feeds/posts/${composerState.postId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId || '',
-        },
-        body: JSON.stringify({ content: trimmed }),
-      });
-      const data = await res.json().catch(() => ({}));
-      setSubmitting(false);
-      if (!res.ok) {
-        onError && onError(data.message || 'Unable to edit message');
+      if (composerState?.type === 'edit') {
+        const res = await fetch(`/api/feeds/posts/${composerState.postId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': userId || '',
+          },
+          body: JSON.stringify({ content: trimmed }),
+        });
+        const data = await res.json().catch(() => { throw new Error('The server returned an unexpected response. Check the feed before trying again.'); });
+        if (!res.ok) {
+          reportSubmitError(data.message || 'Unable to edit message');
+          return;
+        }
+        resetComposer();
+        onPosted && onPosted();
         return;
       }
-      resetComposer();
-      onPosted && onPosted();
-      return;
-    }
 
-    if (composerState?.type === 'editComment') {
-      const res = await fetch(`/api/feeds/posts/${composerState.postId}/comments/${composerState.commentId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId || '',
-        },
-        body: JSON.stringify({ text: trimmed }),
-      });
-      const data = await res.json().catch(() => ({}));
-      setSubmitting(false);
-      if (!res.ok) {
-        onError && onError(data.message || 'Unable to edit reply');
+      if (composerState?.type === 'editComment') {
+        const res = await fetch(`/api/feeds/posts/${composerState.postId}/comments/${composerState.commentId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': userId || '',
+          },
+          body: JSON.stringify({ text: trimmed }),
+        });
+        const data = await res.json().catch(() => { throw new Error('The server returned an unexpected response. Check the feed before trying again.'); });
+        if (!res.ok) {
+          reportSubmitError(data.message || 'Unable to edit reply');
+          return;
+        }
+        resetComposer();
+        onPosted && onPosted();
         return;
       }
-      resetComposer();
-      onPosted && onPosted();
-      return;
-    }
 
-    if (composerState?.type === 'reply') {
-      const res = await fetch(`/api/feeds/posts/${composerState.postId}/comments`, {
+      if (composerState?.type === 'reply') {
+        const res = await fetch(`/api/feeds/posts/${composerState.postId}/comments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': userId || '',
+          },
+          body: JSON.stringify({ text: trimmed }),
+        });
+        const data = await res.json().catch(() => { throw new Error('The server returned an unexpected response. Check the feed before trying again.'); });
+        if (!res.ok) {
+          reportSubmitError(data.message || 'Unable to reply to message');
+          return;
+        }
+        resetComposer();
+        onPosted && onPosted();
+        return;
+      }
+
+      if (composerState?.type === 'replyComment') {
+        const res = await fetch(`/api/feeds/posts/${composerState.postId}/comments/${composerState.commentId}/replies`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': userId || '',
+          },
+          body: JSON.stringify({
+            text: trimmed,
+            replyToId: composerState.replyToId || '',
+            replyToName: composerState.replyToName || '',
+          }),
+        });
+        const data = await res.json().catch(() => { throw new Error('The server returned an unexpected response. Check the feed before trying again.'); });
+        if (!res.ok) {
+          reportSubmitError(data.message || 'Unable to reply');
+          return;
+        }
+        resetComposer();
+        onPosted && onPosted();
+        return;
+      }
+
+      if (composerState?.type === 'editReply') {
+        const res = await fetch(`/api/feeds/posts/${composerState.postId}/comments/${composerState.commentId}/replies/${composerState.replyId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': userId || '',
+          },
+          body: JSON.stringify({ text: trimmed }),
+        });
+        const data = await res.json().catch(() => { throw new Error('The server returned an unexpected response. Check the feed before trying again.'); });
+        if (!res.ok) {
+          reportSubmitError(data.message || 'Unable to edit reply');
+          return;
+        }
+        resetComposer();
+        onPosted && onPosted();
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('content', trimmed);
+      formData.append('sendAsText', String(canSendSms ? sendAsText : false));
+
+      if (canSendSms && sendAsText) {
+        if (canSchedule && scheduleLater) formData.append('smsSendAt', new Date(smsSendAt).toISOString());
+        formData.append('audienceType', audienceType);
+        formData.append('channelSlug', feed);
+        formData.append('includeRoles', JSON.stringify(includeRoles));
+        formData.append('includeMemberStatuses', JSON.stringify(includeMemberStatuses));
+        formData.append('selectedUserIds', JSON.stringify(selectedUserIds));
+      }
+
+      draftAttachments.forEach(item => {
+        if (item.file) formData.append('attachments', item.file);
+      });
+
+      const res = await fetch(`/api/feeds/${feed}/posts`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'x-user-id': userId || '',
+          ...(scheduleLater ? { Authorization: `Bearer ${localStorage.getItem('psr_token') || ''}` } : {}),
         },
-        body: JSON.stringify({ text: trimmed }),
+        body: formData,
       });
-      const data = await res.json().catch(() => ({}));
-      setSubmitting(false);
+
+      const data = await res.json().catch(() => { throw new Error('The server returned an unexpected response. Check the feed before trying again.'); });
+
       if (!res.ok) {
-        onError && onError(data.message || 'Unable to reply to message');
+        reportSubmitError(data.message || 'Server error creating post');
         return;
       }
+
       resetComposer();
       onPosted && onPosted();
-      return;
-    }
-
-    if (composerState?.type === 'replyComment') {
-      const res = await fetch(`/api/feeds/posts/${composerState.postId}/comments/${composerState.commentId}/replies`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId || '',
-        },
-        body: JSON.stringify({
-          text: trimmed,
-          replyToId: composerState.replyToId || '',
-          replyToName: composerState.replyToName || '',
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
+    } catch (err) {
+      reportSubmitError(err.message === 'Failed to fetch'
+        ? 'Could not reach the server. Your draft is saved here. Check your connection and try again.'
+        : err.message || 'Unable to send your message. Please try again.');
+    } finally {
+      submitInFlight.current = false;
       setSubmitting(false);
-      if (!res.ok) {
-        onError && onError(data.message || 'Unable to reply');
-        return;
-      }
-      resetComposer();
-      onPosted && onPosted();
-      return;
     }
-
-    if (composerState?.type === 'editReply') {
-      const res = await fetch(`/api/feeds/posts/${composerState.postId}/comments/${composerState.commentId}/replies/${composerState.replyId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId || '',
-        },
-        body: JSON.stringify({ text: trimmed }),
-      });
-      const data = await res.json().catch(() => ({}));
-      setSubmitting(false);
-      if (!res.ok) {
-        onError && onError(data.message || 'Unable to edit reply');
-        return;
-      }
-      resetComposer();
-      onPosted && onPosted();
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('content', trimmed);
-    formData.append('sendAsText', String(canSendSms ? sendAsText : false));
-
-    if (canSendSms && sendAsText) {
-      if (canSchedule && scheduleLater) formData.append('smsSendAt', new Date(smsSendAt).toISOString());
-      formData.append('audienceType', audienceType);
-      formData.append('channelSlug', feed);
-      formData.append('includeRoles', JSON.stringify(includeRoles));
-      formData.append('includeMemberStatuses', JSON.stringify(includeMemberStatuses));
-      formData.append('selectedUserIds', JSON.stringify(selectedUserIds));
-    }
-
-    draftAttachments.forEach(item => {
-      if (item.file) formData.append('attachments', item.file);
-    });
-
-    const res = await fetch(`/api/feeds/${feed}/posts`, {
-      method: 'POST',
-      headers: {
-        'x-user-id': userId || '',
-        ...(scheduleLater ? { Authorization: `Bearer ${localStorage.getItem('psr_token') || ''}` } : {}),
-      },
-      body: formData,
-    });
-
-    const data = await res.json().catch(() => ({}));
-    setSubmitting(false);
-
-    if (!res.ok) {
-      onError && onError(data.message || 'Server error creating post');
-      return;
-    }
-
-    resetComposer();
-    onPosted && onPosted();
   };
 
   if (!canPost) return null;
@@ -811,6 +833,8 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
           </button>
         </div>
       )}
+
+      {submitError && <p role="alert" className="sms-error" style={{ margin: '0 0 10px' }}>{submitError}</p>}
 
       {draftAttachments.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
@@ -947,7 +971,7 @@ function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, composer
               fontSize: 12,
             }}
           >
-            {submitting ? '...' : ['edit', 'editComment', 'editReply'].includes(composerState?.type) ? 'Save' : ['reply', 'replyComment'].includes(composerState?.type) ? 'Reply' : 'Send'}
+            {submitting ? 'Sending…' : ['edit', 'editComment', 'editReply'].includes(composerState?.type) ? 'Save' : ['reply', 'replyComment'].includes(composerState?.type) ? 'Reply' : 'Send'}
           </motion.button>
         </div>
       </div>
