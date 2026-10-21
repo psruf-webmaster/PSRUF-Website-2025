@@ -10,7 +10,9 @@ const digest = value => crypto.createHash('sha256').update(value).digest('hex');
 let user, server, base, links, mailFailure, dbFailure;
 require.cache[require.resolve('../utils/email')] = { loaded: true, exports: {
   sendPasswordResetEmail: async (_to, link) => {
-    if (mailFailure) throw new Error('Simulated SMTP failure');
+    if (mailFailure) throw Object.assign(new Error('Sensitive SMTP response and reset link'), {
+      code: 'EAUTH', command: 'AUTH PLAIN', responseCode: 535,
+    });
     links.push(link);
   },
 } };
@@ -176,7 +178,17 @@ test('reset expiration at the present and in the past is rejected', async () => 
 test('SMTP failure stays generic and clears the failed token', async () => {
   const absent = await forgot('absent@example.com');
   mailFailure = true;
-  assert.deepEqual(await forgot(user.personalEmail), absent);
+  const logged = [];
+  const originalError = console.error;
+  console.error = (...args) => logged.push(args);
+  try {
+    assert.deepEqual(await forgot(user.personalEmail), absent);
+  } finally {
+    console.error = originalError;
+  }
+  assert.deepEqual(logged, [['Password reset email delivery failed.', {
+    code: 'EAUTH', command: 'AUTH PLAIN', responseCode: 535,
+  }]]);
   assert.equal(user.resetPasswordToken, undefined);
   assert.equal(user.resetPasswordExpires, undefined);
 });

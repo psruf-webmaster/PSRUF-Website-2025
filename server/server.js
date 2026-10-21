@@ -69,11 +69,11 @@ io.use(async (socket, next) => {
   }
 });
 
-// --- SMTP sanity check (optional) ---
+// Resend verification checks configuration; SMTP also checks the connection.
 const { transporter } = require('./utils/email');
 transporter.verify()
-  .then(() => console.log('✅ SMTP connection OK'))
-  .catch(err => console.error('❌ SMTP error:', err.message));
+  .then(() => console.log('✅ Email transport configured'))
+  .catch(err => console.error('❌ Email transport error:', err.message));
 
 // --- Middleware ---
 app.use(express.json({ limit: '10mb' }));

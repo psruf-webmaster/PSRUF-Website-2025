@@ -1,22 +1,8 @@
 // server/utils/email.js
 require('dotenv').config();
-const nodemailer = require('nodemailer');
+const { createEmailDelivery } = require('./emailDelivery');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true', // true only for 465
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-// Optional: verify on import (comment out if too noisy)
-transporter
-  .verify()
-  .then(() => console.log('✅ SMTP connection OK'))
-  .catch((err) => console.error('❌ SMTP error:', err.message));
+const transporter = createEmailDelivery();
 
 async function sendApprovalEmail(to, name = 'there') {
   const fromName = process.env.SMTP_FROM_NAME || 'PSR Webmaster';
@@ -49,10 +35,10 @@ if (require.main === module) {
   (async () => {
     try {
       const info = await transporter.sendMail({
-        from: `"${process.env.SMTP_FROM_NAME}" <${process.env.SMTP_FROM_EMAIL}>`,
+        from: `"${process.env.SMTP_FROM_NAME || 'PSR Webmaster'}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
         to: process.env.SMTP_USER, // send to yourself for the test
-        subject: 'PSR SMTP test',
-        text: 'If you see this, SMTP works.',
+        subject: 'PSR email delivery test',
+        text: 'If you see this, email delivery works.',
       });
       console.log('✅ Test email sent:', info.messageId);
     } catch (e) {

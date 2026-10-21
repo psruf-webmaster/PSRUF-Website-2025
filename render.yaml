@@ -6,5 +6,11 @@ services:
     buildCommand: npm install && npm run build:client
     startCommand: npm start
     envVars:
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
       - key: FRONTEND_URL
         value: https://psruf-website-2026.onrender.com

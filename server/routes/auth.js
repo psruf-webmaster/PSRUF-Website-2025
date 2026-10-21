@@ -316,9 +316,14 @@ router.post('/forgot-password', passwordLimiter, async (req, res) => {
       link.searchParams.set('token', rawToken);
       try {
         await sendPasswordResetEmail(user.personalEmail, link.toString());
-      } catch {
+      } catch (err) {
         // Never expose account existence or email transport details to the caller.
-        console.error('Password reset email delivery failed.');
+        // Log only transport metadata; messages may contain addresses or reset links.
+        console.error('Password reset email delivery failed.', {
+          code: err?.code,
+          command: err?.command,
+          responseCode: err?.responseCode,
+        });
         await User.updateOne({ _id: user._id, resetPasswordToken: digest }, {
           $unset: { resetPasswordToken: '', resetPasswordExpires: '' },
         });
