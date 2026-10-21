@@ -141,9 +141,9 @@ test('token payload fuzzing cannot mutate a password', async () => {
 
 test('new requests supersede old tokens and stored digests cannot be redeemed', async () => {
   await forgot(user.personalEmail);
-  const first = new URL(links[0]).searchParams.get('token');
+  const first = new URLSearchParams(new URL(links[0]).hash.split('?')[1]).get('token');
   await forgot(user.personalEmail);
-  const second = new URL(links[1]).searchParams.get('token');
+  const second = new URLSearchParams(new URL(links[1]).hash.split('?')[1]).get('token');
   assert.notEqual(first, second);
   assert.equal((await reset(first)).status, 400);
   assert.equal((await reset(user.resetPasswordToken)).status, 400);
@@ -202,7 +202,7 @@ test('invalid frontend configuration fails before writing tokens or sending mail
   assert.equal(links.length, 0);
 });
 
-test('Render deployments can send and redeem reset links without FRONTEND_URL', async () => {
+test('API-only Render deployments link to the public frontend without FRONTEND_URL', async () => {
   delete process.env.FRONTEND_URL;
   process.env.RENDER_EXTERNAL_URL = 'https://psruf-website-2026.onrender.com';
   const result = await request('/api/auth/forgot-password', { personalEmail: user.personalEmail }, {
@@ -210,9 +210,10 @@ test('Render deployments can send and redeem reset links without FRONTEND_URL', 
   });
   assert.equal(result.status, 200);
   const link = new URL(links[0]);
-  assert.equal(link.origin, process.env.RENDER_EXTERNAL_URL);
-  assert.equal(link.pathname, '/reset-password');
-  assert.equal((await reset(link.searchParams.get('token'))).status, 200);
+  assert.equal(link.origin, 'https://phisigmarhouf.com');
+  assert.equal(link.pathname, '/');
+  assert.equal(link.hash.split('?')[0], '#/reset-password');
+  assert.equal((await reset(new URLSearchParams(link.hash.split('?')[1]).get('token'))).status, 200);
   assert.equal(await bcrypt.compare('replacement-password', user.personalPassword), true);
 });
 
@@ -228,8 +229,8 @@ test('reset emails use the configured public domain, never request host headers'
   })).status, 200);
   const link = new URL(links[0]);
   assert.equal(link.origin, 'https://phisigmarhouf.com');
-  assert.equal(link.pathname, '/reset-password');
-  assert.match(link.searchParams.get('token'), /^[a-f0-9]{64}$/);
+  assert.equal(link.hash.split('?')[0], '#/reset-password');
+  assert.match(new URLSearchParams(link.hash.split('?')[1]).get('token'), /^[a-f0-9]{64}$/);
 });
 
 test('rate limit blocks the eleventh request with a JSON error', async () => {
@@ -249,7 +250,7 @@ test('database failures do not expose internal errors', async () => {
 test('reset invalidates old JWTs, including access to the recovery email', async () => {
   const oldJwt = issueToken(user);
   await forgot(user.personalEmail);
-  assert.equal((await reset(new URL(links[0]).searchParams.get('token'))).status, 200);
+  assert.equal((await reset(new URLSearchParams(new URL(links[0]).hash.split('?')[1]).get('token'))).status, 200);
   const result = await request('/api/users/me', { personalEmail: 'attacker@example.com' }, { token: oldJwt, method: 'PATCH' });
   assert.equal(result.status, 401);
   assert.equal(user.personalEmail, 'member@example.com');
@@ -259,7 +260,7 @@ test('reset invalidates old JWTs, including access to the recovery email', async
 test('password change rotates JWT, rejects old JWT, and invalidates pending reset links', async () => {
   const oldJwt = issueToken(user);
   await forgot(user.personalEmail);
-  const token = new URL(links[0]).searchParams.get('token');
+  const token = new URLSearchParams(new URL(links[0]).hash.split('?')[1]).get('token');
   const result = await change(passwordBody, oldJwt);
   assert.equal(result.status, 200);
   assert.equal(jwt.verify(result.body.token, process.env.JWT_SECRET).passwordVersion, 1);

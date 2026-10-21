@@ -13,4 +13,4 @@ services:
       - key: EMAIL_FROM
         sync: false
       - key: FRONTEND_URL
-        value: https://psruf-website-2026.onrender.com
+        value: https://phisigmarhouf.com

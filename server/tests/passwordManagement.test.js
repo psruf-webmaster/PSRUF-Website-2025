@@ -69,8 +69,8 @@ test('request is generic, stores a digest and one-hour expiry; reset tokens are 
   const absent = await request('/api/auth/forgot-password', { personalEmail: 'absent@example.com' });
   const existing = await request('/api/auth/forgot-password', { personalEmail: user.personalEmail });
   assert.deepEqual(existing, absent);
-  const token = new URL(sentLink).searchParams.get('token');
-  assert.equal(new URL(sentLink).pathname, '/reset-password');
+  const token = new URLSearchParams(new URL(sentLink).hash.split('?')[1]).get('token');
+  assert.equal(new URL(sentLink).hash.split('?')[0], '#/reset-password');
   assert.equal(user.resetPasswordToken, crypto.createHash('sha256').update(token).digest('hex'));
   assert.ok(user.resetPasswordExpires - Date.now() > 3590000);
   assert.equal((await request('/api/auth/reset-password', { token, newPassword: 'short' })).status, 400);

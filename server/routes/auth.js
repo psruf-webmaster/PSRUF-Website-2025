@@ -296,12 +296,12 @@ router.post('/forgot-password', passwordLimiter, async (req, res) => {
   try {
     let base;
     try {
-      // Render serves the frontend and API together and supplies this trusted URL.
+      // The frontend is hosted separately; Render's external URL can be API-only.
       // Never derive recovery links from request Host/Origin headers.
-      base = new URL(process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL);
+      base = new URL(process.env.FRONTEND_URL ?? 'https://phisigmarhouf.com');
       if (!['http:', 'https:'].includes(base.protocol)) throw new Error();
     } catch {
-      console.error('Password reset unavailable: configure FRONTEND_URL with the public frontend URL (or RENDER_EXTERNAL_URL on Render).');
+      console.error('Password reset unavailable: configure FRONTEND_URL with the public frontend URL.');
       return res.status(503).json({ message: 'Password reset is temporarily unavailable. Please try again later.' });
     }
     const user = await User.findOne({ personalEmail: personalEmail.trim() });
@@ -312,8 +312,8 @@ router.post('/forgot-password', passwordLimiter, async (req, res) => {
         resetPasswordToken: digest,
         resetPasswordExpires: new Date(Date.now() + 60 * 60 * 1000),
       } });
-      const link = new URL('reset-password', `${base.origin}${base.pathname.replace(/\/$/, '')}/`);
-      link.searchParams.set('token', rawToken);
+      const link = new URL(`${base.origin}${base.pathname.replace(/\/$/, '')}/`);
+      link.hash = `/reset-password?${new URLSearchParams({ token: rawToken })}`;
       try {
         await sendPasswordResetEmail(user.personalEmail, link.toString());
       } catch (err) {

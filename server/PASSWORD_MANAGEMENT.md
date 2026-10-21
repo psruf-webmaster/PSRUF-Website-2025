@@ -1,10 +1,10 @@
 # Password management configuration
 
-The Render deployment file sets `FRONTEND_URL` to `https://psruf-website-2026.onrender.com`. If it is unset, password reset links fall back to Render's `RENDER_EXTERNAL_URL` for the combined frontend/API service. For a custom domain or separately hosted frontend, set `FRONTEND_URL` explicitly. Recovery links never use request host or origin headers. Outside Render, `FRONTEND_URL` is required (use `http://localhost:3000` for local development).
+The Render deployment file sets `FRONTEND_URL=https://phisigmarhouf.com`. Set this on the **backend Render service** as well if it is managed separately. When unset, links default to that public website; `RENDER_EXTERNAL_URL` is deliberately ignored because it may be an API-only host. Links use `/#/reset-password?token=...` to open the existing HashRouter directly, without requiring a server route. Request a new email after deploying or changing this setting. For local development, set `FRONTEND_URL=http://localhost:3000`. Recovery links never use request host or origin headers.
 
 Set `JWT_SECRET` to a strong random secret before deploying. Login issues an HS256 JWT valid for one day; the web client stores it as `psr_token` and removes it on logout. Existing sessions must log out and log in again to change passwords.
 
-Set `FRONTEND_URL` to the public frontend base URL (for example `https://example.com`, without a hash route). Configure email delivery as described below. Reset emails link to `/reset-password?token=...`; the host must serve the SPA at that path. The Express production server already supports this fallback. The client translates that URL to its hash route.
+Set `FRONTEND_URL` to the public frontend base URL (for example `https://example.com`, without a hash route). Configure email delivery as described below. Reset emails link directly to `/#/reset-password?token=...`. The client also translates older `/reset-password` links when the host serves the SPA at that path.
 
 Reset tokens are random 32-byte values; only their SHA-256 digest is stored. They expire after one hour, are replaced by new requests, and are atomically cleared on successful reset. Password changes also clear outstanding reset tokens. Both public endpoints allow ten requests per IP per fifteen minutes using the existing express-rate-limit dependency. Mail failures are logged server-side without changing the generic account-existence response.
 
