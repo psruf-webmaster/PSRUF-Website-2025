@@ -47,13 +47,14 @@
 
 .dashboard-main-grid {
   display: grid;
-  grid-template-columns: 1.75fr 1fr;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
   gap: 0.72rem;
   align-items: start;
 }
 
 .dashboard-primary-column,
 .dashboard-sidebar-column {
+  min-width: 0;
   display: grid;
   gap: 0.72rem;
 }
@@ -1120,5 +1121,31 @@
     font-size: 0.75rem !important;
     white-space: nowrap !important;
     flex-shrink: 0 !important;
+  }
+}
+/* Align dashboard previews and contain long content within the columns. */
+.dashboard-primary-column > .dashboard-section,
+.dashboard-sidebar-column > .dashboard-section {
+  margin-top: 0;
+}
+
+.dashboard-section-heading > div:not(.dashboard-link-cta-wrap),
+.dashboard-activity-item > div {
+  min-width: 0;
+}
+
+.dashboard-section-heading h2,
+.dashboard-section-heading p,
+.dashboard-activity-title {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .dashboard-section-heading {
+    flex-wrap: wrap !important;
+  }
+
+  .dashboard-section-heading > div:not(.dashboard-link-cta-wrap) {
+    flex: 1;
   }
 }

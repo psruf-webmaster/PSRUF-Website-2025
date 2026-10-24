@@ -16,6 +16,8 @@ import { useAuth } from '../context/AuthContext';
 import './Dashboard.css';
 
 const POINT_MAX = 50;
+const EVENT_PREVIEW_LIMIT = 3;
+const ACTIVITY_PREVIEW_LIMIT = 4;
 
 const progressColorByKey = {
   phi: '#D4608A',
@@ -351,7 +353,7 @@ export default function Dashboard() {
         }
 
         activities.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
-        setRecentActivity(activities.slice(0, 8));
+        setRecentActivity(activities.slice(0, ACTIVITY_PREVIEW_LIMIT));
       } catch (e) {
         setRecentActivity([]);
       } finally {
@@ -365,6 +367,10 @@ export default function Dashboard() {
       loadRecentActivity();
     }
   }, [headers, isAlumni, userId, userScopeKey]);
+
+  const upcomingEvents = useMemo(() => [...events]
+    .sort((a, b) => new Date(a.startAt) - new Date(b.startAt))
+    .slice(0, EVENT_PREVIEW_LIMIT), [events]);
 
   const circles = [
     { label: 'Phi', key: 'phi' },
@@ -617,7 +623,7 @@ export default function Dashboard() {
               </motion.span>
               <div>
                 <h2>This Week&apos;s Events</h2>
-                <p>Stay ready for upcoming chapter events.</p>
+                <p>Up to {EVENT_PREVIEW_LIMIT} events this week. View all for the full schedule.</p>
               </div>
               <motion.div className="dashboard-link-cta-wrap" whileHover={{ x: 5 }} whileTap={{ scale: 0.95 }}>
                 <Link to="/events" className="dashboard-link-cta">
@@ -633,66 +639,12 @@ export default function Dashboard() {
               <div className="dashboard-empty">No events this week.</div>
             ) : (
               <div className="dashboard-events-row">
-                {events.map((ev, index) => <EventCard key={ev._id} ev={ev} index={index} />)}
+                {upcomingEvents.map((ev, index) => <EventCard key={ev._id} ev={ev} index={index} />)}
               </div>
             )}
           </motion.section>
 
-          <motion.section
-            className="dashboard-section"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <div className="dashboard-section-heading">
-              <motion.span
-                className="dashboard-section-icon"
-                aria-hidden="true"
-                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              >
-                <Clock3 size={16} strokeWidth={2} />
-              </motion.span>
-              <div>
-                <h2>Recent Activity</h2>
-                <p>See your recent RSVPs, attendance, and contributions.</p>
-              </div>
-            </div>
 
-            {loadingActivity ? (
-              <LoadingState text="Loading activity..." />
-            ) : recentActivity.length === 0 ? (
-              <div className="dashboard-empty">No recent activity yet.</div>
-            ) : (
-              <div className="dashboard-activity-list">
-                {recentActivity.map((item, index) => {
-                  const ActivityIcon = item.icon;
-                  return (
-                    <motion.article
-                      className="dashboard-activity-item"
-                      key={item.key}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 + 0.5 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <motion.span
-                        className="dashboard-activity-icon"
-                        aria-hidden="true"
-                        whileHover={{ scale: 1.15, rotate: [0, -10, 10, 0] }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <ActivityIcon size={14} strokeWidth={2} />
-                      </motion.span>
-                      <div>
-                        <div className="dashboard-activity-title">{item.action}</div>
-                        <div className="dashboard-activity-time">{formatRelativeTime(item.time)}</div>
-                      </div>
-                    </motion.article>
-                  );
-                })}
-              </div>
-            )}
-          </motion.section>
 
         </div>
 
@@ -897,6 +849,62 @@ export default function Dashboard() {
               </div>
             </div>
           </motion.section>}
+
+          <motion.section
+            className="dashboard-section dashboard-section-activity"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <div className="dashboard-section-heading">
+              <motion.span
+                className="dashboard-section-icon"
+                aria-hidden="true"
+                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+              >
+                <Clock3 size={16} strokeWidth={2} />
+              </motion.span>
+              <div>
+                <h2>Recent Activity</h2>
+                <p>Your latest RSVPs, attendance, and contributions.</p>
+              </div>
+            </div>
+
+            {loadingActivity ? (
+              <LoadingState text="Loading activity..." />
+            ) : recentActivity.length === 0 ? (
+              <div className="dashboard-empty">No recent activity yet.</div>
+            ) : (
+              <div className="dashboard-activity-list">
+                {recentActivity.map((item, index) => {
+                  const ActivityIcon = item.icon;
+                  return (
+                    <motion.article
+                      className="dashboard-activity-item"
+                      key={item.key}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 + 0.5 }}
+                      whileHover={{ x: 5 }}
+                    >
+                      <motion.span
+                        className="dashboard-activity-icon"
+                        aria-hidden="true"
+                        whileHover={{ scale: 1.15, rotate: [0, -10, 10, 0] }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ActivityIcon size={14} strokeWidth={2} />
+                      </motion.span>
+                      <div>
+                        <div className="dashboard-activity-title">{item.action}</div>
+                        <div className="dashboard-activity-time">{formatRelativeTime(item.time)}</div>
+                      </div>
+                    </motion.article>
+                  );
+                })}
+              </div>
+            )}
+          </motion.section>
 
           <motion.section
             className={`dashboard-encouragement-card dashboard-encouragement-${progressCard.tone}`}
