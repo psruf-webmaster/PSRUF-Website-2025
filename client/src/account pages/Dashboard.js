@@ -1,3 +1,4 @@
+import { motionTokens } from '../design/motion';
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
@@ -65,7 +66,7 @@ function EventCard({ ev, index }) {
       className="dashboard-event-card"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.1 + 0.4 }}
+      transition={{ duration: motionTokens.enter, delay: index * 0.1 + 0.4 }}
       whileHover={{ x: 5, backgroundColor: 'rgba(109, 44, 44, 0.05)' }}
     >
       <motion.div
@@ -570,7 +571,7 @@ export default function Dashboard() {
               className="dashboard-stat-card"
               initial={{ opacity: 0, y: 20, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1, type: 'spring', stiffness: 200 }}
+              transition={{ duration: motionTokens.enter, delay: 0.1, type: 'spring', stiffness: 200 }}
               whileHover={{ y: -5, boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}
               whileTap={{ scale: 0.98 }}
             >
@@ -579,7 +580,7 @@ export default function Dashboard() {
                   className="dashboard-stat-icon"
                   aria-hidden="true"
                   whileHover={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.1, 1] }}
-                  transition={{ duration: 0.5 }}
+                  transition={{ duration: motionTokens.enter }}
                 >
                   <Award size={16} strokeWidth={2} />
                 </motion.span>
@@ -609,15 +610,13 @@ export default function Dashboard() {
             className="dashboard-section dashboard-section-events"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{ duration: motionTokens.enter, delay: 0.3 }}
             whileHover={{ scale: 1.01 }}
           >
             <div className="dashboard-section-heading">
               <motion.span
                 className="dashboard-section-icon"
                 aria-hidden="true"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
               >
                 <IconCalendar />
               </motion.span>
@@ -653,7 +652,7 @@ export default function Dashboard() {
             className="dashboard-section dashboard-points-panel"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            transition={{ duration: motionTokens.enter, delay: 0.2 }}
           >
             <div className="dashboard-section-heading">
               <span className="dashboard-section-icon" aria-hidden="true">
@@ -752,11 +751,9 @@ export default function Dashboard() {
                         initial={{ opacity: 0 }}
                         animate={{
                           opacity: 1,
-                          rotate: index % 2 === 0 ? [0, 1.2, 0] : [0, -1.2, 0],
                         }}
                         transition={{
-                          opacity: { duration: 0.35, delay: 0.12 + index * 0.1 },
-                          rotate: { duration: 6.5 + index, repeat: Infinity, ease: 'easeInOut' },
+                          opacity: { duration: motionTokens.enter, delay: 0.12 + index * 0.1 },
                         }}
                         style={{ transformOrigin: '130px 130px' }}
                         className={`dashboard-svg-ring-group${activeRingKey === ring.key ? ' is-active' : ''}`}
@@ -809,10 +806,10 @@ export default function Dashboard() {
                       cy="130"
                       r="22"
                       initial={{ opacity: 0, scale: 0.7 }}
-                      animate={{ opacity: 1, scale: [1, 1.04, 1] }}
+                      animate={{ opacity: 1, scale: 1 }}
                       transition={{
-                        opacity: { duration: 0.35, delay: 0.45 },
-                        scale: { duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.7 },
+                        opacity: { duration: motionTokens.enter, delay: 0.45 },
+                        scale: { duration: motionTokens.enter, ease: motionTokens.ease, delay: 0.45 },
                       }}
                     />
                   </svg>
@@ -823,7 +820,7 @@ export default function Dashboard() {
             className="dashboard-section dashboard-points-panel"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            transition={{ duration: motionTokens.enter, delay: 0.2 }}
           >
             <div className="dashboard-section-heading">
               <span className="dashboard-section-icon" aria-hidden="true">
@@ -854,13 +851,12 @@ export default function Dashboard() {
             className="dashboard-section dashboard-section-activity"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            transition={{ duration: motionTokens.enter, delay: 0.4 }}
           >
             <div className="dashboard-section-heading">
               <motion.span
                 className="dashboard-section-icon"
                 aria-hidden="true"
-                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
               >
                 <Clock3 size={16} strokeWidth={2} />
               </motion.span>
@@ -910,14 +906,12 @@ export default function Dashboard() {
             className={`dashboard-encouragement-card dashboard-encouragement-${progressCard.tone}`}
             initial={{ opacity: 0, x: 20, scale: 0.95 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            transition={{ duration: motionTokens.enter, delay: 0.4 }}
             whileHover={{ scale: 1.02 }}
           >
             <motion.span
               className="dashboard-encouragement-icon"
               aria-hidden="true"
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }}
               whileHover={{ scale: 1.15, transition: { duration: 0.3 } }}
             >
               <ProgressCardIcon size={20} strokeWidth={2} />

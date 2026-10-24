@@ -1,3 +1,4 @@
+import { motionTokens } from '../design/motion';
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Mail, MapPin, Sparkles } from 'lucide-react';
@@ -14,12 +15,10 @@ export default function Contact() {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
+            transition={{ duration: motionTokens.enter, ease: motionTokens.ease }}
           >
             <motion.div 
               className="hero-badge"
-              animate={{ y: [0, -6, 0] }}
-              transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
             >
               <Sparkles size={15} />
               Contact us
@@ -48,18 +47,14 @@ export default function Contact() {
             className="hero-card"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+            transition={{ duration: motionTokens.enter, delay: 0.2, ease: motionTokens.ease }}
           >
             <motion.img
               src={heroImage}
               alt="Phi Sigma Rho chapter contact"
-              animate={{ y: [0, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 5, ease: 'easeInOut' }}
             />
             <motion.div 
               className="hero-card-float"
-              animate={{ y: [0, -8, 0] }}
-              transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut', delay: 1 }}
             >
               Let’s connect.
             </motion.div>
@@ -89,7 +84,7 @@ export default function Contact() {
             className="info-card info-card-link"
             style={{ textDecoration: 'none', color: 'inherit' }}
             variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
-            whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            whileHover={{ y: -3, transition: { duration: motionTokens.fast } }}
           >
             <div className="pillar-icon">
               <Mail size={18} />
@@ -102,7 +97,7 @@ export default function Contact() {
           <motion.div 
             className="info-card"
             variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
-            whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            whileHover={{ y: -3, transition: { duration: motionTokens.fast } }}
           >
             <div className="pillar-icon">
               <MapPin size={18} />
@@ -121,7 +116,7 @@ export default function Contact() {
             className="info-card info-card-link"
             style={{ textDecoration: 'none', color: 'inherit' }}
             variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
-            whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            whileHover={{ y: -3, transition: { duration: motionTokens.fast } }}
           >
             <div className="pillar-icon">
               <Sparkles size={18} />

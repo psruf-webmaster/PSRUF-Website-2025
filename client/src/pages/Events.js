@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Link } from "react-router-dom";
 import {
   CalendarDays,
@@ -40,7 +40,7 @@ const RECURRENCE_OPTIONS = [
 
 const EVENT_PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
-    <rect width="1200" height="675" fill="#e8cbd3" />
+    <rect width="1200" height="675" fill="#efd2d8" />
   </svg>
 `)}`; 
  
@@ -267,7 +267,8 @@ function ShiftEditor({ shifts, setShifts }) {
   ); 
 } 
  
-function EventCard({ event, user, userId, view, onRsvp, onManage }) { 
+function EventCard({ event, user, userId, view, onRsvp, onManage, index = 0 }) {
+  const reduceMotion = useReducedMotion();
   const [imageSrc, setImageSrc] = useState(getEventImage(event)); 
   const [selectedShiftId, setSelectedShiftId] = useState(event.currentUserShiftId || event.shifts?.[0]?.shiftId || ""); 
  
@@ -287,9 +288,10 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
   return ( 
     <motion.article 
       className="events-card" 
-      initial={{ opacity: 0, y: 22 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      transition={{ duration: 0.38, ease: "easeOut" }} 
+      initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: reduceMotion ? 0 : 0.4, delay: reduceMotion ? 0 : Math.min(index * 0.07, 0.21), ease: "easeOut" }}
     > 
       <div className={`events-card-media${imageSrc === EVENT_PLACEHOLDER ? " events-card-media-placeholder" : ""}`}>
         <img 
@@ -2413,7 +2415,7 @@ export default function Events() {
       <motion.section className="events-hero" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.46, ease: "easeOut" }}> 
         <div className="events-hero-copy"> 
           <h1>Events</h1> 
-          <p>Make plans with the chapter. Find an event and save your spot.</p>
+          <p>Sign up for events and stay updated with the latest happenings.</p>
         </div> 
         {canCreate ? ( 
           <motion.button type="button" className="events-primary-button" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} onClick={() => setModalOpen(true)}> 
@@ -2525,9 +2527,9 @@ export default function Events() {
       ) : ( 
         <motion.section className="events-grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.45, delay: 0.1, ease: "easeOut" }}> 
           {filteredEvents.map((event, index) => ( 
-            <motion.div key={event._id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.34, delay: index * 0.04, ease: "easeOut" }}> 
-              <EventCard event={event} user={user} userId={userId} view={view} onRsvp={handleRsvp} onManage={openManage} /> 
-            </motion.div> 
+            <div key={event._id}>
+              <EventCard event={event} index={index} user={user} userId={userId} view={view} onRsvp={handleRsvp} onManage={openManage} />
+            </div>
           ))} 
         </motion.section> 
       )} 

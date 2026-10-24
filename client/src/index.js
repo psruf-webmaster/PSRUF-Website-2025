@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import './design-system.css';
 import reportWebVitals from './reportWebVitals';
 
 // Translate email links for the existing HashRouter before rendering.

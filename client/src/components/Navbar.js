@@ -150,7 +150,7 @@ export default function Navbar() {
             className="site-brand"
             style={{ gap: "16px" }}
           >
-            <span className="site-brand-mark">ΦΣΡ</span>
+            <img className="site-brand-logo" src={`${process.env.PUBLIC_URL}/favicon.ico`} alt="" />
             <span className="site-brand-copy">
               <span>Phi Sigma Rho</span>
               <span>Tau Chapter • UF</span>

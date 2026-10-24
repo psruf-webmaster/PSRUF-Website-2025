@@ -1,3 +1,4 @@
+import { motionTokens } from '../design/motion';
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Sparkles, FileText, Download, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -64,18 +65,12 @@ export default function Alumni() {
         <div className="home-hero-backdrop">
           <motion.div 
             className="home-orb home-orb-one"
-            animate={{ y: [0, -20, 0], scale: [1, 1.05, 1] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div 
             className="home-orb home-orb-two"
-            animate={{ y: [0, 25, 0], scale: [1, 1.08, 1] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div 
             className="home-orb home-orb-three"
-            animate={{ x: [0, 15, 0], y: [0, -15, 0] }}
-            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
           />
         </div>
 
@@ -83,13 +78,13 @@ export default function Alumni() {
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: motionTokens.enter, ease: motionTokens.ease }}
             className="home-hero-copy"
           >
             <motion.div 
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: motionTokens.enter, delay: 0.2 }}
               className="home-hero-kicker"
             >
               <Sparkles size={13} />
@@ -99,7 +94,7 @@ export default function Alumni() {
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: motionTokens.enter, delay: 0.3, ease: motionTokens.ease }}
               className="home-hero-title" 
               style={{ fontSize: 'clamp(3.8rem, 7.2vw, 6.8rem)', lineHeight: '0.94' }}
             >
@@ -109,7 +104,7 @@ export default function Alumni() {
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: motionTokens.enter, delay: 0.4, ease: motionTokens.ease }}
               className="home-hero-description" 
               style={{ fontSize: 'clamp(1.1rem, 1.9vw, 1.28rem)' }}
             >
@@ -119,7 +114,7 @@ export default function Alumni() {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: motionTokens.enter, delay: 0.5, ease: motionTokens.ease }}
               className="home-hero-actions"
             >
               <motion.a 
@@ -137,8 +132,8 @@ export default function Alumni() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.92, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            whileHover={{ y: -8, scale: 1.01 }}
+            transition={{ duration: motionTokens.enter, delay: 0.3, ease: motionTokens.ease }}
+            whileHover={{ y: -3, scale: 1.01 }}
             className="home-hero-editorial"
             style={{ width: '100%', maxWidth: '520px', justifySelf: 'end' }}
           >
@@ -158,7 +153,7 @@ export default function Alumni() {
                       initial={{ opacity: 0, scale: 1.05 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.98 }}
-                      transition={{ duration: 0.7, ease: "easeInOut" }}
+                      transition={{ duration: motionTokens.enter, ease: "easeInOut" }}
                     />
                   </AnimatePresence>
                 ) : (
@@ -171,7 +166,7 @@ export default function Alumni() {
                     key={currentPhotoIndex}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.2 }}
+                    transition={{ duration: motionTokens.enter, delay: 0.2 }}
                   >
                     {PHOTO_CAPTIONS[currentPhotoIndex % PHOTO_CAPTIONS.length]}
                   </motion.span>
@@ -188,7 +183,7 @@ export default function Alumni() {
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: motionTokens.enter, ease: motionTokens.ease }}
           className="home-editorial-aside"
           style={{ marginBottom: '2.5rem' }}
         >
@@ -196,7 +191,7 @@ export default function Alumni() {
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: motionTokens.enter }}
             className="home-small-label" 
             style={{ display: 'inline-flex', width: 'fit-content' }}
           >
@@ -213,7 +208,7 @@ export default function Alumni() {
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: motionTokens.enter, ease: motionTokens.ease }}
           whileHover={{ boxShadow: '0 40px 90px rgba(84, 28, 42, 0.16)' }}
           className="home-editorial-card"
           style={{ padding: '2.5rem', transition: 'box-shadow 0.4s ease, transform 0.4s ease' }}
@@ -247,7 +242,7 @@ export default function Alumni() {
             initial={{ opacity: 0, scale: 0.98 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            transition={{ duration: motionTokens.enter, delay: 0.2 }}
             style={{ width: '100%', height: '700px', borderRadius: '1rem', overflow: 'hidden', border: '1px solid var(--home-border)', background: '#fff' }}
           >
             <iframe 

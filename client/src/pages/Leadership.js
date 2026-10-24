@@ -1,3 +1,4 @@
+import { motionTokens } from '../design/motion';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Leadership.css'; 
@@ -83,12 +84,12 @@ export default function Leadership() {
   const years = ['2024-2025', '2025-2026', '2026-2027'];
 
   return (
-    <div className="page-shell">
+    <div className="page-shell leadership-page">
       <div className="page-hero">
         <motion.div 
           initial={{ opacity: 0, y: -15 }} 
           animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: motionTokens.enter, ease: motionTokens.ease }}
         >
           <h1 className="page-title">Meet our leaders</h1>
           <p className="page-subtitle">
@@ -104,7 +105,7 @@ export default function Leadership() {
             <span>{selectedYear} Term</span>
             <motion.svg 
               animate={{ rotate: dropdownOpen ? 180 : 0 }} 
-              transition={{ duration: 0.2 }}
+              transition={{ duration: motionTokens.fast }}
               width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"
             >
               <path d="M3.5 6L8 11L12.5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -118,7 +119,7 @@ export default function Leadership() {
                 initial={{ opacity: 0, y: -10, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -10, scale: 0.97 }}
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: motionTokens.fast, ease: motionTokens.ease }}
               >
                 {years.map((year) => (
                   <button

@@ -1,10 +1,12 @@
+import { motionTokens } from '../design/motion';
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, HeartHandshake, Sparkles, Users, CalendarDays, MapPin } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import './Recruitment.css';
 import heroImage from '../pics/20260423_195529_6A0A07.JPEG';
 
 export default function Recruitment() {
+  const reduceMotion = useReducedMotion();
   const [pnmEvents, setPnmEvents] = useState([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
 
@@ -36,14 +38,14 @@ export default function Recruitment() {
   ];
 
   return (
-    <div className="page-shell">
+    <div className="page-shell recruitment-page">
       {/* HERO SECTION */}
       <section className="hero-section" style={{ background: 'transparent', boxShadow: 'none', border: 'none', padding: '3rem 1.5rem' }}>
         <div className="hero-grid" style={{ background: 'transparent', boxShadow: 'none', border: 'none', padding: 0 }}>
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: motionTokens.enter, ease: motionTokens.ease }}
           >
             <motion.div 
               className="hero-badge"
@@ -89,14 +91,12 @@ export default function Recruitment() {
             className="hero-card"
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            whileHover={{ y: -8, scale: 1.015 }}
+            transition={{ duration: motionTokens.enter, delay: 0.2, ease: motionTokens.ease }}
+            whileHover={{ y: -3, scale: 1.015 }}
           >
             <motion.img
               src={heroImage}
               alt="Phi Sigma Rho Sisters"
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
             />
             <div className="hero-card-float">Ready to meet your future sisters?</div>
           </motion.div>
@@ -110,7 +110,7 @@ export default function Recruitment() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: motionTokens.enter }}
         >
           <h2>A personal welcome</h2>
         </motion.div>
@@ -120,12 +120,12 @@ export default function Recruitment() {
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: motionTokens.enter, ease: motionTokens.ease }}
         >
           <motion.div 
             className="vp-photo-card"
             whileHover={{ scale: 1.01 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: motionTokens.fast }}
           >
             <img 
               src="/message_from_vp_membership.jpeg" 
@@ -172,7 +172,7 @@ export default function Recruitment() {
           <div className="recruitment-events-empty" role="status">Loading upcoming events…</div>
         ) : pnmEvents.length > 0 ? (
           <div className="recruitment-events-rail">
-            {pnmEvents.map(event => {
+            {pnmEvents.map((event, index) => {
               const startDate = new Date(event.startAt);
               const month = startDate.toLocaleDateString('en-US', { month: 'short' });
               const day = startDate.getDate();
@@ -181,7 +181,14 @@ export default function Recruitment() {
               const eventImageUrl = event.image || event.imageUrl || event.coverImage;
 
               return (
-                <article key={event._id} className="recruitment-event-card">
+                <motion.article
+                  key={event._id}
+                  className="recruitment-event-card"
+                  initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.4, delay: reduceMotion ? 0 : Math.min(index * 0.07, 0.21), ease: motionTokens.ease }}
+                >
                   <div className={`recruitment-event-cover${eventImageUrl ? ' has-image' : ''}`}>
                     {eventImageUrl && (
                       <img src={eventImageUrl} alt={event.title} onError={e => {
@@ -208,15 +215,25 @@ export default function Recruitment() {
                       <span>{event.location || 'Location to be announced'}</span>
                     </div>
                   </div>
-                </article>
+                </motion.article>
               );
             })}
           </div>
         ) : (
-          <div className="recruitment-events-empty">
-            <h3>More events are on the way</h3>
-            <p>Check back soon for open socials and rush dates.</p>
-          </div>
+          <motion.div
+            className="recruitment-events-empty recruitment-events-invitation"
+            initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: motionTokens.enter, ease: motionTokens.ease }}
+          >
+            <div className="recruitment-invitation-icon" aria-hidden="true"><CalendarDays size={28} /><Sparkles size={16} /></div>
+            <span className="recruitment-invitation-label">Your next chapter starts here</span>
+            <h3>Good things are on the way.</h3>
+            <p>We’re planning more chances to meet your future sisters. Join our email list to hear about open socials and rush dates.</p>
+            <a className="button" href="https://docs.google.com/forms/d/e/1FAIpQLSd7XzAEOR7hOqxU3NOFY9df0ZQFcPGI5LPeSI1pW3jQLo4aXg/viewform">Keep me in the loop <ArrowRight size={16} aria-hidden="true" /></a>
+            <span className="recruitment-invitation-note">A little curiosity. A lot of possibility.</span>
+          </motion.div>
         )}
       </section>
 
@@ -227,7 +244,7 @@ export default function Recruitment() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: motionTokens.enter }}
         >
           <span>Our roots</span>
           <h2>Built for women in STEM</h2>
@@ -242,8 +259,8 @@ export default function Recruitment() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            whileHover={{ y: -8, scale: 1.02 }}
+            transition={{ duration: motionTokens.enter, delay: 0.1 }}
+            whileHover={{ y: -3, scale: 1.02 }}
           >
             <div className="pillar-icon"><Users size={18} /></div>
             <h3>Friendship</h3>
@@ -255,8 +272,8 @@ export default function Recruitment() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            whileHover={{ y: -8, scale: 1.02 }}
+            transition={{ duration: motionTokens.enter, delay: 0.2 }}
+            whileHover={{ y: -3, scale: 1.02 }}
           >
             <div className="pillar-icon"><HeartHandshake size={18} /></div>
             <h3>Scholarship</h3>
@@ -268,8 +285,8 @@ export default function Recruitment() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            whileHover={{ y: -8, scale: 1.02 }}
+            transition={{ duration: motionTokens.enter, delay: 0.3 }}
+            whileHover={{ y: -3, scale: 1.02 }}
           >
             <div className="pillar-icon"><Sparkles size={18} /></div>
             <h3>Encouragement</h3>
@@ -285,7 +302,7 @@ export default function Recruitment() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: motionTokens.enter }}
         >
           <span>Qualifications</span>
           <h2>Accepted Majors</h2>
@@ -300,7 +317,7 @@ export default function Recruitment() {
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.3, delay: index * 0.02 }}
+              transition={{ duration: motionTokens.fast, delay: index * 0.02 }}
               whileHover={{ y: -3, scale: 1.04, backgroundColor: '#ffffff', borderColor: 'var(--home-maroon)' }}
               whileTap={{ scale: 0.97 }}
             >

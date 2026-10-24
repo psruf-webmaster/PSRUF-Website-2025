@@ -630,3 +630,94 @@
   letter-spacing: -0.02em;
   font-size: clamp(2rem, 3vw, 2.75rem);
 }
+/* Compact summary above a full-width, paginated history. */
+.points-history-card {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.points-main-column,
+.points-side-column {
+  min-width: 0;
+}
+
+.points-history-card .points-filter-card {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 0.75rem;
+}
+
+.points-card-head {
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.points-circle-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.points-circle-ring {
+  width: clamp(54px, 6vw, 80px);
+  height: clamp(54px, 6vw, 80px);
+  box-shadow: 0 6px 14px rgba(109, 44, 44, 0.08);
+}
+
+.points-circle-ring::before {
+  inset: 7px;
+}
+
+.points-callout-card {
+  padding: 0.85rem 1rem;
+}
+
+.points-callout-card .points-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.points-callout-card h4 {
+  font-size: 1.15rem;
+  margin-top: 0.4rem;
+}
+
+.points-callout-card p {
+  font-size: 0.85rem;
+}
+
+.points-filter-grid label,
+.points-filter-grid input,
+.points-filter-grid select {
+  min-width: 0;
+}
+
+.points-table td {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .points-circle-grid {
+    gap: 0.4rem;
+  }
+
+  .points-circle-ring {
+    width: 48px;
+    height: 48px;
+  }
+
+  .points-circle-ring span,
+  .points-circle-value {
+    font-size: 0.65rem;
+  }
+
+  .points-table td {
+    box-sizing: border-box;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .points-semester-pill {
+    width: auto;
+  }
+}

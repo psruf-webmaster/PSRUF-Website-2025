@@ -1,0 +1,196 @@
+/* Shared visual language. Imported after page styles so routes share one theme. */
+:root {
+  --background: #fff8fa;
+  --foreground: #31161e;
+  --primary: #6f2434;
+  --primary-foreground: #fff;
+  --muted-foreground: #795d66;
+  --border: rgba(111, 36, 52, .14);
+  --ring: #a65369;
+  --font-body: 'Manrope', system-ui, sans-serif;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --surface: #fff;
+  --surface-soft: #fcf1f4;
+  --radius-card: 24px;
+  --radius-control: 12px;
+  --shadow-card: 0 12px 36px rgba(84, 28, 42, .07);
+  --motion-fast: 180ms;
+  --motion-enter: 450ms;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+}
+
+html { scroll-padding-top: 100px; }
+body {
+  font-family: var(--font-body);
+  color: var(--foreground);
+  background: var(--background);
+  line-height: 1.6;
+}
+button, input, textarea, select { font-family: var(--font-body); }
+#root :is(.app-shell, .navbar-shell, .site-footer) { font-family: var(--font-body); }
+#root :is(h1, h2, h3) { text-wrap: balance; }
+#root .app-shell h1,
+#root :is(.page-title, .hero-title, .section-title, .section-header-centered h2) {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -.035em;
+  line-height: 1.08;
+}
+#root .app-shell h1 { font-size: clamp(2.5rem, 5vw, 4.5rem); }
+#root :is(.dashboard-hero, .events-hero-copy, .points-header, .calendar-hero-copy, .profile-hero) h1 {
+  font-size: clamp(2.25rem, 4vw, 3.25rem);
+  color: var(--primary);
+}
+#root :is(.page-subtitle, .section-subtitle, .profile-subtitle) {
+  color: var(--muted-foreground);
+  line-height: 1.75;
+}
+
+/* A single content rhythm for public pages and member tools. */
+#root .page-shell {
+  width: min(1280px, 100%);
+  margin-inline: auto;
+  padding: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 3vw, 2rem) 4rem;
+  align-items: stretch;
+}
+#root :is(.dashboard-shell, .events-page-shell, .points-page, .profile-page-shell) {
+  width: min(1280px, 100%);
+  margin-inline: auto;
+  padding: 2rem clamp(1rem, 3vw, 2rem) 4rem;
+}
+#root .content-section { width: 100%; margin-top: clamp(2.5rem, 5vw, 4rem); }
+#root .page-hero { margin-top: 0; }
+#root .calendar-page-shell { padding-top: 2rem; }
+
+#root :is(.info-card, .leader-card, .points-card, .points-filter-card,
+.dashboard-stat-card, .dashboard-panel, .calendar-card, .profile-card,
+.signinup-form-container, .events-toggle-panel) {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+#root :is(.leader-name, .info-card h3) {
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  color: var(--primary);
+}
+#root .leader-title { color: var(--muted-foreground); font-size: .95rem; }
+
+#root .leader-links { opacity: 1; }
+
+/* Explicit transitions avoid animating layout, dimensions, or unrelated properties. */
+#root :is(button, a, input, textarea, select, .info-card, .leader-card, .dashboard-stat-card) {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--motion-fast);
+  transition-timing-function: var(--ease-out);
+}
+#root :is(.site-cta, .events-primary-button, .home-primary-cta) {
+  background: var(--primary);
+  color: white;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(111, 36, 52, .14);
+}
+#root :is(.site-nav-pill-active, .dropdown-option.selected) {
+  background: var(--surface-soft);
+  color: var(--primary);
+}
+#root :is(input:not([type='checkbox']):not([type='radio']):not([type='file']), textarea, select) {
+  border-color: var(--border);
+  border-radius: var(--radius-control);
+  color: var(--foreground);
+}
+#root :is(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+#root button:disabled { cursor: not-allowed; opacity: .55; }
+#root .site-footer { background: var(--surface-soft); border-color: var(--border); color: var(--muted-foreground); }
+
+/* Shared public hero treatment, including pages without their own stylesheet. */
+#root .page-shell:not(.recruitment-page) .hero-section {
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  box-shadow: none;
+  border-radius: var(--radius-card);
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+#root .page-shell:not(.recruitment-page) :is(.hero-title, .hero-description) { color: var(--primary); }
+#root .page-shell:not(.recruitment-page) .hero-badge { background: #efd2d8; color: var(--primary); }
+#root .page-shell:not(.recruitment-page) :is(.button, .button-secondary) {
+  background: var(--primary);
+  color: white;
+  border-color: transparent;
+}
+#root :is(.calendar-hero, .calendar-card) {
+  animation-duration: var(--motion-enter);
+  animation-timing-function: var(--ease-out);
+  animation-delay: 0s;
+}
+#root .calendar-hero-icon { animation: none; }
+
+@media (hover: hover) {
+  #root :is(.site-cta, .events-primary-button, .home-primary-cta):hover {
+    background: #43121d;
+    transform: translateY(-2px);
+  }
+  #root :is(.info-card-link, .leader-card, .dashboard-stat-card):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(84, 28, 42, .11);
+  }
+}
+@media (max-width: 640px) {
+  #root .page-shell { padding-top: 1.5rem; }
+  #root .hero-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  #root .profile-hero .button-secondary { margin-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  #root *, #root *::before, #root *::after {
+    animation-duration: .01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+#root .leadership-page { background: transparent; }
+#root .app-shell .button {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid transparent;
+  box-shadow: 0 6px 18px rgba(111, 36, 52, .12);
+}
+#root .app-shell .button-secondary {
+  background: var(--surface);
+  color: var(--primary);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+/* Keep the narrower leadership grid centered beneath its heading. */
+#root .leadership-page .content-section {
+  margin-inline: auto;
+}
+
+/* Entrances share one rhythm; loading indicators retain continuous feedback. */
+#root :is(.dashboard-stat-card, .dashboard-section, .dashboard-encouragement-card) {
+  animation-duration: var(--motion-enter);
+  animation-timing-function: var(--ease-out);
+}
+#root .events-modal { animation-timing-function: var(--ease-out); }
+
+/* Match the circular chapter mark used in the footer. */
+#root .site-brand-logo {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  max-width: 36px !important;
+  max-height: 36px !important;
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
+}

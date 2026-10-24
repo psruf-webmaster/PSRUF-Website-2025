@@ -7,12 +7,13 @@ import "./Points.css";
 
 const CAT_OPTIONS = ["all", "phi", "sigma", "rho", "tau", "any"];
 const POINT_MAX = 50;
+const HISTORY_PAGE_SIZE = 5;
 const CATEGORY_META = {
-  phi: { label: "Phi", color: "#D4608A" }, 
-  sigma: { label: "Sigma", color: "#6D2C2C" }, 
-  rho: { label: "Rho", color: "#A04E74" }, 
-  tau: { label: "Tau", color: "#BC6E8E" }, 
-  any: { label: "Extra", color: "#C47878" }, 
+  phi: { label: "Phi", color: "#D4608A" },
+  sigma: { label: "Sigma", color: "#6D2C2C" },
+  rho: { label: "Rho", color: "#A04E74" },
+  tau: { label: "Tau", color: "#BC6E8E" },
+  any: { label: "Extra", color: "#C47878" },
 };
 
 function getCategoryMeta(category) {
@@ -36,9 +37,9 @@ function Circle({ label, value, target, color, index, showTarget = true }) {
     "--circle-angle": `${angle}deg`,
     "--circle-fill": color || "#6D2C2C",
   };
-  
+
   return (
-    <motion.div 
+    <motion.div
       className="points-circle"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -80,7 +81,7 @@ export default function Points() {
   const [entries, setEntries] = useState([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [limit, setLimit] = useState(25);
+  const limit = HISTORY_PAGE_SIZE;
   const [loading, setLoading] = useState(true);
   const [loadingEntries, setLoadingEntries] = useState(true);
   const [error, setError] = useState("");
@@ -97,18 +98,18 @@ export default function Points() {
       const res = await fetch(`/api/ledger/summary/self`, { headers, credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to load totals");
-      
+
       const row = (data.totals || [])[0] || {};
       const byCat = row.totalsByCategory || {};
       const grand = row.grandTotal || 0;
-      
+
       const cats = {
         phi: byCat.phi || 0,
         sigma: byCat.sigma || 0,
         rho: byCat.rho || 0,
         tau: byCat.tau || 0,
       };
-      
+
       setTotals({ ...cats, any: 0, grand });
     } catch (e) {
       setError(e.message);
@@ -146,7 +147,7 @@ export default function Points() {
       if (!res.ok) throw new Error(data.message || "Failed to load entries");
       setEntries(data.entries || []);
       setPage(data.page || 1);
-      setLimit(data.limit || limit);
+
       setTotal(data.total || 0);
     } catch (e) {
       setError(e.message);
@@ -185,15 +186,15 @@ export default function Points() {
     : Math.max(totalRequired || 0, totals.grand || 0, 1);
 
   const effectiveTotal = requirementRule === "per-category"
-    ? Math.min(totals.phi, minPerCategory) + 
-      Math.min(totals.sigma, minPerCategory) + 
-      Math.min(totals.rho, minPerCategory) + 
-      Math.min(totals.tau, minPerCategory) + 
+    ? Math.min(totals.phi, minPerCategory) +
+      Math.min(totals.sigma, minPerCategory) +
+      Math.min(totals.rho, minPerCategory) +
+      Math.min(totals.tau, minPerCategory) +
       Math.min(anyPoints, minPerCategory)
     : requirementRule === "anywhere"
       ? Math.min(totals.grand, totalRequired)
       : 0;
-                         
+
   const percentComplete = totalRequired > 0 ? Math.round((effectiveTotal / totalRequired) * 100) : 100;
   const safePercent = Math.max(0, Math.min(100, percentComplete));
 
@@ -214,45 +215,11 @@ export default function Points() {
 
       {error && <div className="points-error">{error}</div>}
 
-      <motion.section 
-        className="points-filter-card"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
-        whileHover={{ boxShadow: '0 18px 40px rgba(29, 20, 32, 0.09)' }}
-      >
-        <div className="points-filter-grid">
-          <label>
-            Category
-            <select value={category} onChange={e => setCategory(e.target.value)}>
-              {CAT_OPTIONS.map(c => <option key={c} value={c}>{c === "all" ? "All Categories" : getCategoryMeta(c).label}</option>)}
-            </select>
-          </label>
-          <label>
-            From
-            <input type="date" value={from} onChange={e => setFrom(e.target.value)} />
-          </label>
-          <label>
-            To
-            <input type="date" value={to} onChange={e => setTo(e.target.value)} />
-          </label>
-          <label>
-            Search Notes
-            <div className="points-search-wrap">
-              <Search size={16} />
-              <input
-                placeholder="Find by note or source"
-                value={q}
-                onChange={e => setQ(e.target.value)}
-              />
-            </div>
-          </label>
-        </div>
-      </motion.section>
+
 
       <div className="points-grid">
         <section className="points-main-column">
-          <motion.article 
+          <motion.article
             className="points-card points-total-card"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -274,8 +241,8 @@ export default function Points() {
 
             <div className="points-master-progress">
               <div className="points-master-progress-track">
-                <motion.div 
-                  className="points-master-progress-fill" 
+                <motion.div
+                  className="points-master-progress-fill"
                   initial={{ width: 0 }}
                   animate={{ width: `${safePercent}%` }}
                   transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
@@ -303,99 +270,12 @@ export default function Points() {
             )}
           </motion.article>
 
-          <motion.article 
-            className="points-card"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
-          >
-            <div className="points-card-head">
-              <h3>
-                <span>
-                  <CalendarDays size={18} />
-                </span>
-                Points History
-              </h3>
-            </div>
 
-            {loadingEntries ? (
-              <div className="points-loading">Loading history...</div>
-            ) : (
-              <div className="points-table-wrap">
-                <table className="points-table">
-                  <thead>
-                    <tr>
-                      <th>Event</th>
-                      <th>Category</th>
-                      <th>Points</th>
-                      <th>Date</th>
-                      <th>Note</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries.length === 0 && (
-                      <tr><td colSpan={5} className="points-empty-cell">No entries yet</td></tr>
-                    )}
-                    {entries.map((e, index) => {
-                      const meta = getCategoryMeta(e.category);
-                      return (
-                        <motion.tr 
-                          key={e._id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 + 0.3, ease: "easeOut" }}
-                          whileHover={{ backgroundColor: 'rgba(125, 52, 52, 0.03)' }}
-                        >
-                          <td data-label="Event">{e.eventTitle || e.source || "Manual Entry"}</td>
-                          <td data-label="Category">
-                            <span className="points-category-pill" style={{ backgroundColor: `${meta.color}15`, color: meta.color }}>
-                              {meta.label}
-                            </span>
-                          </td>
-                          <td data-label="Points" className="points-score-cell">+{e.points}</td>
-                          <td data-label="Date">{new Date(e.createdAt).toLocaleDateString()}</td>
-                          <td data-label="Note">{e.note || "-"}</td>
-                        </motion.tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <div className="points-pagination">
-              <button
-                type="button"
-                className="points-page-btn"
-                disabled={page <= 1}
-                onClick={() => {
-                  const p = Math.max(1, page - 1);
-                  setPage(p);
-                  loadEntries(p);
-                }}
-              >
-                Previous
-              </button>
-              <span>Page {page} of {totalPages}</span>
-              <button
-                type="button"
-                className="points-page-btn"
-                disabled={page >= totalPages}
-                onClick={() => {
-                  const p = Math.min(totalPages, page + 1);
-                  setPage(p);
-                  loadEntries(p);
-                }}
-              >
-                Next
-              </button>
-            </div>
-          </motion.article>
         </section>
 
         <aside className="points-side-column">
           {reqs && (
-            <motion.article 
+            <motion.article
               className="points-card points-requirements-card"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -415,10 +295,10 @@ export default function Points() {
                     const need = cat === "any" ? (reqs?.any?.need ?? Math.max(0, minPerCategory - have)) : (reqs.requirements?.buckets?.[cat]?.need ?? Math.max(0, minPerCategory - have));
                     const percent = Math.max(0, Math.min(100, (have / Math.max(1, minPerCategory)) * 100));
                     const meta = getCategoryMeta(cat);
-                    
+
                     return (
-                      <motion.div 
-                        key={cat} 
+                      <motion.div
+                        key={cat}
                         className="points-req-item"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -430,12 +310,12 @@ export default function Points() {
                           <span>{have} / {minPerCategory}</span>
                         </div>
                         <div className="points-req-track">
-                          <motion.div 
-                            className="points-req-fill" 
+                          <motion.div
+                            className="points-req-fill"
                             initial={{ width: 0 }}
                             animate={{ width: `${percent}%` }}
                             transition={{ duration: 1, delay: 0.4 + index * 0.1, ease: "easeOut" }}
-                            style={{ backgroundColor: meta.color }} 
+                            style={{ backgroundColor: meta.color }}
                           />
                         </div>
                         <div className="points-req-copy" style={{ color: met ? "#127a4b" : "#7d3434" }}>
@@ -463,7 +343,7 @@ export default function Points() {
             </motion.article>
           )}
 
-          <motion.article 
+          <motion.article
             className="points-card points-callout-card"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -485,6 +365,131 @@ export default function Points() {
             </p>
           </motion.article>
         </aside>
+
+          <motion.article
+            className="points-card points-history-card"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
+          >
+            <div className="points-card-head">
+              <h3>
+                <span>
+                  <CalendarDays size={18} />
+                </span>
+                Points History
+              </h3>
+            </div>
+
+            <motion.section
+              className="points-filter-card"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
+              whileHover={{ boxShadow: '0 18px 40px rgba(29, 20, 32, 0.09)' }}
+            >
+              <div className="points-filter-grid">
+                <label>
+                  Category
+                  <select value={category} onChange={e => setCategory(e.target.value)}>
+                    {CAT_OPTIONS.map(c => <option key={c} value={c}>{c === "all" ? "All Categories" : getCategoryMeta(c).label}</option>)}
+                  </select>
+                </label>
+                <label>
+                  From
+                  <input type="date" value={from} onChange={e => setFrom(e.target.value)} />
+                </label>
+                <label>
+                  To
+                  <input type="date" value={to} onChange={e => setTo(e.target.value)} />
+                </label>
+                <label>
+                  Search Notes
+                  <div className="points-search-wrap">
+                    <Search size={16} />
+                    <input
+                      placeholder="Find by note or source"
+                      value={q}
+                      onChange={e => setQ(e.target.value)}
+                    />
+                  </div>
+                </label>
+              </div>
+            </motion.section>
+
+            {loadingEntries ? (
+              <div className="points-loading">Loading history...</div>
+            ) : (
+              <div className="points-table-wrap">
+                <table className="points-table">
+                  <thead>
+                    <tr>
+                      <th>Event</th>
+                      <th>Category</th>
+                      <th>Points</th>
+                      <th>Date</th>
+                      <th>Note</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.length === 0 && (
+                      <tr><td colSpan={5} className="points-empty-cell">No entries yet</td></tr>
+                    )}
+                    {entries.map((e, index) => {
+                      const meta = getCategoryMeta(e.category);
+                      return (
+                        <motion.tr
+                          key={e._id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 + 0.3, ease: "easeOut" }}
+                          whileHover={{ backgroundColor: 'rgba(125, 52, 52, 0.03)' }}
+                        >
+                          <td data-label="Event">{e.eventTitle || e.source || "Manual Entry"}</td>
+                          <td data-label="Category">
+                            <span className="points-category-pill" style={{ backgroundColor: `${meta.color}15`, color: meta.color }}>
+                              {meta.label}
+                            </span>
+                          </td>
+                          <td data-label="Points" className="points-score-cell">+{e.points}</td>
+                          <td data-label="Date">{new Date(e.createdAt).toLocaleDateString()}</td>
+                          <td data-label="Note">{e.note || "-"}</td>
+                        </motion.tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="points-pagination">
+              <button
+                type="button"
+                className="points-page-btn"
+                disabled={loadingEntries || page <= 1}
+                onClick={() => {
+                  const p = Math.max(1, page - 1);
+                  setPage(p);
+                  loadEntries(p);
+                }}
+              >
+                Previous
+              </button>
+              <span role="status" aria-live="polite">{total === 0 ? "0 entries" : `${(page - 1) * limit + 1}–${Math.min(page * limit, total)} of ${total} entries`} · Page {page} of {totalPages}</span>
+              <button
+                type="button"
+                className="points-page-btn"
+                disabled={loadingEntries || page >= totalPages}
+                onClick={() => {
+                  const p = Math.min(totalPages, page + 1);
+                  setPage(p);
+                  loadEntries(p);
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </motion.article>
       </div>
     </div>
   );

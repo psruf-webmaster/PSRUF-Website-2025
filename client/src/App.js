@@ -13,6 +13,7 @@ import {
 import AuthProvider, { useAuth } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Navbar from './components/Navbar';
+import { MotionConfig } from 'framer-motion';
 
 import Home from './pages/Home';
 import Leadership from './pages/Leadership';
@@ -289,7 +290,7 @@ function AppContent() {
             </div>
 
             <div className="site-footer-links">
-              <a href="/#/home">Home</a>
+              <a href="/#/">Home</a>
               <span className="site-footer-dot">·</span>
               <a href="/#/leadership">Leadership</a>
               <span className="site-footer-dot">·</span>
@@ -313,9 +314,11 @@ function AppContent() {
 export default function App() {
   return (
     <Router>
+      <MotionConfig reducedMotion="user" transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
       <AuthProvider>
         <AppContent />
       </AuthProvider>
+      </MotionConfig>
     </Router>
   );
 }

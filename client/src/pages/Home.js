@@ -1,3 +1,4 @@
+import { motionTokens } from '../design/motion';
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -40,9 +41,9 @@ function MaskedReveal({ children, delay = 0, className = 'home-mask-line' }) {
         initial={{ y: '112%' }}
         animate={{ y: '0%' }}
         transition={{
-          duration: 0.9,
+          duration: motionTokens.enter,
           delay,
-          ease: [0.22, 1, 0.36, 1],
+          ease: motionTokens.ease,
         }}
       >
         {children}
@@ -191,7 +192,7 @@ export default function Home() {
 
         <div className="home-hero-grid">
           <div className="home-hero-copy">
-            <motion.div className="home-hero-kicker" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: 'easeOut' }}>
+            <motion.div className="home-hero-kicker" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.enter, ease: motionTokens.ease }}>
               <Sparkles size={15} />
               Phi Sigma Rho - Tau Chapter at the University of Florida
             </motion.div>
@@ -201,11 +202,11 @@ export default function Home() {
               <MaskedReveal delay={0.22}>Sorority life.</MaskedReveal>
             </h1>
 
-            <motion.p className="home-hero-description" initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.85, delay: 0.34, ease: [0.22, 1, 0.36, 1] }}>
+            <motion.p className="home-hero-description" initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.enter, delay: 0.34, ease: motionTokens.ease }}>
               Phi Sigma Rho was founded in 1984 with the vision to be the foremost social sorority for women in engineering and engineering technology. Through a powerful bond of friendship that lasts beyond college, unwavering scholarship and academic support in a rigorous field, and constant encouragement through every challenge and victory, our sisters empower each other to thrive from day one.
             </motion.p>
 
-            <motion.div className="home-hero-actions" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.46, ease: 'easeOut' }}>
+            <motion.div className="home-hero-actions" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.enter, delay: 0.46, ease: motionTokens.ease }}>
               <Link className="home-primary-cta" to="/recruitment">
                 Join our sisterhood
                 <ArrowRight size={18} />
@@ -219,8 +220,8 @@ export default function Home() {
               {highlightBadges.map((item, index) => {
                 const Icon = item.icon;
                 return (
-                  <motion.div key={item.title} className="home-stat-badge" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.78, delay: 0.55 + index * 0.08, ease: 'easeOut' }} whileInView={{ y: [0, -8, 0] }} viewport={{ once: true }}>
-                    <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 4.4, delay: index * 0.35, repeat: Infinity, ease: 'easeInOut' }}>
+                  <motion.div key={item.title} className="home-stat-badge" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.enter, delay: 0.55 + index * 0.08, ease: motionTokens.ease }} viewport={{ once: true }}>
+                    <motion.div>
                       <span className="home-stat-icon"><Icon size={15} /></span>
                       <span>{item.value} {item.title}</span>
                     </motion.div>
@@ -231,7 +232,7 @@ export default function Home() {
           </div>
 
           {/* EDITORIAL */}
-          <motion.div className="home-hero-editorial" initial={{ opacity: 0, y: 28, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.95, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}>
+          <motion.div className="home-hero-editorial" initial={{ opacity: 0, y: 28, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: motionTokens.enter, delay: 0.28, ease: motionTokens.ease }}>
             <div className="home-editorial-card">
               <div className="home-editorial-meta">
                 <span>Sisterhood spirit, STEM focus</span>
@@ -268,7 +269,7 @@ export default function Home() {
         <div className="home-sisterhood-media">
           <img src={chapterPhoto} alt="Chapter cover" className="home-editorial-image" />
           <div className="home-sisterhood-wash" />
-          <motion.div className="home-sisterhood-copy" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}>
+          <motion.div className="home-sisterhood-copy" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: motionTokens.enter, ease: motionTokens.ease }}>
             <span>Phi Sigma Rho · Tau Chapter</span>
             <h2>Together we build the future</h2>
           </motion.div>
@@ -278,11 +279,11 @@ export default function Home() {
       {/* SOCIAL */}
       <section className="home-panel home-panel-social">
         <div className="home-social-header">
-          <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: 0.75, ease: 'easeOut' }}>
+          <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: motionTokens.enter, ease: motionTokens.ease }}>
             <span className="home-small-label">Social and events</span>
             <h2>Instagram energy with chapter moments and upcoming events.</h2>
           </motion.div>
-          <motion.p className="home-social-intro" initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: 0.82, delay: 0.08, ease: 'easeOut' }}>
+          <motion.p className="home-social-intro" initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: motionTokens.enter, delay: 0.08, ease: motionTokens.ease }}>
             A glimpse into life in PSR — sisterhood, memories, and the moments that make our chapter feel like home.
           </motion.p>
         </div>
@@ -315,7 +316,7 @@ export default function Home() {
                   initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.7, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: motionTokens.enter, delay: index * 0.05, ease: motionTokens.ease }}
                   whileHover={{ y: -5 }}
                 >
                   <div className="home-social-media">
@@ -328,7 +329,7 @@ export default function Home() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                        transition={{ duration: motionTokens.enter, ease: "easeInOut" }}
                         className="instagram-fade-image"
                       />
                     </AnimatePresence>
@@ -406,7 +407,7 @@ export default function Home() {
                   initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.25 }}
-                  transition={{ duration: 0.65, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: motionTokens.enter, delay: index * 0.06, ease: motionTokens.ease }}
                 >
                   <div className="home-event-hero-image">
                     {eventImageUrl ? (

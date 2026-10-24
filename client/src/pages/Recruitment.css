@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
-:root {
+.recruitment-page {
   --home-rose: #efd2d8;
   --home-dusty: #d7a7b1;
   --home-maroon: #6f2434;
@@ -15,33 +15,33 @@
 /* ========================================
    RECRUITMENT PAGE BASE & TYPOGRAPHY
    ======================================== */
-.page-shell {
+.recruitment-page {
   position: relative;
   color: var(--home-copy);
   overflow-x: hidden;
   padding-bottom: 6rem;
 }
 
-.page-shell h1, 
-.page-shell h2, 
-.page-shell h3 {
+.recruitment-page h1,
+.recruitment-page h2,
+.recruitment-page h3 {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 600;
   letter-spacing: -0.03em;
   color: var(--home-maroon-deep);
 }
 
-.page-shell p, 
-.page-shell span, 
-.page-shell a, 
-.page-shell li {
+.recruitment-page p,
+.recruitment-page span,
+.recruitment-page a,
+.recruitment-page li {
   font-family: 'Manrope', sans-serif;
 }
 
 /* ========================================
    HERO SECTION
    ======================================== */
-.hero-section {
+.recruitment-page .hero-section {
   position: relative;
   padding: 0rem clamp(0rem, 4vw, 3rem) 3rem; /* Reduced top padding to 1.5rem */
   padding-top: 0rem !important; /* Override any inline styles */
@@ -53,7 +53,7 @@
   border-radius: 0 !important;
 }
 
-.hero-grid {
+.recruitment-page .hero-grid {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
   align-items: center;
@@ -65,7 +65,7 @@
   box-shadow: none !important;
 }
 
-.hero-badge {
+.recruitment-page .hero-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
@@ -83,13 +83,13 @@
   box-shadow: 0 4px 20px rgba(111, 36, 52, 0.04);
 }
 
-.hero-title {
+.recruitment-page .hero-title {
   margin: 0 0 1.25rem;
   font-size: clamp(2.8rem, 5.5vw, 5rem);
   line-height: 1.02;
 }
 
-.hero-description {
+.recruitment-page .hero-description {
   max-width: 40rem;
   margin: 0 0 2rem;
   color: var(--home-copy-soft);
@@ -97,14 +97,14 @@
   line-height: 1.75;
 }
 
-.hero-actions {
+.recruitment-page .hero-actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 1.25rem;
 }
 
-.button {
+.recruitment-page .button {
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
@@ -119,12 +119,12 @@
   transition: var(--transition-smooth);
 }
 
-.button:hover {
+.recruitment-page .button:hover {
   transform: translateY(-2px);
   box-shadow: 0 15px 35px rgba(111, 36, 52, 0.35);
 }
 
-.button-secondary {
+.recruitment-page .button-secondary {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -140,16 +140,16 @@
   white-space: nowrap;
   box-shadow: 0 4px 20px rgba(111, 36, 52, 0.04);
   transition: transform 220ms ease, background 220ms ease, color 220ms ease, box-shadow 220ms ease;
-} 
+}
 
-.button-secondary:hover {
+.recruitment-page .button-secondary:hover {
   color: var(--home-maroon-deep);
   background: #ffffff;
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(111, 36, 52, 0.08);
 }
 
-.hero-card {
+.recruitment-page .hero-card {
   position: relative;
   border: 1px solid var(--home-border);
   border-radius: 32px;
@@ -160,7 +160,7 @@
   overflow: hidden;
 }
 
-.hero-card img {
+.recruitment-page .hero-card img {
   width: 100%;
   aspect-ratio: 4 / 5;
   object-fit: cover;
@@ -168,7 +168,7 @@
   display: block;
 }
 
-.hero-card-float {
+.recruitment-page .hero-card-float {
   position: absolute;
   bottom: 2.25rem;
   left: 2.25rem;
@@ -188,19 +188,19 @@
 /* ========================================
    CONTENT SECTIONS & HEADERS
    ======================================== */
-.content-section {
+.recruitment-page .content-section {
   width: min(1200px, 92%);
   margin: 4.5rem auto 0;
   padding: 0;
 }
 
-.section-header-centered {
+.recruitment-page .section-header-centered {
   text-align: center;
   max-width: 48rem;
   margin: 0 auto 2.5rem;
 }
 
-.section-header-centered span {
+.recruitment-page .section-header-centered span {
   display: inline-block;
   font-size: 0.78rem;
   font-weight: 800;
@@ -210,13 +210,13 @@
   margin-bottom: 0.75rem;
 }
 
-.section-header-centered h2 {
+.recruitment-page .section-header-centered h2 {
   font-size: clamp(2.2rem, 4.5vw, 3.5rem);
   margin: 0 0 1rem;
   line-height: 1.1;
 }
 
-.section-header-centered p {
+.recruitment-page .section-header-centered p {
   color: var(--home-copy-soft);
   font-size: 1.05rem;
   line-height: 1.7;
@@ -226,7 +226,7 @@
 /* ========================================
    VP MEMBERSHIP MESSAGE SECTION (Uncropped)
    ======================================== */
-.vp-message-grid {
+.recruitment-page .vp-message-grid {
   display: grid;
   grid-template-columns: 0.9fr 1.1fr;
   align-items: center;
@@ -239,7 +239,7 @@
   backdrop-filter: blur(16px);
 }
 
-.vp-photo-card {
+.recruitment-page .vp-photo-card {
   position: relative;
   width: 100%;
   border-radius: 20px;
@@ -250,7 +250,7 @@
   justify-content: center;
 }
 
-.vp-image {
+.recruitment-page .vp-image {
   width: 100%;
   height: auto;
   max-height: 600px;
@@ -259,13 +259,13 @@
   display: block;
 }
 
-.vp-letter-card {
+.recruitment-page .vp-letter-card {
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.vp-letter-content {
+.recruitment-page .vp-letter-content {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -274,11 +274,11 @@
   line-height: 1.8;
 }
 
-.vp-letter-content p {
+.recruitment-page .vp-letter-content p {
   margin: 0;
 }
 
-.vp-signoff {
+.recruitment-page .vp-signoff {
   margin-top: 0.5rem !important;
   color: var(--home-copy);
 }
@@ -286,7 +286,7 @@
 /* ========================================
    ACCEPTED MAJORS CHIPS
    ======================================== */
-.majors-grid {
+.recruitment-page .majors-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -295,7 +295,7 @@
   margin: 0 auto;
 }
 
-.major-chip {
+.recruitment-page .major-chip {
   border: 1px solid var(--home-border);
   border-radius: 999px;
   padding: 0.65rem 1.2rem;
@@ -311,7 +311,7 @@
   transition: var(--transition-smooth);
 }
 
-.major-chip:hover {
+.recruitment-page .major-chip:hover {
   transform: translateY(-3px);
   background: #ffffff;
   border-color: var(--home-maroon);
@@ -321,8 +321,8 @@
 /* ========================================
    RECRUITMENT EVENTS RAIL
    ======================================== */
-.recruitment-events { scroll-margin-top: 100px; }
-.recruitment-events-heading {
+.recruitment-page .recruitment-events { scroll-margin-top: 100px; }
+.recruitment-page .recruitment-events-heading {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -331,7 +331,7 @@
   margin-bottom: 24px;
   border-bottom: 1px solid #ded3d6;
 }
-.recruitment-events-eyebrow {
+.recruitment-page .recruitment-events-eyebrow {
   display: block;
   margin-bottom: 8px;
   color: #7c454e;
@@ -340,59 +340,61 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.recruitment-events .recruitment-events-heading h2 {
+.recruitment-page .recruitment-events .recruitment-events-heading h2 {
   margin: 0 0 10px;
-  font-family: 'Manrope', sans-serif;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 700;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(2rem, 3.5vw, 2.6rem);
+  font-weight: 600;
   line-height: 1.25;
 }
-.recruitment-events-heading p { margin: 0; color: #77666c; font-size: 0.95rem; line-height: 1.6; }
-.recruitment-events-count { flex-shrink: 0; color: #77666c; font-size: 0.8rem; }
-.recruitment-events-rail {
+.recruitment-page .recruitment-events-heading p { margin: 0; color: #77666c; font-size: 0.95rem; line-height: 1.6; }
+.recruitment-page .recruitment-events-count { flex-shrink: 0; color: #77666c; font-size: 0.8rem; }
+.recruitment-page .recruitment-events-rail {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
 }
-.recruitment-event-card {
+.recruitment-page .recruitment-event-card {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #e2d8db;
-  border-radius: 10px;
+  border: 1px solid var(--home-border);
+  border-radius: 20px;
   background: #fff;
+  box-shadow: 0 6px 20px rgba(84, 28, 42, 0.05);
+  transition: box-shadow 220ms ease, border-color 220ms ease, translate 220ms ease;
   display: flex;
   flex-direction: column;
 }
-.recruitment-event-cover { height: 48px; background: #e8cbd3; }
-.recruitment-event-cover.has-image { height: 180px; }
-.recruitment-event-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.recruitment-event-body { padding: 24px; display: flex; flex-direction: column; flex: 1; }
-.recruitment-event-date-row { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
-.recruitment-event-date {
+.recruitment-page .recruitment-event-cover { height: 48px; background: var(--home-rose); border-bottom: 1px solid var(--home-border); }
+.recruitment-page .recruitment-event-cover.has-image { height: 180px; }
+.recruitment-page .recruitment-event-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.recruitment-page .recruitment-event-body { padding: 24px; display: flex; flex-direction: column; flex: 1; }
+.recruitment-page .recruitment-event-date-row { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+.recruitment-page .recruitment-event-date {
   display: grid;
   justify-items: center;
   min-width: 54px;
   padding: 8px 10px;
-  border-radius: 6px;
-  background: #f7f1f3;
-  color: #6f2434;
+  border-radius: 10px;
+  background: #f8edf0;
+  color: var(--home-maroon);
 }
-.recruitment-event-date span { font-size: 0.7rem; font-weight: 650; text-transform: uppercase; }
-.recruitment-event-date strong { font-size: 1.5rem; line-height: 1.2; }
-.recruitment-event-time { display: grid; gap: 5px; color: #615057; font-size: 0.85rem; }
-.recruitment-event-time > span:last-child { display: flex; align-items: center; gap: 6px; }
-.recruitment-events .recruitment-event-card h3 {
-  font-family: 'Manrope', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  line-height: 1.45;
+.recruitment-page .recruitment-event-date span { font-size: 0.7rem; font-weight: 650; text-transform: uppercase; }
+.recruitment-page .recruitment-event-date strong { font-size: 1.5rem; line-height: 1.2; }
+.recruitment-page .recruitment-event-time { display: grid; gap: 5px; color: #615057; font-size: 0.85rem; }
+.recruitment-page .recruitment-event-time > span:last-child { display: flex; align-items: center; gap: 6px; }
+.recruitment-page .recruitment-events .recruitment-event-card h3 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   margin: 0 0 12px;
-  color: #33272b;
+  color: var(--home-maroon-deep);
   overflow-wrap: anywhere;
 }
-.recruitment-event-body p { margin: 0 0 22px; color: #76676c; font-size: 0.9rem; line-height: 1.7; overflow-wrap: anywhere; }
-.recruitment-event-location {
+.recruitment-page .recruitment-event-body p { margin: 0 0 22px; color: #76676c; font-size: 0.9rem; line-height: 1.7; overflow-wrap: anywhere; }
+.recruitment-page .recruitment-event-location {
   margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid #eee7e9;
@@ -402,32 +404,32 @@
   font-size: 0.8rem;
   color: #76676c;
 }
-.recruitment-event-location svg { flex-shrink: 0; }
-.recruitment-events-empty { padding: 32px; background: #fff; border: 1px solid #e2d8db; border-radius: 10px; color: #76676c; }
-.recruitment-events-empty h3 { margin: 0 0 8px; }
-.recruitment-events-empty p { margin: 0; }
+.recruitment-page .recruitment-event-location svg { flex-shrink: 0; }
+.recruitment-page .recruitment-events-empty { padding: 32px; background: #fff; border: 1px solid #e2d8db; border-radius: 10px; color: #76676c; }
+.recruitment-page .recruitment-events-empty h3 { margin: 0 0 8px; }
+.recruitment-page .recruitment-events-empty p { margin: 0; }
 @media (max-width: 640px) {
-  .recruitment-events-rail { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-  .recruitment-events-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
-  .recruitment-event-body { padding: 20px; }
+  .recruitment-page .recruitment-events-rail { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .recruitment-page .recruitment-events-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .recruitment-page .recruitment-event-body { padding: 20px; }
 }
 
 /* ========================================
    PILLARS / INFO CARDS (3-column Grid)
    ======================================== */
-.info-grid-3x1 {
+.recruitment-page .info-grid-3x1 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
 }
 
 @media screen and (max-width: 1024px) {
-  .info-grid-3x1 {
+  .recruitment-page .info-grid-3x1 {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
 }
 
-.info-card {
+.recruitment-page .info-card {
   border: 1px solid var(--home-border);
   border-radius: 28px;
   background: #ffffff;
@@ -437,14 +439,14 @@
   transition: var(--transition-smooth);
 }
 
-.info-card:hover {
+.recruitment-page .info-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 30px 60px rgba(91, 37, 50, 0.14);
   border-color: rgba(111, 36, 52, 0.28);
   background: #ffffff;
 }
 
-.pillar-icon {
+.recruitment-page .pillar-icon {
   display: inline-grid;
   place-items: center;
   width: 3.25rem;
@@ -456,18 +458,18 @@
   transition: var(--transition-smooth);
 }
 
-.info-card:hover .pillar-icon {
+.recruitment-page .info-card:hover .pillar-icon {
   background: var(--home-maroon);
   color: #fff;
   transform: scale(1.05);
 }
 
-.info-card h3 {
+.recruitment-page .info-card h3 {
   margin: 0 0 0.75rem;
   font-size: 1.6rem;
 }
 
-.info-card p {
+.recruitment-page .info-card p {
   margin: 0;
   color: var(--home-copy-soft);
   font-size: 0.98rem;
@@ -478,25 +480,119 @@
    RESPONSIVE DESIGN OVERRIDES
    ======================================== */
 @media screen and (max-width: 1024px) {
-  .hero-grid {
+  .recruitment-page .hero-grid {
     grid-template-columns: 1fr;
     gap: 3rem;
   }
 
-  .vp-message-grid {
+  .recruitment-page .vp-message-grid {
     grid-template-columns: 1fr;
     padding: 2rem;
   }
 }
 
 @media screen and (max-width: 768px) {
-  .hero-actions {
+  .recruitment-page .hero-actions {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .button, .button-secondary {
+  .recruitment-page .button, .recruitment-page .button-secondary {
     justify-content: center;
     text-align: center;
   }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .recruitment-page .recruitment-event-card:hover {
+    translate: 0 -4px;
+    border-color: rgba(111, 36, 52, 0.28);
+    box-shadow: 0 12px 28px rgba(84, 28, 42, 0.09);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recruitment-page .recruitment-event-card { transition: none; }
+}
+
+/* Give the recruitment calendar an inviting, editorial introduction. */
+.recruitment-page .recruitment-events-heading {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-bottom: 0;
+  padding-bottom: 0;
+  margin-bottom: 2rem;
+}
+.recruitment-page .recruitment-events-heading h2 {
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  line-height: 1.1;
+  margin: .75rem 0 1rem;
+  text-wrap: balance;
+}
+.recruitment-page .recruitment-events-eyebrow {
+  letter-spacing: .16em;
+  font-weight: 700;
+}
+.recruitment-page .recruitment-events-heading p { margin: 0; }
+.recruitment-page .recruitment-events-invitation {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 3rem);
+  border: 1px solid var(--home-border);
+  border-radius: 28px;
+  background: radial-gradient(ellipse at 0% 100%, #efd2d866, transparent 55%),
+    radial-gradient(ellipse at 100% 0%, #efd2d866, transparent 55%), #fffdfd;
+  box-shadow: 0 16px 48px rgba(84, 28, 42, .05);
+}
+.recruitment-page .recruitment-invitation-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin-bottom: 1.5rem;
+  background: #f7e8ed;
+  color: var(--home-maroon);
+  border-radius: 22px;
+
+}
+.recruitment-page .recruitment-invitation-icon svg:last-child {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #fffdfd;
+  box-sizing: content-box;
+  border-radius: 50%;
+  padding: 5px;
+}
+.recruitment-page .recruitment-invitation-label {
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--home-maroon);
+}
+.recruitment-page .recruitment-events-invitation h3 {
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  line-height: 1.15;
+  margin: .75rem 0 1rem;
+}
+.recruitment-page .recruitment-events-invitation p {
+  max-width: 490px;
+  font-size: .98rem;
+  line-height: 1.8;
+  color: var(--home-copy-soft);
+  margin-bottom: 1.75rem;
+}
+.recruitment-page .recruitment-invitation-note {
+  font-size: .75rem;
+  color: var(--home-copy-soft);
+  margin-top: 1rem;
+}
+@keyframes recruitmentInvitationFloat {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-7px) rotate(3deg); }
 }
