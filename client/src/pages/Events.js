@@ -40,19 +40,7 @@ const RECURRENCE_OPTIONS = [
 
 const EVENT_PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
-    <defs>
-      <linearGradient id="grad" x2="100%" y2="100%">
-        <stop stop-color="#faf0f3" />
-        <stop offset="1" stop-color="#e8cbd3" />
-      </linearGradient>
-      <pattern id="lines" width="36" height="36" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-        <path d="M0 0V36" stroke="#6f2434" stroke-opacity="0.06" stroke-width="2" />
-      </pattern>
-    </defs>
-    <rect width="1200" height="675" fill="url(#grad)" />
-    <circle cx="240" cy="170" r="160" fill="#fff" fill-opacity="0.5" />
-    <circle cx="1020" cy="600" r="260" fill="#6f2434" fill-opacity="0.06" />
-    <rect width="1200" height="675" fill="url(#lines)" />
+    <rect width="1200" height="675" fill="#e8cbd3" />
   </svg>
 `)}`; 
  
@@ -302,9 +290,8 @@ function EventCard({ event, user, userId, view, onRsvp, onManage }) {
       initial={{ opacity: 0, y: 22 }} 
       animate={{ opacity: 1, y: 0 }} 
       transition={{ duration: 0.38, ease: "easeOut" }} 
-      whileHover={{ y: -6 }} 
     > 
-      <div className="events-card-media"> 
+      <div className={`events-card-media${imageSrc === EVENT_PLACEHOLDER ? " events-card-media-placeholder" : ""}`}>
         <img 
           src={imageSrc} 
           alt={event.title} 
@@ -2426,7 +2413,7 @@ export default function Events() {
       <motion.section className="events-hero" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.46, ease: "easeOut" }}> 
         <div className="events-hero-copy"> 
           <h1>Events</h1> 
-          <p>Discover, organize, and manage chapter events with a cleaner RSVP and attendance workflow.</p> 
+          <p>Make plans with the chapter. Find an event and save your spot.</p>
         </div> 
         {canCreate ? ( 
           <motion.button type="button" className="events-primary-button" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} onClick={() => setModalOpen(true)}> 
@@ -2449,7 +2436,7 @@ export default function Events() {
       <motion.section className="events-toolbar" initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.48, delay: 0.06, ease: "easeOut" }}> 
         <div className="events-tab-row events-tab-row-primary"> 
           {availableViewOptions.map((option) => ( 
-            <button key={option.key} type="button" className={view === option.key ? "events-tab active" : "events-tab"} onClick={() => setView(view === "week" && option.key === "week" ? "allUpcoming" : option.key)}> 
+            <button key={option.key} type="button" aria-pressed={view === option.key} className={view === option.key ? "events-tab active" : "events-tab"} onClick={() => setView(view === "week" && option.key === "week" ? "allUpcoming" : option.key)}>
               {option.label} 
             </button> 
           ))} 
@@ -2458,12 +2445,12 @@ export default function Events() {
         <div className="events-controls-row"> 
           <label className="events-search-box"> 
             <Search size={16} /> 
-            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search within this view, locations, or descriptions" /> 
+            <input aria-label="Search events" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search events or locations" />
           </label> 
  
           <label className="events-filter-select"> 
             <Filter size={16} /> 
-            <select value={eventFilter} onChange={(e) => setEventFilter(e.target.value)}> 
+            <select aria-label="Event category" value={eventFilter} onChange={(e) => setEventFilter(e.target.value)}>
               {EVENT_FILTERS.map((option) => ( 
                 <option key={option.key} value={option.key}>{option.label}</option> 
               ))} 
@@ -2492,7 +2479,7 @@ export default function Events() {
                   <span className="events-mobile-block-label">View</span> 
                   <div className="events-tab-row events-tab-row-primary"> 
                     {availableViewOptions.map((option) => ( 
-                      <button key={option.key} type="button" className={view === option.key ? "events-tab active" : "events-tab"} onClick={() => setView(view === "week" && option.key === "week" ? "allUpcoming" : option.key)}> 
+                      <button key={option.key} type="button" aria-pressed={view === option.key} className={view === option.key ? "events-tab active" : "events-tab"} onClick={() => setView(view === "week" && option.key === "week" ? "allUpcoming" : option.key)}>
                         {option.label} 
                       </button> 
                     ))} 
@@ -2501,12 +2488,12 @@ export default function Events() {
  
                 <label className="events-search-box"> 
                   <Search size={16} /> 
-                  <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search within this view, locations, or descriptions" /> 
+                  <input aria-label="Search events" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search events or locations" />
                 </label> 
  
                 <label className="events-filter-select"> 
                   <Filter size={16} /> 
-                  <select value={eventFilter} onChange={(e) => setEventFilter(e.target.value)}> 
+                  <select aria-label="Event category" value={eventFilter} onChange={(e) => setEventFilter(e.target.value)}>
                     {EVENT_FILTERS.map((option) => ( 
                       <option key={option.key} value={option.key}>{option.label}</option> 
                     ))} 
@@ -2526,6 +2513,11 @@ export default function Events() {
  
       {error ? <div className="events-inline-error">{error}</div> : null} 
  
+      <div className="events-results-heading">
+        <h2>{availableViewOptions.find((option) => option.key === view)?.label || 'Events'}</h2>
+        {!loading && <span>{filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'}</span>}
+      </div>
+
       {loading ? ( 
         <div className="events-empty-state">Loading events...</div> 
       ) : filteredEvents.length === 0 ? ( 

@@ -4,18 +4,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { createAppSocket } from "../lib/socket";
 
-const itemStyle = ({ isActive }) => ({
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  padding: "8px 10px",
-  borderRadius: 14,
-  textDecoration: "none",
-  fontWeight: 600,
-  color: isActive ? "#6d2c2c" : "#1f2937",
-  background: isActive ? "rgba(109,44,44,0.10)" : "transparent",
-});
-
 export default function ChannelsSidebar() {
   const { user } = useAuth();
   const location = useLocation();
@@ -96,13 +84,6 @@ export default function ChannelsSidebar() {
     officerFeed: '🔒',
   };
 
-  const longestChannelNameLength = useMemo(() => {
-    return visibleChannels.reduce((maxLength, channel) => {
-      return Math.max(maxLength, String(channel?.name || '').length);
-    }, 22);
-  }, [visibleChannels]);
-
-  const sidebarWidth = `clamp(18rem, ${Math.min(longestChannelNameLength + 5, 32)}ch, 26rem)`;
   const activeSlug = String(location.pathname || "").split("/").filter(Boolean).pop() || "";
   const activeChannel = visibleChannels.find((channel) => channel.slug === activeSlug);
 
@@ -110,18 +91,6 @@ export default function ChannelsSidebar() {
     return (
       <section
         className="channels-sidebar channels-sidebar-mobile"
-        style={{
-          width: "100%",
-          maxWidth: "100%",
-          background: "linear-gradient(180deg, rgba(255,252,253,0.97), rgba(247,233,238,0.97))",
-          border: "1px solid rgba(109,44,44,0.12)",
-          borderRadius: 22,
-          padding: 12,
-          boxSizing: "border-box",
-          boxShadow: "0 18px 32px rgba(109,44,44,0.08)",
-          display: "grid",
-          gap: 10,
-        }}
       >
         <style>{`
           .channels-mobile-rail {
@@ -148,20 +117,7 @@ export default function ChannelsSidebar() {
             <NavLink
               key={channel._id || channel.slug}
               to={`/feeds/${channel.slug}`}
-              style={({ isActive }) => ({
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "10px 12px",
-                borderRadius: 16,
-                textDecoration: "none",
-                fontWeight: 700,
-                whiteSpace: "nowrap",
-                color: isActive ? "#6d2c2c" : "#3b2327",
-                background: isActive ? "rgba(109,44,44,0.12)" : "rgba(255,255,255,0.7)",
-                border: `1px solid ${isActive ? "rgba(109,44,44,0.18)" : "rgba(109,44,44,0.08)"}`,
-                boxShadow: isActive ? "0 10px 18px rgba(109,44,44,0.08)" : "none",
-              })}
+              className={({ isActive }) => isActive ? "channel-link active" : "channel-link"}
             >
               <span>{iconBySlug[channel.slug] || "#"}</span>
               <span>{channel.name}</span>
@@ -175,24 +131,6 @@ export default function ChannelsSidebar() {
   return (
     <aside
       className="channels-sidebar"
-      style={{
-        '--channels-sidebar-width': sidebarWidth,
-        position: "sticky",
-        top: 8,
-        alignSelf: "start",
-        width: sidebarWidth,
-        maxWidth: "100%",
-        background: "linear-gradient(180deg, rgba(255,252,253,0.97), rgba(247,233,238,0.97))",
-        border: "1px solid rgba(109,44,44,0.12)",
-        borderRadius: 22,
-        padding: 14,
-        height: "calc(100vh - 100px)",
-        boxSizing: "border-box",
-        boxShadow: "0 18px 32px rgba(109,44,44,0.08)",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
     >
       <style>{`
         .channels-scroll {
@@ -220,11 +158,11 @@ export default function ChannelsSidebar() {
         Channels
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: "hidden", borderRadius: 18, background: "linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0.1))", border: "1px solid rgba(109,44,44,0.05)", padding: "6px 10px 6px 0" }}>
-      <nav className="channels-scroll" style={{ display: "grid", gap: 8, height: "100%", overflowY: "scroll", overflowX: "hidden", paddingRight: 22, overscrollBehaviorY: "contain", overscrollBehaviorX: "none", alignContent: "start" }}>
+      <div className="channels-list-wrap">
+      <nav className="channels-scroll">
         {loading && <div style={{ color: '#7b5d63', fontSize: 12, padding: '6px 2px' }}>Loading channels…</div>}
         {!loading && visibleChannels.map(channel => (
-          <NavLink key={channel._id || channel.slug} to={`/feeds/${channel.slug}`} style={itemStyle}>
+          <NavLink key={channel._id || channel.slug} to={`/feeds/${channel.slug}`} className={({ isActive }) => isActive ? "channel-link active" : "channel-link"}>
             <span>{iconBySlug[channel.slug] || '#'} </span>
             <span style={{ minWidth: 0, flex: 1, overflowWrap: 'anywhere', whiteSpace: 'normal', lineHeight: 1.22 }}>{channel.name}</span>
           </NavLink>

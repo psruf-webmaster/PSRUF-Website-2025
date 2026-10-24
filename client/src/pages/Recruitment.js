@@ -155,84 +155,67 @@ export default function Recruitment() {
         </motion.div>
       </section>
 
-      {/* UPCOMING EVENTS RAIL */}
-      <section id="events" className="content-section">
-        <motion.div 
-          className="section-header-centered"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-        >
-          <span>Get connected</span>
-          <h2>Upcoming Open Socials & Rush Events</h2>
-          <p>Check out where you can meet our sisters this season. No RSVP required unless noted!</p>
-        </motion.div>
+      {/* Upcoming recruitment events */}
+      <section id="events" className="content-section recruitment-events">
+        <div className="recruitment-events-heading">
+          <div>
+            <span className="recruitment-events-eyebrow">Meet the chapter</span>
+            <h2>Open socials &amp; rush events</h2>
+            <p>Come meet our sisters. No RSVP required unless noted.</p>
+          </div>
+          {!isLoadingEvents && pnmEvents.length > 0 && (
+            <span className="recruitment-events-count">{pnmEvents.length} upcoming</span>
+          )}
+        </div>
 
         {isLoadingEvents ? (
-          <div className="event-loading-state">Loading upcoming events...</div>
+          <div className="recruitment-events-empty" role="status">Loading upcoming events…</div>
         ) : pnmEvents.length > 0 ? (
           <div className="recruitment-events-rail">
-            {pnmEvents.map((event, index) => {
+            {pnmEvents.map(event => {
               const startDate = new Date(event.startAt);
-              const month = startDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+              const month = startDate.toLocaleDateString('en-US', { month: 'short' });
               const day = startDate.getDate();
               const time = startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+              const weekday = startDate.toLocaleDateString('en-US', { weekday: 'long' });
               const eventImageUrl = event.image || event.imageUrl || event.coverImage;
 
               return (
-                <motion.article 
-                  key={event._id} 
-                  className="info-card" 
-                  style={{ minWidth: '320px', flex: '1 0 320px', display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: index * 0.08 }}
-                  whileHover={{ y: -8, scale: 1.02 }}
-                >
-                  <div style={{ height: '180px', width: '100%', backgroundColor: '#efd2d8', position: 'relative', overflow: 'hidden' }}>
-                    {eventImageUrl ? (
-                      <motion.img 
-                        src={eventImageUrl} 
-                        alt={event.title} 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        whileHover={{ scale: 1.08 }}
-                        transition={{ duration: 0.4 }}
-                      />
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #efd2d8 0%, #6f2434 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Sparkles size={32} color="#fff" style={{ opacity: 0.6 }} />
-                      </div>
+                <article key={event._id} className="recruitment-event-card">
+                  <div className={`recruitment-event-cover${eventImageUrl ? ' has-image' : ''}`}>
+                    {eventImageUrl && (
+                      <img src={eventImageUrl} alt={event.title} onError={e => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement.classList.remove('has-image');
+                      }} />
                     )}
                   </div>
-                  <div style={{ padding: '2rem' }}>
-                    <div className="pillar-icon">
-                      <CalendarDays size={18} />
+                  <div className="recruitment-event-body">
+                    <div className="recruitment-event-date-row">
+                      <time className="recruitment-event-date" dateTime={event.startAt}>
+                        <span>{month}</span>
+                        <strong>{day}</strong>
+                      </time>
+                      <div className="recruitment-event-time">
+                        <span>{weekday}</span>
+                        <span><CalendarDays size={14} aria-hidden="true" />{time}</span>
+                      </div>
                     </div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--home-maroon)', letterSpacing: '0.1em' }}>
-                      {month} {day} · {time}
-                    </span>
-                    <h3 style={{ fontSize: '1.4rem', margin: '0.5rem 0 1rem' }}>{event.title}</h3>
-                    {event.description && <p style={{ marginBottom: '1.25rem' }}>{event.description}</p>}
-                    {event.location && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--home-copy-soft)' }}>
-                        <MapPin size={15} />
-                        <span>{event.location}</span>
-                      </div>
-                    )}
+                    <h3>{event.title}</h3>
+                    {event.description && <p>{event.description}</p>}
+                    <div className="recruitment-event-location">
+                      <MapPin size={16} aria-hidden="true" />
+                      <span>{event.location || 'Location to be announced'}</span>
+                    </div>
                   </div>
-                </motion.article>
+                </article>
               );
             })}
           </div>
         ) : (
-          <div className="info-card" style={{ textAlign: 'center', maxWidth: '600px', margin: '0 auto', padding: '3rem' }}>
-            <div className="pillar-icon" style={{ margin: '0 auto 1rem' }}>
-              <Sparkles size={18} />
-            </div>
-            <h3 style={{ fontSize: '1.6rem', marginBottom: '0.5rem' }}>Stay tuned for rush events!</h3>
-            <p>Our calendar is currently clear, but check back soon for upcoming open socials and recruitment dates.</p>
+          <div className="recruitment-events-empty">
+            <h3>More events are on the way</h3>
+            <p>Check back soon for open socials and rush dates.</p>
           </div>
         )}
       </section>

@@ -1,0 +1,147 @@
+/* Channel navigation and conversation surfaces. */
+.feeds-layout {
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 0;
+  margin-top: 16px;
+  padding: 0 20px;
+}
+.feeds-layout .channels-sidebar {
+  box-sizing: border-box;
+  position: sticky;
+  top: 8px;
+  width: 100%;
+  min-width: 0;
+  height: calc(100dvh - 108px);
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f6f3f3;
+  border: 1px solid #e3dcdc;
+  border-right: 0;
+  border-radius: 10px 0 0 10px;
+}
+.channels-list-wrap { flex: 1; min-height: 0; overflow: hidden; }
+.channels-list-wrap .channels-scroll {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  height: 100%;
+  overflow-y: auto;
+}
+.channel-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  color: #54494d;
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+.channel-link > span:first-child { flex-shrink: 0; }
+.channel-link:hover { background: #eee7e8; }
+.channel-link.active { background: #e9dcdf; color: #6d2c2c; font-weight: 650; }
+.feed-page { height: calc(100dvh - 108px); min-height: 0; width: 100%; }
+.feed-conversation {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e3dcdc;
+  border-radius: 0 10px 10px 0;
+  background: #fff;
+}
+.feed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid #ebe5e5;
+  background: #fff;
+  flex-shrink: 0;
+}
+.feed-channel-label { color: #85777c; font-size: 11px; margin-bottom: 3px; }
+.feed-header h1 { font-weight: 650; line-height: 1.3; }
+.feed-header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.feed-header-actions button {
+  background: #fff !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  font-weight: 500 !important;
+  min-height: 34px;
+}
+.feed-messages {
+  padding: 20px 16px;
+  overflow-y: auto;
+  min-height: 0;
+  background: #fff;
+  overscroll-behavior: contain;
+}
+.feed-message { border-radius: 4px; }
+.feed-message:hover, .feed-message:focus-within { background: #faf8f8; }
+.feed-composer-dock {
+  padding: 12px 24px 16px;
+  background: #fff;
+  border-top: 1px solid #ebe5e5;
+  flex-shrink: 0;
+  max-height: 48%;
+  overflow-y: auto;
+}
+.feed-composer { width: 100%; box-sizing: border-box; }
+.feed-compose-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #d7cacc;
+  border-radius: 8px;
+  background: #fff;
+}
+.feed-compose-box:focus-within { border-color: #8b555b; box-shadow: 0 0 0 2px #8b555b12; }
+.feed-compose-box button { box-shadow: none !important; border-radius: 5px !important; }
+.feed-compose-box .feed-send-button { background: #6d2c2c !important; min-height: 32px; }
+.feed-composer .sms-composer-panel {
+  padding: 10px 0 0;
+  margin-top: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  gap: 10px 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+}
+.feed-composer .sms-enable { justify-content: flex-end; flex-direction: row-reverse; gap: 8px; }
+.feed-composer .sms-enable strong { font-size: 12px; font-weight: 500; }
+.feed-composer .sms-queue { padding-top: 4px; border: 0; }
+.feed-composer .sms-delivery, .feed-composer .sms-audience { grid-column: 1 / -1; }
+.feed-composer .sms-queue[open] { grid-column: 1 / -1; }
+.feeds-layout a:focus-visible, .feed-page button:focus-visible {
+  outline: 2px solid #8b555b;
+  outline-offset: 3px;
+}
+@media (max-width: 980px) {
+  .feeds-layout { grid-template-columns: minmax(0, 1fr); padding: 0 12px; margin-top: 10px; }
+  .feeds-layout .channels-sidebar-mobile {
+    position: static;
+    height: auto;
+    border: 1px solid #e3dcdc;
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    padding: 12px;
+  }
+  .channels-mobile-rail .channel-link { flex-shrink: 0; white-space: nowrap; font-size: 13px; }
+  .feed-page { height: auto; }
+  .feed-conversation { border-radius: 0 0 8px 8px; }
+  .feed-messages { max-height: 60dvh; padding: 16px 8px; }
+  .feed-composer-dock { max-height: none; padding: 12px; }
+  .feed-header { padding: 14px; }
+}
+@media (max-width: 640px) {
+  .feed-header { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .feed-composer .sms-composer-panel { grid-template-columns: 1fr; }
+  .feed-header-actions button { flex: initial !important; }
+}

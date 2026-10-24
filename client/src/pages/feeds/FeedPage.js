@@ -1,3 +1,4 @@
+import './Feeds.css';
 import MediaLightbox, { isVideoMedia } from './MediaLightbox';
 import ScheduledTexts, { canScheduleTexts, TextScheduleFields } from './ScheduledTexts';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -459,7 +460,7 @@ function CommentThreadItem({
   };
 
   return (
-    <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (!isCompact) setActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 5 : 7, alignItems: 'flex-start', marginTop: isReply ? 6 : 0, marginLeft: isReply ? (isCompact ? 6 : 18) : 0, width: '100%', boxSizing: 'border-box' }}>
+    <div className="feed-message" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (!isCompact) setActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 5 : 7, alignItems: 'flex-start', marginTop: isReply ? 6 : 0, marginLeft: isReply ? (isCompact ? 6 : 18) : 0, width: '100%', boxSizing: 'border-box' }}>
       <MemberProfile hoverPreview userId={item?.userId} profile={item?.user || item?.author} name={entryName} avatar={entryAvatar} getAvatar={getUserAvatarUrl}><ChatAvatar src={entryAvatar} name={entryName} size={isReply ? 22 : 26} fontSize={isReply ? 8 : 9} /></MemberProfile>
       <div onClick={() => { if (isCompact) setActionsOpen(prev => !prev); }} style={{ flex: 1, minWidth: 0, background: isReply ? 'rgba(255,255,255,0.76)' : '#faf8f9', border: '1px solid rgba(109,44,44,0.08)', borderRadius: 11, padding: isCompact ? '6px 8px' : '7px 9px', boxShadow: '0 4px 12px rgba(109,44,44,0.04)', position: 'relative', cursor: isCompact ? 'pointer' : 'default' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap', paddingRight: actionRowVisible && !isCompact ? 100 : 0 }}>
@@ -823,7 +824,7 @@ export function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, c
   if (!canPost) return null;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: 'easeOut' }} style={{ background: '#fbf2f6', border: '1px solid rgba(109,44,44,0.1)', borderRadius: isPhone ? 14 : 20, padding: isPhone ? '8px 10px' : 10, margin: '0 auto', maxWidth: 760, boxShadow: '0 10px 24px rgba(109,44,44,0.06)', boxSizing: 'border-box' }}>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: 'easeOut' }} className="feed-composer">
       {composerState && (
         <div style={{ display: 'flex', flexDirection: isCompact ? 'column' : 'row', alignItems: isCompact ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8, padding: '8px 10px', borderRadius: 12, background: 'rgba(251,242,246,0.96)', border: '1px solid rgba(109,44,44,0.1)', color: '#6d2c2c' }}>
           <div>
@@ -860,7 +861,7 @@ export function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, c
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, border: '1px solid rgba(109,44,44,0.12)', borderRadius: 16, padding: '8px 10px', background: 'rgba(255,255,255,0.82)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)', boxSizing: 'border-box' }}>
+      <div className="feed-compose-box">
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, width: '100%', boxSizing: 'border-box' }}>
           <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#faf8f9', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6d2c2c', fontSize: 12, fontWeight: 700, boxShadow: '0 6px 14px rgba(109,44,44,0.06)', flexShrink: 0, border: '1px solid rgba(109,44,44,0.1)', marginTop: 3 }}>
             {currentUserAvatar ? (
@@ -872,6 +873,7 @@ export function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, c
 
           <textarea
             ref={textareaRef}
+            aria-label="Message the channel"
             placeholder="Message the channel..."
             value={content}
             onChange={e => setContent(e.target.value)}
@@ -955,6 +957,7 @@ export function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, c
             whileHover={{ scale: 1.04, y: -1 }} 
             whileTap={{ scale: 0.97 }} 
             transition={SPRING_TRANSITION} 
+            className="feed-send-button"
             onClick={submit} 
             disabled={postingLocked || submitting || (!content.trim() && draftAttachments.length === 0)} 
             style={{ 
@@ -1027,7 +1030,7 @@ export function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, c
       {!composerState && canSendSms && (
         <div className="sms-composer-panel">
           <label className="sms-enable">
-            <span><strong>Text blast</strong><small>Reach sisters beyond the feed.</small></span>
+            <span><strong>Also send as text</strong></span>
             <input type="checkbox" role="switch" aria-label="Also send as text blast" checked={sendAsText} onChange={e => setSendAsText(e.target.checked)} />
           </label>
           {sendAsText && canSchedule && <TextScheduleFields key={scheduleRefresh} later={scheduleLater} onModeChange={setScheduleLater} value={smsSendAt} onChange={setSmsSendAt} />}
@@ -1125,10 +1128,10 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
   const actionRowVisible = isCompact ? messageActionsOpen : isHovered || messageActionsOpen;
   const compactGroupedMessage = isGrouped;
   const bubbleStyle = {
-    background: '#faf8f9',
-    border: '1px solid rgba(109,44,44,0.08)',
-    borderRadius: compactGroupedMessage ? 12 : 16,
-    padding: compactGroupedMessage ? '8px 10px' : '10px 12px',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: 0,
+    padding: '3px 0',
     color: '#3b2327',
     boxShadow: 'none',
     width: '100%',
@@ -1137,7 +1140,7 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
   };
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (isCompact) setMessageActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 6 : 10, alignItems: 'flex-start', padding: isGrouped ? (isCompact ? '0 2px 4px' : '0 8px 6px') : (isCompact ? '0 2px 8px' : '0 8px 10px'), borderBottom: 'none', marginBottom: 0, justifyContent: 'center', width: '100%', boxSizing: 'border-box' }}>
+    <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }} className="feed-message" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (isCompact) setMessageActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 6 : 10, alignItems: 'flex-start', padding: isGrouped ? (isCompact ? '0 2px 4px' : '0 8px 6px') : (isCompact ? '0 2px 8px' : '0 8px 10px'), borderBottom: 'none', marginBottom: 0, justifyContent: 'center', width: '100%', boxSizing: 'border-box' }}>
       {selectedMedia && <MediaLightbox item={selectedMedia} authorName={authorName} timeLabel={when} onClose={closeMedia} />}
       <div style={{ width: '100%', minWidth: 0, display: 'flex', gap: isCompact ? 6 : 10, alignItems: 'flex-start', position: 'relative', boxSizing: 'border-box' }}>
         {!isGrouped ? (
@@ -1207,7 +1210,7 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
           </div>
         )}
 
-        <div onClick={() => setMessageActionsOpen(prev => !prev)} style={{ ...bubbleStyle, cursor: 'pointer', padding: compactGroupedMessage ? (isCompact ? '6px 8px' : bubbleStyle.padding) : (isCompact ? '8px 10px' : bubbleStyle.padding) }}>
+        <div onClick={() => setMessageActionsOpen(prev => !prev)} style={{ ...bubbleStyle, cursor: 'pointer', padding: bubbleStyle.padding }}>
           <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: compactGroupedMessage ? 1.3 : 1.45, fontSize: isCompact ? 13 : 14 }}>{post.content}</div>
 
           {media.length > 0 && (
@@ -1232,9 +1235,9 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
             </div>
           )}
 
-          {post.sendTextBlast && <div style={{ fontSize: 10, color: '#a5b4fc', marginTop: 6 }}>{post.smsSchedule?.status ? `Text ${post.smsSchedule.status}${post.smsSchedule.status === 'pending' ? ` for ${new Date(post.smsSchedule.sendAt).toLocaleString()}` : ''}` : '📢 Sent as text'}</div>}
+          {post.sendTextBlast && <div style={{ fontSize: 10, color: '#70636a', marginTop: 6 }}>{post.smsSchedule?.status ? `Text ${post.smsSchedule.status}${post.smsSchedule.status === 'pending' ? ` for ${new Date(post.smsSchedule.sendAt).toLocaleString()}` : ''}` : '📢 Sent as text'}</div>}
           {post.smsResult && (
-            <div style={{ fontSize: 10, color: post.smsResult.failed > 0 ? '#fca5a5' : '#bdc7ff', marginTop: 5 }}>
+            <div style={{ fontSize: 10, color: post.smsResult.failed > 0 ? '#a23737' : '#70636a', marginTop: 5 }}>
               {post.smsResult.error
                 ? 'SMS skipped: Not authorized'
                 : (post.smsResult.sent != null
@@ -1940,7 +1943,7 @@ export default function FeedPage({ feed }) {
 
   return (
     <MemberProfilesProvider value={currentProfilesById}>
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }} style={{ height: isNarrow ? 'auto' : 'calc(100vh - 84px)', minHeight: 0, maxHeight: isNarrow ? 'none' : 'calc(100vh - 84px)', overflow: isNarrow ? 'visible' : 'hidden', paddingBottom: isNarrow ? 8 : 12, boxSizing: 'border-box', width: '100%' }}>
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }} className="feed-page">
       <style>{`
         .psr-chat-scrollbar {
           scrollbar-width: thin;
@@ -1962,14 +1965,14 @@ export default function FeedPage({ feed }) {
           background: linear-gradient(180deg, rgba(236, 144, 184, 0.9), rgba(212, 96, 138, 0.72));
         }
       `}</style>
-      <motion.div layout style={{ background: 'linear-gradient(180deg, rgba(255,250,252,0.985), rgba(248,232,238,0.98))', border: '1px solid rgba(109,44,44,0.12)', borderRadius: isPhone ? 12 : 22, overflow: 'hidden', boxShadow: 'none', height: isNarrow ? 'auto' : '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', width: '100%' }}>
+      <motion.div layout className="feed-conversation">
         
-        <motion.div layout style={{ display: 'flex', flexDirection: isPhone ? 'column' : 'row', justifyContent: 'space-between', alignItems: isPhone ? 'stretch' : 'center', gap: 8, padding: isPhone ? '10px 12px' : '12px 18px 10px', borderBottom: '1px solid rgba(109,44,44,0.09)', background: 'linear-gradient(180deg, rgba(255,255,255,0.84), rgba(243,222,232,0.58))', position: 'sticky', top: 0, zIndex: 2, boxSizing: 'border-box', width: '100%' }}>
+        <motion.div layout className="feed-header">
           <div>
-            <div style={{ color: '#6d2c2c', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 1, fontWeight: 700 }}>📌 Pinned channel</div>
+            <div className="feed-channel-label">Channel</div>
             <h1 style={{ margin: 0, fontSize: isPhone ? 18 : 22, color: '#3b2327' }}>{FEED_TITLES[feed] || currentChannel?.name || 'Feed'}</h1>
           </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', width: isPhone ? '100%' : 'auto' }}>
+          <div className="feed-header-actions">
             {currentChannel?._id && (
               <motion.button whileHover={{ y: -1, scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={SPRING_TRANSITION} onClick={() => setShowMembersPanel(prev => !prev)} style={{ border: '1px solid rgba(109,44,44,0.12)', background: 'rgba(255,255,255,0.74)', color: '#5a3034', borderRadius: 10, padding: '6px 10px', cursor: 'pointer', fontWeight: 700, fontSize: 11, boxShadow: '0 6px 14px rgba(109,44,44,0.05)', flex: isPhone ? 1 : 'initial' }}>
                 {showMembersPanel ? 'Hide members' : 'Show members'}
@@ -1992,8 +1995,8 @@ export default function FeedPage({ feed }) {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: showMembersPanel && !isNarrow ? 'minmax(0,1fr) 220px' : 'minmax(0,1fr)', flex: 1, minHeight: 0, background: '#fbf2f6', overflow: 'hidden', boxSizing: 'border-box', width: '100%' }}>
-          <div ref={messageListRef} className="psr-chat-scrollbar" style={{ padding: isPhone ? '6px 2px 0' : '10px 0 0', borderRight: showMembersPanel && !isNarrow ? '1px solid rgba(109,44,44,0.09)' : 'none', overflowY: isNarrow ? 'visible' : 'auto', minHeight: 0, background: 'linear-gradient(180deg, rgba(251,242,246,0.94), rgba(249,238,243,0.96))', boxSizing: 'border-box' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: showMembersPanel && !isNarrow ? 'minmax(0,1fr) 220px' : 'minmax(0,1fr)', flex: 1, minHeight: 0, background: '#fff', overflow: 'hidden', boxSizing: 'border-box', width: '100%' }}>
+          <div ref={messageListRef} className="feed-messages psr-chat-scrollbar">
             {loading && <div style={{ color: '#5a3034', padding: '14px 16px', fontSize: 13 }}>Loading…</div>}
             {!loading && displayPosts.length === 0 && <div style={{ color: '#5a3034', padding: '14px 16px', fontSize: 13 }}>No posts yet.</div>}
             {!loading && displayPosts.map((p, index) => (
@@ -2015,7 +2018,7 @@ export default function FeedPage({ feed }) {
           </div>
 
           {showMembersPanel && (
-              <motion.aside initial={{ opacity: 0, x: isNarrow ? 0 : 10, y: isNarrow ? 6 : 0 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }} style={{ background: 'linear-gradient(180deg, rgba(250,240,244,0.98), rgba(247,233,239,0.98))', padding: '10px 10px', minHeight: 0, display: 'flex', flexDirection: 'column', borderTop: isNarrow ? '1px solid rgba(109,44,44,0.09)' : 'none', boxSizing: 'border-box' }}>
+              <motion.aside initial={{ opacity: 0, x: isNarrow ? 0 : 10, y: isNarrow ? 6 : 0 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }} style={{ background: '#faf8f8', padding: '10px 10px', minHeight: 0, display: 'flex', flexDirection: 'column', borderTop: isNarrow ? '1px solid rgba(109,44,44,0.09)' : 'none', boxSizing: 'border-box' }}>
               <div style={{ color: '#3b2327', fontWeight: 800, marginBottom: 6, fontSize: 12 }}>Members</div>
               <div className="psr-chat-scrollbar" style={{ overflowY: isNarrow ? 'visible' : 'auto', minHeight: 0, paddingRight: 2, maxHeight: isNarrow ? 'none' : '100%', boxSizing: 'border-box' }}>
               {members.length === 0 ? (
@@ -2043,7 +2046,7 @@ export default function FeedPage({ feed }) {
           )}
         </div>
 
-        <div style={{ position: isNarrow ? 'static' : 'sticky', bottom: 0, borderTop: '1px solid rgba(109,44,44,0.09)', background: 'rgba(250,240,244,0.96)', padding: isPhone ? '8px 8px 10px' : '10px 14px 14px', zIndex: 2, boxSizing: 'border-box', width: '100%' }}>
+        <div className="feed-composer-dock">
           <CreatePost feed={feed} canPost={canPost} canBlast={canBlast} onPosted={load} postingLocked={isArchived} composerState={composerState} onClearComposerState={() => setComposerState(null)} onError={(text) => setUiMessage({ type: 'error', text })} isCompact={isNarrow} isPhone={isPhone} />
         </div>
       </motion.div>
