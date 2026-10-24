@@ -1369,6 +1369,12 @@ button, select {
   word-break: break-word;
 }
 
+.profile-sections-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 /* Right Form Card */
 .profile-form-card {
   border: 1px solid rgba(109, 44, 44, 0.08);
@@ -1376,7 +1382,7 @@ button, select {
   border-radius: 1.6rem;
   box-shadow: 0 10px 32px rgba(109, 44, 44, 0.06);
   backdrop-filter: blur(4px);
-  padding: 1.8rem;
+  padding: 1.8rem 1.8rem 2rem;
 }
 
 .profile-form-header {

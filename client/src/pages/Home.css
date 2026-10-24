@@ -432,6 +432,8 @@
    CAROUSEL 
    ======================================== */ 
 .home-social-rail { 
+  box-sizing: border-box;
+  scroll-padding-inline: 1rem;
   display: flex; 
   align-items: stretch; 
   width: min(1320px, 100%); 
@@ -443,8 +445,8 @@
   scroll-snap-type: x mandatory;
   padding: 1rem 1rem 4rem 1rem; 
   gap: 1.75rem; 
-  scrollbar-width: none; 
-  -ms-overflow-style: none; 
+  scrollbar-width: thin;
+  scrollbar-color: #b77889 #f5e8ed;
 } 
 
 @media (max-width: 1080px) {
@@ -458,12 +460,15 @@
   .home-social-rail {
     width: min(1180px, 100%);
     min-height: auto;
+    scroll-padding-inline: 0.5rem;
     padding: 0.5rem 0.5rem 2rem 0.5rem;
     gap: 1.25rem;
   }
 }
 
-.home-social-rail::-webkit-scrollbar { display: none; } 
+.home-social-rail::-webkit-scrollbar { height: 8px; }
+.home-social-rail::-webkit-scrollbar-track { background: #f5e8ed; border-radius: 999px; }
+.home-social-rail::-webkit-scrollbar-thumb { background: #b77889; border-radius: 999px; }
  
 /* ======================================== 
    SOCIAL CARDS 
@@ -542,7 +547,9 @@
 .home-social-card-event { 
   flex: 0 0 365px; 
   width: 365px;
-  min-width: 365px; 
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column; 
   background: #ffffff; 
@@ -558,12 +565,19 @@
 } 
 
 .home-event-hero-image {
+  position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
+  max-height: 140px;
+  flex-shrink: 0;
+  overflow: hidden;
   background: #fdfdfd;
   border-bottom: 1px solid rgba(0,0,0,0.03);
 }
 .home-event-hero-image img {
+  position: absolute;
+  inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -591,7 +605,8 @@
 }
  
 .home-social-card-event .home-social-body { 
-  display: grid; 
+  display: flex;
+  flex-direction: column;
   gap: 0.9rem; 
   padding: 1.35rem 1.35rem 1.5rem; 
   flex-grow: 1; 
@@ -601,16 +616,22 @@
 }
 
 .home-event-fallback-image {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, var(--home-rose) 0%, var(--home-dusty) 100%);
+  background:
+    radial-gradient(circle at 20% 25%, #ffffff99 0 16%, transparent 16.5%),
+    radial-gradient(circle at 85% 90%, #6f243414 0 30%, transparent 30.5%),
+    repeating-linear-gradient(135deg, transparent 0 18px, #6f24340a 18px 19px),
+    linear-gradient(135deg, #faf0f3, #e8cbd3);
 }
 
 .home-social-card-event .home-social-body h3 { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 2rem; line-height: 0.96; } 
 @media (max-width: 720px) {
   .home-social-card-event .home-social-body h3 { font-size: 1.75rem; line-height: 0.98; }
 }
-.home-social-card-event .home-social-body p { margin: 0; color: var(--home-copy-soft); font-family: 'Manrope', sans-serif; line-height: 1.7; font-size: 0.95rem; } 
+.home-social-card-event .home-social-body p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; margin: 0; color: var(--home-copy-soft); font-family: 'Manrope', sans-serif; line-height: 1.7; font-size: 0.95rem; }
 @media (max-width: 720px) {
   .home-social-card-event .home-social-body p { line-height: 1.6; font-size: 0.9rem; }
 }
@@ -623,7 +644,9 @@
 @media (max-width: 720px) {
   .home-event-meta-list { gap: 0.5rem 0.8rem; font-size: 0.8rem; padding-top: 0.8rem; }
 }
-.home-event-meta-list span { display: inline-flex; align-items: center; gap: 0.45rem; } 
+.home-event-meta-list svg { flex-shrink: 0; }
+.home-event-meta-list span:first-child { color: #43121d; background: #f5e8ed; border-radius: 8px; padding: 6px 10px; font-weight: 800; }
+.home-event-meta-list span { min-width: 0; overflow-wrap: anywhere; display: inline-flex; align-items: center; gap: 0.45rem; }
 @media (max-width: 720px) {
   .home-event-meta-list span { gap: 0.4rem; }
 }
@@ -665,6 +688,7 @@
  
 @media (max-width: 700px) { 
   .home-social-card-instagram, .home-social-card-event { flex-basis: 300px; width: 300px; min-width: 300px; } 
+  .home-social-card-event { min-width: 0; }
   .home-social-card-instagram { border-radius: 23px; } 
   .home-social-card-instagram .home-social-body { padding: 21px; } 
   .home-social-card-instagram h3 { font-size: 24px; } 

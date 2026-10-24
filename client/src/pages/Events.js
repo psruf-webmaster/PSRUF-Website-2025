@@ -39,22 +39,21 @@ const RECURRENCE_OPTIONS = [
 ];
 
 const EVENT_PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720"> 
-    <defs> 
-      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"> 
-        <stop offset="0%" stop-color="#f6d7d2" /> 
-        <stop offset="50%" stop-color="#f4efe6" /> 
-        <stop offset="100%" stop-color="#c86b5e" /> 
-      </linearGradient> 
-    </defs> 
-    <rect width="1200" height="720" fill="url(#grad)" /> 
-    <circle cx="940" cy="160" r="180" fill="rgba(255,255,255,0.22)" /> 
-    <circle cx="260" cy="620" r="210" fill="rgba(124,41,41,0.16)" /> 
-    <rect x="80" y="96" width="360" height="72" rx="36" fill="rgba(124,41,41,0.12)" /> 
-    <rect x="80" y="198" width="520" height="28" rx="14" fill="rgba(124,41,41,0.12)" /> 
-    <rect x="80" y="246" width="420" height="28" rx="14" fill="rgba(124,41,41,0.1)" /> 
-    <rect x="80" y="294" width="300" height="28" rx="14" fill="rgba(124,41,41,0.08)" /> 
-  </svg> 
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
+    <defs>
+      <linearGradient id="grad" x2="100%" y2="100%">
+        <stop stop-color="#faf0f3" />
+        <stop offset="1" stop-color="#e8cbd3" />
+      </linearGradient>
+      <pattern id="lines" width="36" height="36" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <path d="M0 0V36" stroke="#6f2434" stroke-opacity="0.06" stroke-width="2" />
+      </pattern>
+    </defs>
+    <rect width="1200" height="675" fill="url(#grad)" />
+    <circle cx="240" cy="170" r="160" fill="#fff" fill-opacity="0.5" />
+    <circle cx="1020" cy="600" r="260" fill="#6f2434" fill-opacity="0.06" />
+    <rect width="1200" height="675" fill="url(#lines)" />
+  </svg>
 `)}`; 
  
 const VIEW_OPTIONS = [ 

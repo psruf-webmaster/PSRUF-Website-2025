@@ -1,3 +1,4 @@
+import MediaLightbox, { isVideoMedia } from './MediaLightbox';
 import ScheduledTexts, { canScheduleTexts, TextScheduleFields } from './ScheduledTexts';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -378,7 +379,7 @@ function getPostMedia(post) {
   if (explicit.length) {
     return explicit.filter(Boolean).map((item, index) => ({
       id: item.id || `${post._id || 'post'}-${index}`,
-      name: item.name || 'Attachment',
+      name: item.name || item.originalName || item.filename || 'Attachment',
       url: item.url || item.src || '',
       type: item.type || 'file',
     }));
@@ -388,7 +389,7 @@ function getPostMedia(post) {
   if (post?.imageURL) {
     const url = String(post.imageURL || '');
     const type = url.match(/\.(mp4|webm|ogg|mov)$/i) ? 'video' : 'image';
-    fallback.push({ id: `${post._id || 'post'}-image`, name: 'Media', url, type });
+    fallback.push({ id: `${post._id || 'post'}-image`, name: url.split(/[?#]/)[0].split('/').pop() || 'Media', url, type });
   }
   return fallback;
 }
@@ -1081,6 +1082,8 @@ export function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, c
 
 function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThreadReplyRequest, onEditCommentRequest, onDeleteCommentRequest, isGrouped = false, isCompact = false }) {
   const { user } = useAuth();
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const closeMedia = useCallback(() => setSelectedMedia(null), []);
   const [showReactions, setShowReactions] = useState(false);
   const [messageActionsOpen, setMessageActionsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -1135,6 +1138,7 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setShowReactions(false); if (isCompact) setMessageActionsOpen(false); }} style={{ display: 'flex', gap: isCompact ? 6 : 10, alignItems: 'flex-start', padding: isGrouped ? (isCompact ? '0 2px 4px' : '0 8px 6px') : (isCompact ? '0 2px 8px' : '0 8px 10px'), borderBottom: 'none', marginBottom: 0, justifyContent: 'center', width: '100%', boxSizing: 'border-box' }}>
+      {selectedMedia && <MediaLightbox item={selectedMedia} authorName={authorName} timeLabel={when} onClose={closeMedia} />}
       <div style={{ width: '100%', minWidth: 0, display: 'flex', gap: isCompact ? 6 : 10, alignItems: 'flex-start', position: 'relative', boxSizing: 'border-box' }}>
         {!isGrouped ? (
           <MemberProfile hoverPreview userId={post.authorId} profile={authorProfile} name={authorName} avatar={avatarUrl} getAvatar={getUserAvatarUrl}><ChatAvatar src={avatarUrl} name={authorName} size={isCompact ? 30 : 36} fontSize={isCompact ? 10 : 12} style={{ boxShadow: '0 6px 12px rgba(109,44,44,0.05)' }} /></MemberProfile>
@@ -1210,10 +1214,20 @@ function PostCard({ post, onDeleteRequest, onReplyRequest, onEditRequest, onThre
             <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
               {media.map(item => {
                 if (!item.url) return null;
-                if (item.type === 'video' || /\.(mp4|webm|ogg|mov)$/i.test(item.url) || item.url.includes('video')) {
-                  return <video key={item.id} src={item.url} controls style={{ width: '100%', maxHeight: isCompact ? 180 : 240, borderRadius: 8, background: '#0f172a' }} />;
-                }
-                return <img key={item.id} src={item.url} alt={item.name || 'Attached content'} style={{ width: '100%', maxHeight: isCompact ? 200 : 260, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(148,163,184,0.18)' }} />;
+                return (
+                  <div key={item.id} onClick={event => event.stopPropagation()}>
+                    {isVideoMedia(item) ? (
+                      <>
+                        <video src={item.url} controls onClick={() => setSelectedMedia(item)} style={{ width: '100%', maxHeight: isCompact ? 180 : 240, borderRadius: 8, background: '#0f172a' }} />
+                        <button type="button" onClick={() => setSelectedMedia(item)}>Expand {item.name}</button>
+                      </>
+                    ) : (
+                      <button type="button" aria-label={`Expand ${item.name}`} onClick={() => setSelectedMedia(item)} style={{ display: 'block', width: '100%', padding: 0, background: 'transparent', border: 0, cursor: 'zoom-in' }}>
+                        <img src={item.url} alt={item.name || 'Attached content'} style={{ display: 'block', width: '100%', maxHeight: isCompact ? 200 : 260, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(148,163,184,0.18)' }} />
+                      </button>
+                    )}
+                  </div>
+                );
               })}
             </div>
           )}

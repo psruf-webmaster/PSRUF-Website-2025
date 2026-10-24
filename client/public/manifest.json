@@ -1,6 +1,6 @@
 {
-  "short_name": "Phi Sigma Rho Tau Chapter",
-  "name": "Phi Sigma Rho Tau Chapter",
+  "short_name": "Phi Sigma Rho",
+  "name": "Phi Sigma Rho at UF | Tau Chapter",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +20,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#6d2c2c",
   "background_color": "#ffffff"
 }
