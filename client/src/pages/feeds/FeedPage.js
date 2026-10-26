@@ -811,6 +811,17 @@ export function CreatePost({ feed, canPost, canBlast, onPosted, postingLocked, c
 
       resetComposer();
       onPosted && onPosted();
+      if (canSendSms && sendAsText && !scheduleLater) {
+        const result = data.smsResult;
+        if (!result || result.error || result.failures?.length || result.failed > 0 || !result.attempted) {
+          const detail = result?.error
+            || (result?.failed > 0 ? `${result.sent || 0} sent; ${result.failed} failed.`
+              : result?.failures?.length ? 'The text service could not send the blast.'
+              : result && !result.attempted ? 'No recipients with phone numbers matched this audience.'
+              : 'The server did not confirm text delivery.');
+          reportSubmitError(`Your feed post was published, but the text blast did not complete. ${detail} Do not repost the message to retry.`);
+        }
+      }
     } catch (err) {
       reportSubmitError(err.message === 'Failed to fetch'
         ? 'Could not reach the server. Your draft is saved here. Check your connection and try again.'

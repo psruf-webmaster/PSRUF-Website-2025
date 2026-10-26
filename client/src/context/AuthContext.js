@@ -105,15 +105,22 @@ export default function AuthProvider({ children }) {
 
     const refreshPromise = (async () => {
       try {
-        const userId = user._id || user.id;
+        const token = localStorage.getItem("psr_token");
+        if (!token) {
+          logout();
+          return null;
+        }
 
         const r = await fetch("/api/auth/me", {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${userId}`,
+            Authorization: `Bearer ${token}`,
           },
           credentials: "include",
         });
+
+        // A response from an earlier session must not replace a newer login.
+        if (localStorage.getItem("psr_token") !== token) return null;
 
         if (!r.ok) {
           if (r.status === 401 || r.status === 403) {
@@ -129,6 +136,8 @@ export default function AuthProvider({ children }) {
           throw new Error("No user returned from /me");
         }
 
+        if (localStorage.getItem("psr_token") !== token) return null;
+        if (data.token) localStorage.setItem("psr_token", data.token);
         updateUser(data.user);
 
         return data.user;

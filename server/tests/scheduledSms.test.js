@@ -112,3 +112,22 @@ test('immediate blast behavior is preserved', async () => {
   assert.equal((await create({ smsSendAt: undefined })).status, 201);
   assert.equal(calls.length, 1);
 });
+
+test('VP C&R sends immediately without a cached sms.send permission', async () => {
+  sender.permissions = [];
+  const response = await create({ smsSendAt: undefined });
+  assert.equal(response.status, 201);
+  const data = await response.json();
+  assert.equal(data.smsResult.sent, 2);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].message, 'Hello sisters');
+});
+test('C&R position keys accept legacy formatting without granting access to subordinate positions', async () => {
+  sender.positions = [{ key: 'vp_communications' }];
+  assert.equal((await create({ smsSendAt: undefined })).status, 201);
+  sender.positions = [{ key: 'PR_DIRECTOR', exec: 'VP_COMMUNICATIONS' }];
+  stored = null;
+  assert.equal((await create({ smsSendAt: undefined })).status, 403);
+  assert.equal(stored, null);
+  assert.equal(calls.length, 1);
+});

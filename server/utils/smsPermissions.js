@@ -1,7 +1,9 @@
-const { POSITIONS, EXEC_POSITIONS, EXEC } = require('../constants/positions');
+const { POSITIONS, EXEC } = require('../constants/positions');
 
 function hasPosition(user, key) {
-  return Array.isArray(user?.positions) && user.positions.some(p => p?.key === key);
+  const normalizeKey = value => String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return Array.isArray(user?.positions) && user.positions.some(p =>
+    normalizeKey(p?.key || p) === normalizeKey(key));
 }
 
 function canUserSendSms(user) {

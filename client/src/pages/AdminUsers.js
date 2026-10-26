@@ -172,6 +172,9 @@ export default function AdminUsers() {
 
   const allowed = canAccessAdminUsers(user);
   const scholarshipAllowed = canManageScholarship(user);
+  const scholarshipVisible = scholarshipAllowed || (user?.positions || []).some(
+    (position) => position?.key === "VP_STANDARDS"
+  );
 
   const userId = user?._id || user?.id;
 
@@ -634,7 +637,7 @@ export default function AdminUsers() {
                             width={140}
                           />
 
-                          {scholarshipAllowed && (
+                          {scholarshipVisible && (
                             <label
                               style={
                                 styles.inlineFieldLabel
@@ -648,7 +651,7 @@ export default function AdminUsers() {
                                 Scholarship
                               </span>
 
-                              <select
+                              {scholarshipAllowed ? <select
                                 value={Number(
                                   scholarshipEdit[
                                     u._id
@@ -681,15 +684,15 @@ export default function AdminUsers() {
                                     </option>
                                   )
                                 )}
-                              </select>
+                              </select> : <span>{Number(u.scholarship ?? 0)}%</span>}
 
-                              <span
+                              {scholarshipAllowed && <span
                                 style={
                                   styles.inlineFieldHint
                                 }
                               >
                                 Saves immediately
-                              </span>
+                              </span>}
                             </label>
                           )}
                         </div>

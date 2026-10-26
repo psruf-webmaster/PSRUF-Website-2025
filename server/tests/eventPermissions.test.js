@@ -12,6 +12,7 @@ const outsider = { _id: '507f1f77bcf86cd799439012', role: ['webmaster'], isAppro
 const eventId = '507f1f77bcf86cd799439013';
 let server, base, saved = 0, seriesQuery;
 let series = false;
+let coHosts = [];
 before(async () => {
   User.findById = id => {
     const value = [owner, outsider].find(u => u._id === String(id));
@@ -21,7 +22,7 @@ before(async () => {
   };
   User.find = () => ({ select: async () => [] });
   const makeEvent = () => {
-    const event = new Event({ _id: eventId, createdBy: owner._id, coHosts: [outsider._id], title: 'Event',
+    const event = new Event({ _id: eventId, createdBy: owner._id, coHosts, title: 'Event',
       startAt: new Date('2027-01-01T15:00:00Z'), endAt: new Date('2027-01-01T16:00:00Z'),
       visibility: { rolesAllowed: ['member', 'exec'] }, points: { category: 'phi' }, recurrence: { frequency: series ? 'weekly' : 'none', seriesId: series ? 'test-series' : undefined, endDate: series ? new Date('2027-02-01') : undefined } });
     event.save = async () => { saved++; };
@@ -44,7 +45,7 @@ const routes = [['GET', '/manage'], ['PATCH', ''], ['PATCH', '/cohosts'], ['PUT'
 async function request(method, suffix, token, extra = {}, body = {}) {
   return fetch(base + suffix, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...extra }, ...(method === 'GET' ? {} : { body: JSON.stringify(body) }) });
 }
-test('non-creators cannot manage even with privileged roles or co-host membership', async () => {
+test('unassigned users cannot manage even with privileged roles', async () => {
   for (const role of ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer', 'member']) {
     outsider.role = [role];
     for (const [method, suffix] of routes) assert.equal((await request(method, suffix, issueToken(outsider))).status, 403, `${role}: ${method} ${suffix}`);
@@ -91,5 +92,41 @@ test('Standards Board and other VP positions do not inherit global event managem
   for (const positions of [[{ key: 'STANDARDS_BOARD', exec: 'VP_STANDARDS' }], [{ key: 'VP_SOCIAL' }], []]) {
     outsider.positions = positions;
     for (const [method, suffix] of routes) assert.equal((await request(method, suffix, issueToken(outsider))).status, 403);
+  }
+});
+
+test('assigned co-hosts can use every management endpoint and lose access when removed', async () => {
+  outsider.positions = [];
+  outsider.role = ['member'];
+  coHosts = [outsider._id];
+  for (const [method, suffix] of routes) {
+    const body = suffix === '/manage-members' ? { userId: owner._id } : {};
+    const response = await request(method, suffix, issueToken(outsider), {}, body);
+    assert.equal(response.status, 200, `${method} ${suffix}: ${await response.text()}`);
+  }
+  coHosts = [];
+  for (const [method, suffix] of routes) {
+    assert.equal((await request(method, suffix, issueToken(outsider))).status, 403);
+  }
+});
+
+test('ordinary members receive public host names in every event card list', async () => {
+  outsider.role = ['member'];
+  outsider.positions = [];
+  coHosts = [outsider._id];
+  User.find = () => ({ select: async () => [
+    { ...owner, firstName: 'Alex', lastName: 'Host', personalEmail: 'private@example.com' },
+    { ...outsider, firstName: 'Sam', lastName: 'CoHost', personalPassword: 'private' },
+  ] });
+  for (const path of ['?view=allUpcoming', '?view=rsvpd', '/mine']) {
+    const response = await fetch(base.replace(`/${eventId}`, '') + path, {
+      headers: { Authorization: `Bearer ${outsider._id}` },
+    });
+    assert.equal(response.status, 200);
+    const [card] = await response.json();
+    assert.deepEqual(card.host, { _id: owner._id, firstName: 'Alex', lastName: 'Host' });
+    assert.deepEqual(card.coHostProfiles, [{ _id: outsider._id, firstName: 'Sam', lastName: 'CoHost' }]);
+    assert.equal(String(card.createdBy), owner._id);
+    assert.deepEqual(card.coHosts, [outsider._id]);
   }
 });

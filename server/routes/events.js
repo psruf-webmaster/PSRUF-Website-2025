@@ -248,7 +248,7 @@ function memberStatusMatches(event, user) {
 
 function eventVisibleToUser(event, user) {
   if (!user) return false;
-  if (isVpStandards(user)) return true;
+  if (canManageEvent(event, user)) return true;
   if (isOfficerLevel(user)) return true;
 
   const rolesAllowed = normalizeStrings(event.visibility?.rolesAllowed);
@@ -334,7 +334,10 @@ function getSpecialEventQuery(viewParam, user) {
 }
 
 function canManageEvent(event, user) {
-  return !!event && (isVpStandards(user) || isEventCreator(event, user));
+  const userId = user?._id || user?.id;
+  const coHost = !!userId && (event?.coHosts || []).some(host =>
+    String(host?._id || host?.id || host) === String(userId));
+  return !!event && (isVpStandards(user) || isEventCreator(event, user) || coHost);
 }
 
 function isVpStandards(user) {
@@ -489,6 +492,21 @@ function applySeriesTemplate(targetEvent, templatePayload, sourceEventId) {
   };
 }
 
+// Resolve only public host names, keeping stored IDs intact for authorization.
+async function withEventHosts(events) {
+  const ids = [...new Set(events.flatMap(event => [event.createdBy, ...(event.coHosts || [])])
+    .filter(Boolean).map(id => String(id?._id || id)))];
+  const hosts = ids.length ? await User.find({ _id: { $in: ids } }).select('_id firstName lastName') : [];
+  const byId = new Map(hosts.map(host => [String(host._id), {
+    _id: host._id, firstName: host.firstName, lastName: host.lastName,
+  }]));
+  return events.map(event => ({
+    ...event,
+    host: byId.get(String(event.createdBy?._id || event.createdBy)) || null,
+    coHostProfiles: (event.coHosts || []).map(id => byId.get(String(id?._id || id))).filter(Boolean),
+  }));
+}
+
 // GET /api/events?view=week|month|nextMonth|allUpcoming|past|rsvpd|created
 router.get('/', async (req, res) => {
   try {
@@ -505,7 +523,7 @@ router.get('/', async (req, res) => {
         ...e.toObject(),
         ...summarizeRsvps(e, user),
       }));
-      return res.json(enriched);
+      return res.json(await withEventHosts(enriched));
     }
 
     const range = getDateRange(req.query.view);
@@ -528,7 +546,7 @@ router.get('/', async (req, res) => {
       ...e.toObject(),
       ...summarizeRsvps(e, user),
     }));
-    return res.json(enriched);
+    return res.json(await withEventHosts(enriched));
   } catch (err) {
     console.error('Events list error:', err);
     return res.status(500).json({ message: 'Server error' });
@@ -566,6 +584,8 @@ router.get('/mine', async (req, res) => {
         recurrence: ev.recurrence,
         capacityMax: ev.capacityMax,
         visibility: ev.visibility,
+        createdBy: ev.createdBy,
+        coHosts: ev.coHosts || [],
         pointsCategory: ev.points?.category,
         points: ev.points,
         currentUserRsvp: rsvp?.status || null,
@@ -581,7 +601,7 @@ router.get('/mine', async (req, res) => {
       };
     });
 
-    return res.json(data);
+    return res.json(await withEventHosts(data));
   } catch (err) {
     console.error('Events mine error:', err);
     return res.status(500).json({ message: 'Server error' });
@@ -833,7 +853,7 @@ router.get('/:id', async (req, res) => {
     if (!eventVisibleToUser(event, user)) return res.status(403).json({ message: 'Not allowed' });
 
     const summary = summarizeRsvps(event, user);
-    return res.json({ ...event.toObject(), ...summary });
+    return res.json((await withEventHosts([{ ...event.toObject(), ...summary }]))[0]);
   } catch (err) {
     console.error('Event detail error:', err);
     return res.status(500).json({ message: 'Server error' });
@@ -969,7 +989,7 @@ router.post('/:id/rsvp', async (req, res) => {
     const existing = (event.rsvps || []).find((entry) => String(entry.user) === String(user._id));
     const sameSelection = existing && existing.status === status && String(existing.shiftId || '') === String(shiftId || '');
     if (sameSelection || (status === 'none' && !existing)) {
-      return res.json({ ...event.toObject(), ...summarizeRsvps(event, user) });
+      return res.json((await withEventHosts([{ ...event.toObject(), ...summarizeRsvps(event, user) }]))[0]);
     }
     const originalRsvps = event.toObject().rsvps;
     const notificationShiftId = status === 'none' ? existing.shiftId : shiftId;
@@ -987,7 +1007,7 @@ router.post('/:id/rsvp', async (req, res) => {
     if (!saved.modifiedCount) return res.status(409).json({ message: 'RSVPs changed. Refresh and try again.' });
     await notifyRsvpChange(event.toObject(), user, status, notificationShiftId);
     const summary = summarizeRsvps(event, user);
-    return res.json({ ...event.toObject(), ...summary });
+    return res.json((await withEventHosts([{ ...event.toObject(), ...summary }]))[0]);
   } catch (err) {
     console.error('Event RSVP error:', err);
     return res.status(500).json({ message: 'Server error' });

@@ -88,7 +88,9 @@ export function isManager(user, event) {
   const creatorId = event?.createdBy?._id || event?.createdBy?.id || event?.createdBy;
   const vpStandards = (Array.isArray(user?.positions) ? user.positions : []).some(position =>
     String(position?.key || position || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === 'VPSTANDARDS');
-  return !!userId && !!event && (vpStandards || (!!creatorId && String(userId) === String(creatorId)));
+  const coHost = !!userId && (event?.coHosts || []).some(host =>
+    String(host?._id || host?.id || host) === String(userId));
+  return !!userId && !!event && (vpStandards || coHost || (!!creatorId && String(userId) === String(creatorId)));
 } 
  
 function fmtRange(startAt, endAt) {
@@ -267,7 +269,7 @@ function ShiftEditor({ shifts, setShifts }) {
   ); 
 } 
  
-function EventCard({ event, user, userId, view, onRsvp, onManage, index = 0 }) {
+export function EventCard({ event, user, userId, view, onRsvp, onManage, index = 0 }) {
   const reduceMotion = useReducedMotion();
   const [imageSrc, setImageSrc] = useState(getEventImage(event)); 
   const [selectedShiftId, setSelectedShiftId] = useState(event.currentUserShiftId || event.shifts?.[0]?.shiftId || ""); 
@@ -331,6 +333,11 @@ function EventCard({ event, user, userId, view, onRsvp, onManage, index = 0 }) {
           <span><Clock3 size={15} /> {formatDurationHours(event.startAt, event.endAt)}</span> 
         </div> 
  
+        <div className="events-empty-note">
+          <div><strong>Host:</strong> {[event.host?.firstName, event.host?.lastName].filter(Boolean).join(" ") || "Unavailable"}</div>
+          <div><strong>Co-hosts:</strong> {(event.coHostProfiles || []).map(host => [host.firstName, host.lastName].filter(Boolean).join(" ")).filter(Boolean).join(", ") || "None"}</div>
+        </div>
+
         {event.recurrence?.frequency && event.recurrence.frequency !== "none" ? ( 
           <div className="events-role-pills"> 
             <span className="events-role-pill">Repeats {toTitleCase(event.recurrence.frequency)}</span> 
@@ -1551,7 +1558,7 @@ export function ManageEventModal({
               <section className="events-manage-panel"> 
                 <div className="events-manage-panel-head"> 
                   <h3>Co-hosts</h3> 
-                  <p>Choose up to seven co-hosts. The event creator and VP Standards can manage this event.</p>
+                  <p>Choose up to seven co-hosts. The event host, co-hosts, and VP Standards can manage this event.</p>
                 </div> 
                 <div className="events-cohost-list" role="group" aria-label="Co-hosts" aria-describedby="cohost-selection-count">
                   {cohostOptions.length ? cohostOptions.map((option) => {

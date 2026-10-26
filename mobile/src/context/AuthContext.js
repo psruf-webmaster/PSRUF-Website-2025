@@ -44,9 +44,9 @@ export default function AuthProvider({ children }) {
 
     try {
       const response = await api.get('/auth/me', {
-        headers: authHeaders(user),
+        headers: authHeaders(user, true),
       });
-      return updateUser(response.data.user || null);
+      return updateUser(response.data.user ? { ...response.data.user, token: response.data.token || tokenRef.current } : null);
     } catch (requestError) {
       if (requestError?.response?.status === 401 || requestError?.response?.status === 403) {
         await logout();

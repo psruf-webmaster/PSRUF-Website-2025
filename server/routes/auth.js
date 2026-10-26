@@ -4,9 +4,8 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const { rateLimit } = require('express-rate-limit');
-const { issueToken } = require('../middleware/requireJwt');
+const { issueToken, requireJwt } = require('../middleware/requireJwt');
 const { sendPasswordResetEmail } = require('../utils/email');
-const mongoose = require('mongoose');
 const { sanitizeMemberStatuses } = require('../constants/memberOptions');
 const { normalizeAssetUrl } = require('../utils/assetUrls');
 
@@ -48,30 +47,6 @@ function toSafeUser(user) {
     rejectedAt: user.rejectedAt,
     rejectionReason: user.rejectionReason,
   };
-}
-
-/**
- * Get a user from the Authorization header.
- *
- * Current system:
- * Authorization: Bearer <MongoDB user ID>
- *
- * This preserves your existing authentication setup.
- */
-async function getAuthenticatedUser(req) {
-  const auth = req.header('authorization') || '';
-
-  if (!auth.toLowerCase().startsWith('bearer ')) {
-    return null;
-  }
-
-  const id = auth.slice(7).trim();
-
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return null;
-  }
-
-  return User.findById(id);
 }
 
 /**
@@ -251,9 +226,9 @@ router.post('/login', async (req, res) => {
  * This is important because localStorage can become stale after
  * an admin changes someone's roles/positions.
  */
-router.get('/me', async (req, res) => {
+router.get('/me', requireJwt, async (req, res) => {
   try {
-    const user = await getAuthenticatedUser(req);
+    const user = req.user;
 
     if (!user) {
       return res.status(401).json({
@@ -269,6 +244,7 @@ router.get('/me', async (req, res) => {
 
     return res.json({
       ok: true,
+      token: issueToken(user),
       user: toSafeUser(user),
     });
   } catch (err) {

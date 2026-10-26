@@ -76,7 +76,7 @@ async function canUserPostToFeed(user, feed) {
 const CAN = {
   VIEW_FEED: canUserViewFeed,
   POST_CREATE: canUserPostToFeed,
-  TEXTBLAST_SEND: (user) => Array.isArray(user?.permissions) && user.permissions.includes('sms.send'),
+  TEXTBLAST_SEND: canUserSendSms,
 };
 
 function normalizeAudienceType(rawAudienceType, rawScope) {
@@ -404,6 +404,9 @@ router.post('/:feed/posts', upload.array('attachments', 10), (req, res, next) =>
     const firstAttachment = finalAttachments[0]?.url || imageURL || '';
 
     const sendAsTextNormalized = sendAsText === true || sendTextBlast === true;
+    if (sendAsTextNormalized && !canUserSendSms(user)) {
+      return bad(res, 403, 'Only authorized text senders, including VP Communications & Records, can send text blasts.');
+    }
     const audienceTypeNormalized = normalizeAudienceType(audienceType, blastAudience?.scope);
     const channelSlugNormalized = channelSlug || feed;
 

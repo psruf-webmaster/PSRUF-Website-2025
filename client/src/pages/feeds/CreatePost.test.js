@@ -99,3 +99,20 @@ test('unexpected server response does not discard the draft', async () => {
   expect(screen.getByPlaceholderText('Message the channel...')).toHaveValue('Hello sisters');
   expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled();
 });
+
+test.each([
+  [{ error: 'Not authorized to send SMS', attempted: 0 }, 'Not authorized'],
+  [{ attempted: 0, sent: 0, failed: 0 }, 'No recipients'],
+  [{ attempted: 2, sent: 1, failed: 1 }, '1 sent; 1 failed'],
+  [{ attempted: 0, failures: [{ reason: 'private provider details' }] }, 'text service'],
+])('a published post with failed SMS shows delivery feedback without keeping a duplicate draft', async (smsResult, detail) => {
+  fetch.mockResolvedValue({ ok: true, json: async () => ({ _id: 'post', smsResult }) });
+  const onPosted = setup();
+  fireEvent.click(screen.getByRole('switch', { name: 'Also send as text blast' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('feed post was published');
+  expect(screen.getByRole('alert')).toHaveTextContent(detail);
+  expect(screen.getByRole('alert')).not.toHaveTextContent('private provider details');
+  expect(screen.getByPlaceholderText('Message the channel...')).toHaveValue('');
+  expect(onPosted).toHaveBeenCalledTimes(1);
+});

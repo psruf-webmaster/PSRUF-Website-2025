@@ -59,6 +59,12 @@ function canManageScholarship(user) {
   return positions.some(position => position?.key === EXEC.VP_FINANCE);
 }
 
+function canViewScholarship(user) {
+  const positions = Array.isArray(user?.positions) ? user.positions : [];
+  return canManageScholarship(user)
+    || positions.some(position => position?.key === EXEC.VP_STANDARDS);
+}
+
 function serializeAdminUser(user, viewer) {
   const source = typeof user.toObject === 'function' ? user.toObject() : { ...user };
   const serialized = {
@@ -66,7 +72,7 @@ function serializeAdminUser(user, viewer) {
     memberStatus: sanitizeMemberStatuses(source.memberStatus),
   };
 
-  if (canManageScholarship(viewer)) {
+  if (canViewScholarship(viewer)) {
     serialized.scholarship = normalizeScholarship(source.scholarship);
   } else {
     delete serialized.scholarship;

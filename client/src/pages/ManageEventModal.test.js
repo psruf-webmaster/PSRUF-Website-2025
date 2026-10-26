@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { ManageEventModal } from './Events';
+import { ManageEventModal, EventCard } from './Events';
 
 jest.mock('react-router-dom', () => ({ Link: ({ children }) => <a>{children}</a> }));
 jest.mock('../context/AuthContext', () => ({ useAuth: () => ({}) }));
 jest.mock('motion/react', () => ({
+  useReducedMotion: () => true,
   AnimatePresence: ({ children }) => children,
-  motion: { div: ({ initial, animate, exit, transition, children, ...props }) => <div {...props}>{children}</div> },
+  motion: {
+    article: ({ initial, whileInView, viewport, transition, children, ...props }) => <article {...props}>{children}</article>,
+    button: ({ whileHover, whileTap, children, ...props }) => <button {...props}>{children}</button>,
+    div: ({ initial, animate, exit, transition, children, ...props }) => <div {...props}>{children}</div> },
 }));
 
 const event = { title: 'Chapter meeting', startAt: '2026-08-31T18:13:00', endAt: '2026-09-01T18:13:00' };
@@ -55,9 +59,9 @@ test('empty attendance table and member action preserve their behavior', () => {
   expect(saveAttendance).toHaveBeenCalledTimes(1);
 });
 
-test('management controls allow creators and VP Standards, not general roles or co-hosts', () => {
+test('management controls allow creators, assigned co-hosts and VP Standards', () => {
   const { isManager } = require('./Events');
-  const event = { createdBy: 'owner', coHosts: ['other'] };
+  const event = { createdBy: 'owner', coHosts: ['cohost'] };
   for (const role of ['officer', 'exec', 'webmaster', 'webdev', 'candOfficer']) {
     expect(isManager({ id: 'other', role: [role] }, event)).toBe(false);
   }
@@ -69,4 +73,21 @@ test('management controls allow creators and VP Standards, not general roles or 
   expect(isManager({ id: 'other', positions: ['VP_STANDARDS'] }, event)).toBe(true);
   expect(isManager({ id: 'other', positions: [{ key: 'STANDARDS_BOARD', exec: 'VP_STANDARDS' }] }, event)).toBe(false);
   expect(isManager({ id: 'other', positions: [{ key: 'VP_SOCIAL' }] }, event)).toBe(false);
+});
+
+test('assigned co-hosts can manage with raw or populated IDs', () => {
+  const { isManager } = require('./Events');
+  for (const host of ['cohost', { _id: 'cohost' }, { id: 'cohost' }]) {
+    expect(isManager({ id: 'cohost' }, { createdBy: 'owner', coHosts: [host] })).toBe(true);
+  }
+  expect(isManager({ id: 'other' }, { createdBy: 'owner', coHosts: ['cohost'] })).toBe(false);
+});
+
+test('ordinary members see the host and all co-host names on event cards', () => {
+  render(<EventCard event={{ ...event, _id: 'event', host: { firstName: 'Alex', lastName: 'Host' },
+    coHostProfiles: [{ firstName: 'Sam', lastName: 'CoHost' }, { firstName: 'Jo', lastName: 'CoHost' }] }}
+    user={{ id: 'member', role: ['member'] }} userId="member" />);
+  expect(screen.getByText(/Alex Host/)).toBeInTheDocument();
+  expect(screen.getByText(/Sam CoHost, Jo CoHost/)).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Manage Event' })).not.toBeInTheDocument();
 });
