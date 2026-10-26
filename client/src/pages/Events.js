@@ -335,7 +335,9 @@ export function EventCard({ event, user, userId, view, onRsvp, onManage, index =
  
         <div className="events-empty-note">
           <div><strong>Host:</strong> {[event.host?.firstName, event.host?.lastName].filter(Boolean).join(" ") || "Unavailable"}</div>
-          <div><strong>Co-hosts:</strong> {(event.coHostProfiles || []).map(host => [host.firstName, host.lastName].filter(Boolean).join(" ")).filter(Boolean).join(", ") || "None"}</div>
+          {event.coHostProfiles?.length > 0 && (
+            <div><strong>Co-hosts:</strong> {event.coHostProfiles.map(host => [host.firstName, host.lastName].filter(Boolean).join(" ")).filter(Boolean).join(", ")}</div>
+          )}
         </div>
 
         {event.recurrence?.frequency && event.recurrence.frequency !== "none" ? ( 
